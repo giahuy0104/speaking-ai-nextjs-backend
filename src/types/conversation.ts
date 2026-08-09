@@ -58,6 +58,9 @@ export type BenchmarkMetadata = {
   workerPrepareFailureCode?: string;
   workerPrepareDuplicateSuppressed?: number;
   workerPrepareInvalidated?: number;
+  workerPrepareServerJoinFinalize?: boolean;
+  workerEagerAudioStreamStarted?: boolean;
+  workerAudioCacheLookupSkipped?: boolean;
   workerStartedAtSessionMs?: number;
   workerFinalizeStartedAtSessionMs?: number;
   workerStartedBeforeStopMs?: number;

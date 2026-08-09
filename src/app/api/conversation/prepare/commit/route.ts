@@ -7,6 +7,7 @@ import {
   withRequestId,
 } from "@/lib/observability";
 import { commitPreparedWorkerConversation } from "@/lib/ai/conversationPreparation";
+import { authorizeAudioSessionRequest } from "@/lib/storage/audioSessionSecurity";
 
 export const runtime = "nodejs";
 
@@ -39,6 +40,7 @@ export async function POST(request: Request) {
       throw new AppError("BAD_REQUEST", "Dữ liệu commit hội thoại không hợp lệ.");
     }
 
+    authorizeAudioSessionRequest(request, audioSessionId);
     const committed = await commitPreparedWorkerConversation({
       prepareId,
       audioSessionId,

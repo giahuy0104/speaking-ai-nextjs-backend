@@ -11,6 +11,9 @@ let claimEnglishAudioCacheFill:
 let startEnglishAudioStream: typeof import("./tts").startEnglishAudioStream;
 let subscribeEnglishAudioStream:
   typeof import("./tts").subscribeEnglishAudioStream;
+let primeEnglishAudioStream: typeof import("./tts").primeEnglishAudioStream;
+let waitForEnglishAudioStream:
+  typeof import("./tts").waitForEnglishAudioStream;
 let readGeneratedAudioFile:
   typeof import("../storage/audio").readGeneratedAudioFile;
 
@@ -26,6 +29,8 @@ before(async () => {
     claimEnglishAudioCacheFill,
     startEnglishAudioStream,
     subscribeEnglishAudioStream,
+    primeEnglishAudioStream,
+    waitForEnglishAudioStream,
   } = await import("./tts"));
   ({ readGeneratedAudioFile } = await import("../storage/audio"));
 });
@@ -124,7 +129,7 @@ test("a listener joining during cache fill reuses the active provider stream", a
       model: "test-tts-model",
       voice: "test-voice",
       speed: 1,
-      extension: "mp3",
+      extension: "mp3" as const,
     },
   };
   const completion = owner.cacheResponse(speech, true);
@@ -140,4 +145,32 @@ test("a listener joining during cache fill reuses the active provider stream", a
   assert.equal(Buffer.from(joinedAudio).toString(), "shared streaming mp3 bytes");
   assert.equal(joinedResponse.headers.get("X-Audio-Stream-Reused"), "1");
   await completion;
+});
+
+test("eager Web prepare primes one provider stream before Safari joins", async () => {
+  const text = "A fresh sentence should already be buffering.";
+  const originalFetch = globalThis.fetch;
+  let providerCalls = 0;
+  globalThis.fetch = async () => {
+    providerCalls += 1;
+    return new Response(Buffer.from("eager streaming mp3 bytes"), {
+      headers: { "content-type": "audio/mpeg" },
+    });
+  };
+
+  try {
+    const bootstrap = primeEnglishAudioStream(text);
+    assert.equal(waitForEnglishAudioStream(text), bootstrap);
+    await bootstrap;
+    const joinedResponse = subscribeEnglishAudioStream(text);
+    assert.ok(joinedResponse);
+    assert.equal(joinedResponse.headers.get("X-Audio-Stream-Reused"), "1");
+    assert.equal(
+      Buffer.from(await joinedResponse.arrayBuffer()).toString(),
+      "eager streaming mp3 bytes",
+    );
+    assert.equal(providerCalls, 1);
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
 });

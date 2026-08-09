@@ -30,6 +30,8 @@ export type ConversationPipelineOptions = {
    * exact prepared pipeline instead of waiting for durable cache storage.
    */
   streamAudioOnCacheMiss?: boolean;
+  /** Web Worker prepare only: start provider TTS before Safari opens audioUrl. */
+  eagerAudioOnCacheMiss?: boolean;
 };
 
 export type PreparedConversationPipeline = {
@@ -86,7 +88,12 @@ export async function prepareConversationPipeline(
     ? { value: options.prefetchedAudio, latencyMs: 0 }
     : await measureStep<AudioSynthesisResult>(() =>
         usesFastStreamingTts
-          ? prepareEnglishAudio(llm.value.englishText)
+          ? prepareEnglishAudio(llm.value.englishText, {
+              eagerStream: options.eagerAudioOnCacheMiss === true,
+              knownCacheMiss:
+                options.eagerAudioOnCacheMiss === true &&
+                llm.value.source === "cloudflare",
+            })
           : synthesizeEnglishAudio(llm.value.englishText),
       );
 
@@ -124,7 +131,14 @@ export function completePreparedConversationPipeline(
     textFallbackReason: llm.value.textFallbackReason,
     audioSource: tts.value.source,
     asrMode: input.asrMode ?? (input.audioFile ? "batch_chunks" : "text"),
-    benchmark: input.benchmark,
+    benchmark: tts.value.eagerStreamStarted
+      ? {
+          ...input.benchmark,
+          workerEagerAudioStreamStarted: true,
+          workerAudioCacheLookupSkipped:
+            tts.value.cacheLookupSkipped === true,
+        }
+      : input.benchmark,
     latency: {
       asrMs: asr.latencyMs,
       llmMs: llm.latencyMs,
@@ -148,6 +162,8 @@ export function completePreparedConversationPipeline(
     audioSource: result.audioSource,
     audioCacheHit: result.audioSource === "cache",
     audioCacheReady: tts.value.cacheReady,
+    eagerAudioStreamStarted: tts.value.eagerStreamStarted === true,
+    audioCacheLookupSkipped: tts.value.cacheLookupSkipped === true,
     audioDeliveryMode: tts.value.cacheReady ? "cache" : "stream_and_cache",
     audioCacheHitTarget: 0.85,
     latency: result.latency,

@@ -8,6 +8,7 @@ import {
   getTtsProfile,
   startEnglishAudioStream,
   subscribeEnglishAudioStream,
+  waitForEnglishAudioStream,
 } from "@/lib/ai/tts";
 import {
   getRequestId,
@@ -62,11 +63,24 @@ export async function GET(request: Request) {
   const cacheFillClaim = claimEnglishAudioCacheFill(text);
 
   if (!cacheFillClaim.owner) {
-    const activeStream = subscribeEnglishAudioStream(text);
+    let activeStream = subscribeEnglishAudioStream(text);
+    const bootstrap = activeStream ? null : waitForEnglishAudioStream(text);
+    if (!activeStream && bootstrap) {
+      try {
+        await bootstrap;
+        activeStream = subscribeEnglishAudioStream(text);
+      } catch (error) {
+        logEvent("warn", "tts_eager_stream_bootstrap_failed", {
+          requestId,
+          error,
+        });
+      }
+    }
     if (activeStream) {
       logEvent("info", "tts_active_stream_joined", {
         requestId,
         latencyMs: Math.round(performance.now() - startedAt),
+        eagerBootstrapJoined: Boolean(bootstrap),
       });
       return withRequestId(activeStream, requestId);
     }

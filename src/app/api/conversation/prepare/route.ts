@@ -7,6 +7,7 @@ import {
   withRequestId,
 } from "@/lib/observability";
 import { prepareWorkerConversation } from "@/lib/ai/conversationPreparation";
+import { authorizeAudioSessionRequest } from "@/lib/storage/audioSessionSecurity";
 
 export const runtime = "nodejs";
 
@@ -51,6 +52,7 @@ export async function POST(request: Request) {
       throw new AppError("BAD_REQUEST", "Dữ liệu chuẩn bị hội thoại không hợp lệ.");
     }
 
+    authorizeAudioSessionRequest(request, audioSessionId);
     const prepared = await prepareWorkerConversation({
       requestId,
       clientId:

@@ -20,6 +20,7 @@ import { logEvent } from "@/lib/observability";
 const preparationNamespace = "conversation_preparations_v1";
 const commitNamespace = "conversation_preparation_commits_v1";
 const preparationTtlMs = 10 * 60 * 1000;
+const maxMemoryPreparations = 512;
 
 export type ConversationPreparation = {
   version: 1;
@@ -87,6 +88,7 @@ function preparationKey(input: {
   context: PracticeContext;
   childAge: number;
   clientId?: string;
+  sourceText: string;
 }) {
   return createHash("sha256")
     .update(
@@ -96,6 +98,7 @@ function preparationKey(input: {
         context: input.context,
         childAge: input.childAge,
         clientId: input.clientId ?? null,
+        sourceText: input.sourceText.normalize("NFKC").replace(/\s+/g, " ").trim(),
       }),
     )
     .digest("hex");
@@ -103,6 +106,17 @@ function preparationKey(input: {
 
 function isLive(value: ConversationPreparation | null | undefined) {
   return Boolean(value && Date.parse(value.expiresAt) > Date.now());
+}
+
+function prunePreparationMemory(now = Date.now()) {
+  for (const [prepareId, preparation] of memory) {
+    if (Date.parse(preparation.expiresAt) <= now) memory.delete(prepareId);
+  }
+  while (memory.size > maxMemoryPreparations) {
+    const oldestPrepareId = memory.keys().next().value;
+    if (oldestPrepareId === undefined) break;
+    memory.delete(oldestPrepareId);
+  }
 }
 
 export async function prepareWorkerConversation(input: {
@@ -116,6 +130,7 @@ export async function prepareWorkerConversation(input: {
   asrLatencyMs: number;
   benchmark?: BenchmarkMetadata;
 }) {
+  prunePreparationMemory();
   const key = preparationKey(input);
   const prepareId = `prep_${key.slice(0, 32)}`;
   const memoryValue = memory.get(prepareId);
@@ -159,6 +174,7 @@ export async function prepareWorkerConversation(input: {
         latencyMs: input.asrLatencyMs,
       },
       streamAudioOnCacheMiss: true,
+      eagerAudioOnCacheMiss: true,
     });
     const now = Date.now();
     const preparation: ConversationPreparation = {
@@ -188,6 +204,39 @@ export async function prepareWorkerConversation(input: {
   }
 }
 
+/**
+ * Finalize can arrive while /prepare is still translating or priming TTS.
+ * Re-entering with the same session/snapshot joins the server-side flight,
+ * then commits once. This removes the client-side wait plus commit round trip
+ * without starting duplicate LLM or TTS work.
+ */
+export async function finalizeWorkerConversation(input: {
+  requestId?: string;
+  clientId?: string;
+  audioSessionId: string;
+  snapshotHash: string;
+  sourceText: string;
+  context: PracticeContext;
+  childAge: number;
+  asrLatencyMs: number;
+  benchmark?: BenchmarkMetadata;
+}) {
+  const prepared = await prepareWorkerConversation(input);
+  const committed = await commitPreparedWorkerConversation({
+    prepareId: prepared.preparation.prepareId,
+    audioSessionId: input.audioSessionId,
+    snapshotHash: input.snapshotHash,
+    benchmark: input.benchmark,
+  });
+  if (!committed) return null;
+  return {
+    ...committed,
+    prepareId: prepared.preparation.prepareId,
+    preparationJoined: prepared.joined,
+    persistence: prepared.persistence,
+  };
+}
+
 export async function commitPreparedWorkerConversation(input: {
   prepareId: string;
   audioSessionId: string;
@@ -212,7 +261,10 @@ export async function commitPreparedWorkerConversation(input: {
 
   const result: ConversationResponse = {
     ...preparation!.result,
-    benchmark: input.benchmark ?? preparation!.result.benchmark,
+    benchmark:
+      input.benchmark || preparation!.result.benchmark
+        ? { ...preparation!.result.benchmark, ...input.benchmark }
+        : undefined,
   };
   let completion = commitFlights.get(input.prepareId);
   if (!completion) {

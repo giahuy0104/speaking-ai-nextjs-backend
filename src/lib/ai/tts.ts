@@ -14,6 +14,10 @@ export type AudioSynthesisResult = {
   /// provider miss that has just been synthesized and saved.
   cacheReady: boolean;
   byteLength?: number;
+  /** Provider fetch was started before the browser requested audioUrl. */
+  eagerStreamStarted?: boolean;
+  /** A newly generated Web sentence skipped the remote durable-cache probe. */
+  cacheLookupSkipped?: boolean;
 };
 
 const ttsGlobal = globalThis as typeof globalThis & {
@@ -26,6 +30,7 @@ const ttsGlobal = globalThis as typeof globalThis & {
     { normalizedText: string; expiresAt: number }
   >;
   __aiSpeakingActiveAudioStreams?: Map<string, ActiveEnglishAudioStream>;
+  __aiSpeakingAudioStreamBootstraps?: Map<string, Promise<void>>;
 };
 const inFlightSynthesis =
   ttsGlobal.__aiSpeakingInFlightSynthesis ??=
@@ -36,6 +41,9 @@ const audioMissTokens =
 const activeAudioStreams =
   ttsGlobal.__aiSpeakingActiveAudioStreams ??=
     new Map<string, ActiveEnglishAudioStream>();
+const audioStreamBootstraps =
+  ttsGlobal.__aiSpeakingAudioStreamBootstraps ??=
+    new Map<string, Promise<void>>();
 
 type ActiveEnglishAudioStream = {
   expiresAt: number;
@@ -81,7 +89,7 @@ function pruneActiveAudioStreams(now = Date.now()) {
  * progress. Buffered chunks are replayed to late subscribers, so nobody waits
  * for cache completion and then performs an extra redirect/request.
  */
-export function startEnglishAudioStream(
+function ensureEnglishAudioStream(
   englishText: string,
   speech: EnglishSpeechResult,
   options: { onFirstChunk?: () => void } = {},
@@ -89,7 +97,7 @@ export function startEnglishAudioStream(
   pruneActiveAudioStreams();
   const key = getSynthesisKey(englishText);
   const existing = activeAudioStreams.get(key);
-  if (existing) return existing.subscribe(true);
+  if (existing) return { active: existing, reused: true };
 
   const body = speech.response.body;
   if (!body) {
@@ -169,7 +177,20 @@ export function startEnglishAudioStream(
     }
   })();
 
-  return active.subscribe();
+  return { active, reused: false };
+}
+
+export function startEnglishAudioStream(
+  englishText: string,
+  speech: EnglishSpeechResult,
+  options: { onFirstChunk?: () => void } = {},
+) {
+  const { active, reused } = ensureEnglishAudioStream(
+    englishText,
+    speech,
+    options,
+  );
+  return active.subscribe(reused);
 }
 
 export function subscribeEnglishAudioStream(englishText: string) {
@@ -177,6 +198,55 @@ export function subscribeEnglishAudioStream(englishText: string) {
   return (
     activeAudioStreams.get(getSynthesisKey(englishText))?.subscribe(true) ?? null
   );
+}
+
+/**
+ * Starts the provider request and buffering without attaching a disposable
+ * HTTP subscriber. A later Safari /api/audio/stream request joins the same
+ * buffered stream instead of starting TTS after the conversation response.
+ */
+export function primeEnglishAudioStream(englishText: string) {
+  pruneActiveAudioStreams();
+  const key = getSynthesisKey(englishText);
+  if (activeAudioStreams.has(key)) {
+    return Promise.resolve();
+  }
+  const existingBootstrap = audioStreamBootstraps.get(key);
+  if (existingBootstrap) return existingBootstrap;
+
+  const cacheFillClaim = claimEnglishAudioCacheFill(englishText);
+  if (!cacheFillClaim.owner) {
+    // Another streaming owner may be between starting fetch() and receiving
+    // provider headers. Join that short bootstrap when it is available;
+    // otherwise the non-streaming cache fill remains authoritative.
+    return (
+      audioStreamBootstraps.get(key) ??
+      cacheFillClaim.completion.then(() => undefined)
+    );
+  }
+
+  const operation = (async () => {
+    try {
+      const speech = await requestEnglishSpeech(englishText, getTtsProfile());
+      const cacheFill = cacheFillClaim.cacheResponse(speech, true);
+      ensureEnglishAudioStream(englishText, speech);
+      void cacheFill.catch(() => undefined);
+    } catch (error) {
+      cacheFillClaim.fail(error);
+      throw error;
+    }
+  })();
+  audioStreamBootstraps.set(key, operation);
+  void operation.finally(() => {
+    if (audioStreamBootstraps.get(key) === operation) {
+      audioStreamBootstraps.delete(key);
+    }
+  }).catch(() => undefined);
+  return operation;
+}
+
+export function waitForEnglishAudioStream(englishText: string) {
+  return audioStreamBootstraps.get(getSynthesisKey(englishText)) ?? null;
 }
 
 export async function getEnglishAudioCacheUrl(
@@ -328,9 +398,14 @@ export function claimEnglishAudioCacheFill(
   };
 }
 
-export async function prepareEnglishAudio(englishText: string) {
+export async function prepareEnglishAudio(
+  englishText: string,
+  options: { eagerStream?: boolean; knownCacheMiss?: boolean } = {},
+) {
   const profile = getTtsProfile();
-  const cachedUrl = await getCachedProfileAudioUrl(englishText, profile);
+  const cachedUrl = options.knownCacheMiss
+    ? null
+    : await getCachedProfileAudioUrl(englishText, profile);
 
   if (cachedUrl) {
     return {
@@ -340,10 +415,19 @@ export async function prepareEnglishAudio(englishText: string) {
     } satisfies AudioSynthesisResult;
   }
 
+  if (options.eagerStream) {
+    // Do not add provider-header latency to the prepare response. The audio
+    // route can join this bootstrap and begins streaming as soon as headers
+    // arrive, while translation/finalize remains a single server flight.
+    void primeEnglishAudioStream(englishText).catch(() => undefined);
+  }
+
   return {
     audioUrl: getKnownMissAudioStreamUrl(englishText),
     source: "cloudflare_tts",
     cacheReady: false,
+    eagerStreamStarted: options.eagerStream === true,
+    cacheLookupSkipped: options.knownCacheMiss === true,
   } satisfies AudioSynthesisResult;
 }
 

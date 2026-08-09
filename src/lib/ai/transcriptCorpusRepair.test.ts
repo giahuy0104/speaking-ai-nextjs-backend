@@ -10,6 +10,10 @@ import {
   reviewedRegionalVocabularyV1,
 } from "./regionalVocabulary";
 import {
+  observedChildSpeechAliases,
+  observedChildSpeechAliasRuntimeStats,
+} from "./observedChildSpeechAliases";
+import {
   regionalChildSpeechRulesV1,
   regionalCorpusMatchRulesV1,
   regionalCorpusRulesV1,
@@ -40,6 +44,60 @@ test("regional exact-alias rollout covers the complete official corpus", () => {
   assert.equal(regionalCorpusRuntimeStats.uniqueCanonicalCount, 4_913);
   assert.ok(regionalCorpusRuntimeStats.exactAliasCount > 10_000);
   assert.ok(regionalCorpusRuntimeStats.foldedAliasCount > 10_000);
+});
+
+test("loads only unambiguous reviewed child-speech sentence aliases", () => {
+  assert.equal(observedChildSpeechAliasRuntimeStats.generatedFromRows, 958);
+  assert.equal(observedChildSpeechAliasRuntimeStats.aliasCount, 797);
+  assert.equal(observedChildSpeechAliasRuntimeStats.ambiguousSourceCount, 12);
+  assert.equal(observedChildSpeechAliasRuntimeStats.noOpSourceCount, 3);
+  assert.equal(observedChildSpeechAliasRuntimeStats.negationMismatchSourceCount, 4);
+  assert.equal(
+    observedChildSpeechAliasRuntimeStats.protectedRoleMismatchSourceCount,
+    26,
+  );
+  assert.equal(observedChildSpeechAliasRuntimeStats.personalNameSourceCount, 14);
+  assert.equal(
+    new Set(observedChildSpeechAliases.map((alias) => alias.id)).size,
+    observedChildSpeechAliases.length,
+  );
+});
+
+test("prefers reviewed child observations over broad accent-folded rules", () => {
+  const cases = new Map([
+    ["Con muốn ăn áo.", "Con muốn ăn táo."],
+    ["Con muốn ăn côm.", "Con muốn ăn tôm."],
+    ["Con thấy con èo.", "Con thấy con mèo."],
+  ]);
+
+  for (const [source, expected] of cases) {
+    const repaired = repairVietnameseTranscriptWithCorpus(source);
+    assert.equal(repaired.text, expected, source);
+    assert.equal(repaired.strategy, "observed_child_alias", source);
+    assert.match(repaired.correctionId ?? "", /^CHILD-ASR-V1-[A-F0-9]{12}$/);
+  }
+});
+
+test("does not auto-correct ambiguous or meaning-reversing workbook rows", () => {
+  for (const source of [
+    "Đây là cái báy.",
+    "Con lấy cái báy.",
+    "Không muốn nghe lại",
+    "Anh không hiểu",
+    "Con tên là bé My",
+  ]) {
+    const repaired = repairVietnameseTranscriptWithCorpus(source);
+    assert.notEqual(repaired.strategy, "observed_child_alias", source);
+    assert.equal(repaired.correctionId, undefined, source);
+  }
+});
+
+test("observed child aliases require an exact whole-sentence match", () => {
+  const repaired = repairVietnameseTranscriptWithCorpus(
+    "Con muốn ăn áo hôm nay.",
+  );
+  assert.notEqual(repaired.strategy, "observed_child_alias");
+  assert.equal(repaired.correctionId, undefined);
 });
 
 test("all 100 rollout sentences recover from missing Vietnamese diacritics", () => {
