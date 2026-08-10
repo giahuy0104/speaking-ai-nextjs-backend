@@ -1,5 +1,5 @@
 {
-  "version": "child-speech-aliases-v1-2026-08-07",
+  "version": "child-speech-aliases-v1-2026-08-10",
   "sourceWorkbook": "du_lieu_2_cot_chi_giu_cau.xlsx",
   "sourceSheet": "Cặp câu",
   "generatedFromRows": 958,
@@ -7237,6 +7237,27 @@
       "sourceRows": [
         596
       ]
+    },
+    {
+      "id": "CHILD-ASR-V1-18BF08F434F9",
+      "source": "Góng múng ung sốt.",
+      "canonical": "Con muốn uống nước",
+      "sampleCount": 1,
+      "sourceRows": []
+    },
+    {
+      "id": "CHILD-ASR-V1-F7E370370615",
+      "source": "Còn muốn ôm sợ?",
+      "canonical": "Con muốn uống nước",
+      "sampleCount": 1,
+      "sourceRows": []
+    },
+    {
+      "id": "CHILD-ASR-V1-5795BC7AD6B5",
+      "source": "Còn mong ung sơ?",
+      "canonical": "Con muốn uống nước",
+      "sampleCount": 1,
+      "sourceRows": []
     }
   ]
 }

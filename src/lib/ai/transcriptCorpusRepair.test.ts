@@ -48,7 +48,7 @@ test("regional exact-alias rollout covers the complete official corpus", () => {
 
 test("loads only unambiguous reviewed child-speech sentence aliases", () => {
   assert.equal(observedChildSpeechAliasRuntimeStats.generatedFromRows, 958);
-  assert.equal(observedChildSpeechAliasRuntimeStats.aliasCount, 797);
+  assert.equal(observedChildSpeechAliasRuntimeStats.aliasCount, 800);
   assert.equal(observedChildSpeechAliasRuntimeStats.ambiguousSourceCount, 12);
   assert.equal(observedChildSpeechAliasRuntimeStats.noOpSourceCount, 3);
   assert.equal(observedChildSpeechAliasRuntimeStats.negationMismatchSourceCount, 4);
@@ -98,6 +98,19 @@ test("observed child aliases require an exact whole-sentence match", () => {
   );
   assert.notEqual(repaired.strategy, "observed_child_alias");
   assert.equal(repaired.correctionId, undefined);
+});
+
+test("repairs the three confirmed noisy recordings of the water request", () => {
+  for (const source of [
+    "Góng múng ung sốt.",
+    "Còn muốn ôm sợ?",
+    "Còn mong ung sơ?",
+  ]) {
+    const repaired = repairVietnameseTranscriptWithCorpus(source);
+    assert.equal(repaired.text, "Con muốn uống nước.", source);
+    assert.equal(repaired.strategy, "observed_child_alias", source);
+    assert.match(repaired.correctionId ?? "", /^CHILD-ASR-V1-[A-F0-9]{12}$/);
+  }
 });
 
 test("all 100 rollout sentences recover from missing Vietnamese diacritics", () => {

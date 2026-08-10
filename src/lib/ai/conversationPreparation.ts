@@ -104,6 +104,28 @@ function preparationKey(input: {
     .digest("hex");
 }
 
+function preparationId(input: Parameters<typeof preparationKey>[0]) {
+  return `prep_${preparationKey(input).slice(0, 32)}`;
+}
+
+async function waitForDispatchedPreparation(
+  input: Parameters<typeof preparationKey>[0],
+  maxWaitMs = 90,
+) {
+  const prepareId = preparationId(input);
+  if (isLive(memory.get(prepareId)) || flights.has(prepareId)) return true;
+
+  const deadline = performance.now() + maxWaitMs;
+  while (performance.now() < deadline) {
+    // /prepare was dispatched first by Flutter, but a separate HTTP/2 stream
+    // can arrive a few milliseconds after /prepare/finalize. This bounded
+    // ingress grace joins that flight; it never waits for ASR, LLM or TTS.
+    await new Promise<void>((resolve) => setTimeout(resolve, 15));
+    if (isLive(memory.get(prepareId)) || flights.has(prepareId)) return true;
+  }
+  return false;
+}
+
 function isLive(value: ConversationPreparation | null | undefined) {
   return Boolean(value && Date.parse(value.expiresAt) > Date.now());
 }
@@ -131,8 +153,7 @@ export async function prepareWorkerConversation(input: {
   benchmark?: BenchmarkMetadata;
 }) {
   prunePreparationMemory();
-  const key = preparationKey(input);
-  const prepareId = `prep_${key.slice(0, 32)}`;
+  const prepareId = preparationId(input);
   const memoryValue = memory.get(prepareId);
   if (isLive(memoryValue)) {
     return {
@@ -221,6 +242,9 @@ export async function finalizeWorkerConversation(input: {
   asrLatencyMs: number;
   benchmark?: BenchmarkMetadata;
 }) {
+  if (input.benchmark?.workerPrepareServerJoinFinalize === true) {
+    await waitForDispatchedPreparation(input);
+  }
   const prepared = await prepareWorkerConversation(input);
   const committed = await commitPreparedWorkerConversation({
     prepareId: prepared.preparation.prepareId,
