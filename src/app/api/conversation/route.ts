@@ -148,7 +148,16 @@ export async function POST(request: Request) {
       : validateRequest(await parseJson(request));
     const result = await runConversationPipeline(
       { ...input, requestId },
-      { deferTextCacheWrite: true },
+      {
+        deferTextCacheWrite: true,
+        // Worker Prepare is the primary iOS Web fast path. If a valid Worker
+        // transcript reaches this compatibility route instead, prime TTS while
+        // the JSON response is in flight so Safari does not start the provider
+        // request only after receiving the conversation result. APK Batch
+        // Chunks keeps its established behavior because it never uses
+        // browser_streaming here.
+        eagerAudioOnCacheMiss: input.asrMode === "browser_streaming",
+      },
     );
     scheduleConversationPostResponseTasks(
       result,
