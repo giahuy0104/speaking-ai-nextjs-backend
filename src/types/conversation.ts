@@ -71,27 +71,6 @@ export type BenchmarkMetadata = {
   workerPreparationReadyBeforeStopMs?: number;
   workerPreparationReadyAfterStopMs?: number;
   workerTailVadEligible?: boolean;
-  workerTailVadReason?:
-    | "exact_snapshot"
-    | "tail_silence"
-    | "tail_speech_detected"
-    | "tail_too_long"
-    | "invalid_pcm_boundary";
-  workerTailAudioBytes?: number;
-  workerTailDurationMs?: number;
-  workerTailSpeechDurationMs?: number;
-  workerTailThresholdDbfs?: number;
-  workerRejectedSnapshotCount?: number;
-  workerEarlySnapshotRejectedReason?: string;
-  clientStopReason?: "manual" | "vad";
-  clientPcmSilenceDetectedAtRecordingMs?: number;
-  clientTerminalTimerScheduledAtRecordingMs?: number;
-  clientTerminalRequestedAtRecordingMs?: number;
-  clientStopRequestedAtRecordingMs?: number;
-  clientTerminalRequestedBeforeStopMs?: number;
-  clientTerminalTimerCanceledCount?: number;
-  clientTerminalTimerLastCancelReason?: string;
-  clientTerminalRequestTrigger?: string;
   batchTransport?: string;
   batchFallbackReason?: string;
   chunkIntervalMs?: number;

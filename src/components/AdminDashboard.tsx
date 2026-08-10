@@ -829,26 +829,7 @@ export function AdminDashboard() {
                         <span>
                           Worker tail {conversation.benchmark.workerTailVadEligible
                             ? "eligible"
-                            : "rejected"}
-                          {conversation.benchmark.workerTailVadReason
-                            ? ` (${conversation.benchmark.workerTailVadReason}, ${conversation.benchmark.workerTailDurationMs ?? 0} ms)`
-                            : ""}
-                        </span>
-                      ) : null}
-                      {conversation.benchmark?.clientTerminalRequestTrigger ? (
-                        <span>
-                          Terminal trigger {conversation.benchmark.clientTerminalRequestTrigger}
-                          {conversation.benchmark.clientStopReason
-                            ? ` / ${conversation.benchmark.clientStopReason}`
-                            : ""}
-                        </span>
-                      ) : null}
-                      {(conversation.benchmark?.workerRejectedSnapshotCount ?? 0) > 0 ? (
-                        <span>
-                          Early snapshot rejected {conversation.benchmark?.workerRejectedSnapshotCount}
-                          {conversation.benchmark?.workerEarlySnapshotRejectedReason
-                            ? ` (${conversation.benchmark.workerEarlySnapshotRejectedReason})`
-                            : ""}
+                            : "not prepared"}
                         </span>
                       ) : null}
                       {conversation.benchmark?.workerPrepareDuplicateSuppressed !== undefined ? (
