@@ -108,24 +108,6 @@ function preparationId(input: Parameters<typeof preparationKey>[0]) {
   return `prep_${preparationKey(input).slice(0, 32)}`;
 }
 
-async function waitForDispatchedPreparation(
-  input: Parameters<typeof preparationKey>[0],
-  maxWaitMs = 90,
-) {
-  const prepareId = preparationId(input);
-  if (isLive(memory.get(prepareId)) || flights.has(prepareId)) return true;
-
-  const deadline = performance.now() + maxWaitMs;
-  while (performance.now() < deadline) {
-    // /prepare was dispatched first by Flutter, but a separate HTTP/2 stream
-    // can arrive a few milliseconds after /prepare/finalize. This bounded
-    // ingress grace joins that flight; it never waits for ASR, LLM or TTS.
-    await new Promise<void>((resolve) => setTimeout(resolve, 15));
-    if (isLive(memory.get(prepareId)) || flights.has(prepareId)) return true;
-  }
-  return false;
-}
-
 function isLive(value: ConversationPreparation | null | undefined) {
   return Boolean(value && Date.parse(value.expiresAt) > Date.now());
 }
@@ -227,9 +209,9 @@ export async function prepareWorkerConversation(input: {
 
 /**
  * Finalize can arrive while /prepare is still translating or priming TTS.
- * Re-entering with the same session/snapshot joins the server-side flight,
- * then commits once. This removes the client-side wait plus commit round trip
- * without starting duplicate LLM or TTS work.
+ * Both endpoints enter the same atomic server-side flight. Whichever request
+ * arrives first owns the work and the other joins it; there is deliberately no
+ * ingress grace timer on the response-critical path.
  */
 export async function finalizeWorkerConversation(input: {
   requestId?: string;
@@ -242,9 +224,6 @@ export async function finalizeWorkerConversation(input: {
   asrLatencyMs: number;
   benchmark?: BenchmarkMetadata;
 }) {
-  if (input.benchmark?.workerPrepareServerJoinFinalize === true) {
-    await waitForDispatchedPreparation(input);
-  }
   const prepared = await prepareWorkerConversation(input);
   const committed = await commitPreparedWorkerConversation({
     prepareId: prepared.preparation.prepareId,
