@@ -47,20 +47,82 @@ test("regional exact-alias rollout covers the complete official corpus", () => {
 });
 
 test("loads only unambiguous reviewed child-speech sentence aliases", () => {
-  assert.equal(observedChildSpeechAliasRuntimeStats.generatedFromRows, 958);
-  assert.equal(observedChildSpeechAliasRuntimeStats.aliasCount, 800);
-  assert.equal(observedChildSpeechAliasRuntimeStats.ambiguousSourceCount, 12);
-  assert.equal(observedChildSpeechAliasRuntimeStats.noOpSourceCount, 3);
-  assert.equal(observedChildSpeechAliasRuntimeStats.negationMismatchSourceCount, 4);
+  assert.equal(observedChildSpeechAliasRuntimeStats.generatedFromRows, 1_573);
+  assert.equal(observedChildSpeechAliasRuntimeStats.aliasCount, 1_190);
+  assert.equal(observedChildSpeechAliasRuntimeStats.ambiguousSourceCount, 16);
+  assert.equal(observedChildSpeechAliasRuntimeStats.noOpSourceCount, 5);
+  assert.equal(observedChildSpeechAliasRuntimeStats.negationMismatchSourceCount, 11);
   assert.equal(
     observedChildSpeechAliasRuntimeStats.protectedRoleMismatchSourceCount,
-    26,
+    78,
   );
   assert.equal(observedChildSpeechAliasRuntimeStats.personalNameSourceCount, 14);
+  assert.equal(
+    observedChildSpeechAliasRuntimeStats.duplicateOrExistingSourceCount,
+    131,
+  );
+  assert.equal(
+    observedChildSpeechAliases.filter((alias) =>
+      alias.id.startsWith("CHILD-ASR-V2-"),
+    ).length,
+    390,
+  );
   assert.equal(
     new Set(observedChildSpeechAliases.map((alias) => alias.id)).size,
     observedChildSpeechAliases.length,
   );
+});
+
+test("keeps negation and protected speaker roles unchanged in every V2 alias", () => {
+  const negationTokens = new Set(["không", "chưa", "chẳng"]);
+  const protectedRoleTokens = new Set([
+    "con",
+    "cô",
+    "thầy",
+    "bố",
+    "mẹ",
+    "ba",
+    "má",
+    "anh",
+    "chị",
+    "em",
+    "ông",
+    "bà",
+    "bé",
+    "cháu",
+    "bạn",
+    "bác",
+    "cậu",
+    "dì",
+    "chú",
+    "thím",
+    "mợ",
+    "dượng",
+    "chồng",
+    "vợ",
+    "mình",
+    "tôi",
+  ]);
+  const selectedTokens = (text: string, allowed: Set<string>) =>
+    normalizeVietnameseForExactMatch(text)
+      .split(" ")
+      .filter((token) => allowed.has(token))
+      .sort();
+
+  for (const alias of observedChildSpeechAliases.filter((entry) =>
+    entry.id.startsWith("CHILD-ASR-V2-"),
+  )) {
+    assert.deepEqual(
+      selectedTokens(alias.source, negationTokens),
+      selectedTokens(alias.canonical, negationTokens),
+      alias.id,
+    );
+    assert.deepEqual(
+      selectedTokens(alias.source, protectedRoleTokens),
+      selectedTokens(alias.canonical, protectedRoleTokens),
+      alias.id,
+    );
+  }
 });
 
 test("prefers reviewed child observations over broad accent-folded rules", () => {
@@ -98,6 +160,34 @@ test("observed child aliases require an exact whole-sentence match", () => {
   );
   assert.notEqual(repaired.strategy, "observed_child_alias");
   assert.equal(repaired.correctionId, undefined);
+});
+
+test("repairs only the safe new exact aliases from the second child dataset", () => {
+  const cases = new Map([
+    ["Con hát nước.", "Con khát nước."],
+    ["Con muốn dửa tay.", "Con muốn rửa tay."],
+    ["Món này non quá.", "Món này ngon quá."],
+  ]);
+
+  for (const [source, expected] of cases) {
+    const repaired = repairVietnameseTranscriptWithCorpus(source);
+    assert.equal(repaired.text, expected, source);
+    assert.equal(repaired.strategy, "observed_child_alias", source);
+    assert.match(repaired.correctionId ?? "", /^CHILD-ASR-V2-[A-F0-9]{12}$/);
+  }
+});
+
+test("does not load duplicate, negation, role or conflicting rows from the second dataset", () => {
+  for (const source of [
+    "Công công hiểu.",
+    "Con chào pố.",
+    "Còn có một quà báo?",
+    "Con muốn chơi với bác.",
+  ]) {
+    const repaired = repairVietnameseTranscriptWithCorpus(source);
+    assert.notEqual(repaired.strategy, "observed_child_alias", source);
+    assert.equal(repaired.correctionId, undefined, source);
+  }
 });
 
 test("repairs the three confirmed noisy recordings of the water request", () => {

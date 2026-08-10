@@ -1,0 +1,5088 @@
+{
+  "version": "observed-child-speech-aliases-v2",
+  "sourceWorkbook": "Dữ liệu test (1).xlsx",
+  "sourceSheet": "Trang tính2",
+  "generatedFromRows": 615,
+  "excluded": {
+    "ambiguousSourceCount": 4,
+    "noOpSourceCount": 2,
+    "negationMismatchSourceCount": 7,
+    "protectedRoleMismatchSourceCount": 52,
+    "personalNameSourceCount": 0,
+    "duplicateOrExistingSourceCount": 131
+  },
+  "entries": [
+    {
+      "id": "CHILD-ASR-V2-64ED821CDE58",
+      "source": "Con gõ là ba",
+      "canonical": "Con gọi là ba",
+      "sampleCount": 1,
+      "sourceRows": [
+        82
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "4–5 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-959EE1B62429",
+      "source": "Cô nói trọng lại nha",
+      "canonical": "Cô nói chậm lại nhé",
+      "sampleCount": 1,
+      "sourceRows": [
+        148
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "5–6 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-D8376A0A333F",
+      "source": "Con rõ là ngô",
+      "canonical": "Con gọi là ngô",
+      "sampleCount": 2,
+      "sourceRows": [
+        179,
+        190
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "4–5 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-F34D57247C28",
+      "source": "Con gọi là Bắc",
+      "canonical": "Con gọi là bắp",
+      "sampleCount": 3,
+      "sourceRows": [
+        183,
+        187,
+        192
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "4–5 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-586CD272F0A5",
+      "source": "Con gà là ngó",
+      "canonical": "Con gọi là ngô",
+      "sampleCount": 2,
+      "sourceRows": [
+        185,
+        193
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "4–5 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-436183ECD31B",
+      "source": "Con gũa là báp",
+      "canonical": "Con gọi là bắp",
+      "sampleCount": 2,
+      "sourceRows": [
+        186,
+        195
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "4–5 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-65DCC7C3E820",
+      "source": "Con gọi là bóc",
+      "canonical": "Con gọi là bắp",
+      "sampleCount": 2,
+      "sourceRows": [
+        188,
+        196
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "4–5 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-1ADDA73C65E3",
+      "source": "Con thích xinh tố.",
+      "canonical": "Con thích sinh tố.",
+      "sampleCount": 1,
+      "sourceRows": [
+        200
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "3–4 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-DFEFD1FC2887",
+      "source": "Cho con cái tướt.",
+      "canonical": "Cho con cái thước.",
+      "sampleCount": 1,
+      "sourceRows": [
+        201
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "3–4 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-7663D68EF954",
+      "source": "Con vẽ con tó.",
+      "canonical": "Con vẽ con chó.",
+      "sampleCount": 1,
+      "sourceRows": [
+        202
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "3–4 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-8A3CCDF3E0F9",
+      "source": "Con đến thư diện.",
+      "canonical": "Con đến thư viện.",
+      "sampleCount": 1,
+      "sourceRows": [
+        203
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "3–4 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-C52D1B2D1D72",
+      "source": "Con muốn nảy dây.",
+      "canonical": "Con muốn nhảy dây.",
+      "sampleCount": 1,
+      "sourceRows": [
+        204
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "3–4 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-B69DB69B681F",
+      "source": "Bố ơi, con pùn ngủ.",
+      "canonical": "Bố ơi, con buồn ngủ.",
+      "sampleCount": 1,
+      "sourceRows": [
+        205
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "3–4 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-2D4487B18AA8",
+      "source": "Cho con chà nhé.",
+      "canonical": "Cho con trà nhé.",
+      "sampleCount": 1,
+      "sourceRows": [
+        206
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "3–4 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-76F39D63CECC",
+      "source": "Con lấy cái út.",
+      "canonical": "Con lấy cái bút.",
+      "sampleCount": 1,
+      "sourceRows": [
+        207
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "3–4 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-C564D85BF78F",
+      "source": "Con ở thư diện.",
+      "canonical": "Con ở thư viện.",
+      "sampleCount": 1,
+      "sourceRows": [
+        208
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "3–4 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-99936B26687B",
+      "source": "Con đang mặt áo.",
+      "canonical": "Con đang mặc áo.",
+      "sampleCount": 1,
+      "sourceRows": [
+        209
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "3–4 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-EDDC1ECE3B2F",
+      "source": "Cô ơi, con pùn ngủ.",
+      "canonical": "Cô ơi, con buồn ngủ.",
+      "sampleCount": 1,
+      "sourceRows": [
+        210
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "3–4 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-628987B9E275",
+      "source": "Con muốn thêm uối.",
+      "canonical": "Con muốn thêm chuối.",
+      "sampleCount": 1,
+      "sourceRows": [
+        211
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "3–4 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-C94765197A8E",
+      "source": "Con đang gọn phòng.",
+      "canonical": "Con đang dọn phòng.",
+      "sampleCount": 1,
+      "sourceRows": [
+        214
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "3–4 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-8BD29FFD5AAA",
+      "source": "Con ở xiêu thị.",
+      "canonical": "Con ở siêu thị.",
+      "sampleCount": 1,
+      "sourceRows": [
+        215
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "3–4 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-816B01D9311C",
+      "source": "Con đang dửa tay.",
+      "canonical": "Con đang rửa tay.",
+      "sampleCount": 1,
+      "sourceRows": [
+        216
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "3–4 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-0D78723201F2",
+      "source": "Con hát nước.",
+      "canonical": "Con khát nước.",
+      "sampleCount": 1,
+      "sourceRows": [
+        217
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "3–4 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-315B32539D38",
+      "source": "Con muốn xữa.",
+      "canonical": "Con muốn sữa.",
+      "sampleCount": 1,
+      "sourceRows": [
+        218
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "3–4 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-8D8A8EA050F6",
+      "source": "Con xem con cấu.",
+      "canonical": "Con xem con gấu.",
+      "sampleCount": 1,
+      "sourceRows": [
+        219
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "3–4 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-606126B92C6D",
+      "source": "Con ở bện viện.",
+      "canonical": "Con ở bệnh viện.",
+      "sampleCount": 1,
+      "sourceRows": [
+        220
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "3–4 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-FB03AA4E53E0",
+      "source": "Con thích đọt sách.",
+      "canonical": "Con thích đọc sách.",
+      "sampleCount": 1,
+      "sourceRows": [
+        222
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "3–4 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-224CF206664E",
+      "source": "Con nạnh quá.",
+      "canonical": "Con lạnh quá.",
+      "sampleCount": 1,
+      "sourceRows": [
+        223
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "3–4 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-6D0740C3873B",
+      "source": "Con muốn thêm au.",
+      "canonical": "Con muốn thêm rau.",
+      "sampleCount": 1,
+      "sourceRows": [
+        224
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "3–4 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-124A7F061F09",
+      "source": "Quả bóng nỏ quá.",
+      "canonical": "Quả bóng nhỏ quá.",
+      "sampleCount": 1,
+      "sourceRows": [
+        225
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "3–4 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-3972558E9772",
+      "source": "Con vẽ con èo.",
+      "canonical": "Con vẽ con mèo.",
+      "sampleCount": 1,
+      "sourceRows": [
+        226
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "3–4 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-891847C12EA7",
+      "source": "Con nhớ oại.",
+      "canonical": "Con nhớ ngoại.",
+      "sampleCount": 1,
+      "sourceRows": [
+        227
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "3–4 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-D4BCE7649568",
+      "source": "Bố ơi, con hỏe rồi.",
+      "canonical": "Bố ơi, con khỏe rồi.",
+      "sampleCount": 1,
+      "sourceRows": [
+        228
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "3–4 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-326622350457",
+      "source": "Con ăn tơm.",
+      "canonical": "Con ăn cơm.",
+      "sampleCount": 1,
+      "sourceRows": [
+        229
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "3–4 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-05D940436283",
+      "source": "Con thích con ổ.",
+      "canonical": "Con thích con hổ.",
+      "sampleCount": 1,
+      "sourceRows": [
+        231
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "3–4 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-BED5EB7387C0",
+      "source": "Con nón quá.",
+      "canonical": "Con nóng quá.",
+      "sampleCount": 1,
+      "sourceRows": [
+        232
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "3–4 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-CAA979C9103F",
+      "source": "Con muốn dửa tay.",
+      "canonical": "Con muốn rửa tay.",
+      "sampleCount": 1,
+      "sourceRows": [
+        233
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "3–4 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-D383621C6737",
+      "source": "Bố ơi, con xợ quá.",
+      "canonical": "Bố ơi, con sợ quá.",
+      "sampleCount": 1,
+      "sourceRows": [
+        234
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "3–4 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-F980E8F53FF5",
+      "source": "Con vẽ con ịt.",
+      "canonical": "Con vẽ con vịt.",
+      "sampleCount": 1,
+      "sourceRows": [
+        235
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "3–4 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-7E530B80115D",
+      "source": "Con dau bụng.",
+      "canonical": "Con đau bụng.",
+      "sampleCount": 1,
+      "sourceRows": [
+        236
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "3–4 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-F7F50CEDD456",
+      "source": "Đồ ăn tua quá.",
+      "canonical": "Đồ ăn chua quá.",
+      "sampleCount": 1,
+      "sourceRows": [
+        237
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "3–4 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-F433706913C9",
+      "source": "Mẹ ơi, con dau bụng.",
+      "canonical": "Mẹ ơi, con đau bụng.",
+      "sampleCount": 1,
+      "sourceRows": [
+        238
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "3–4 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-372EFEC16806",
+      "source": "Con thấy con ịt.",
+      "canonical": "Con thấy con vịt.",
+      "sampleCount": 1,
+      "sourceRows": [
+        239
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "3–4 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-CB5FD59910CC",
+      "source": "Con đến xiêu thị.",
+      "canonical": "Con đến siêu thị.",
+      "sampleCount": 1,
+      "sourceRows": [
+        240
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "3–4 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-22DD2821822B",
+      "source": "Mẹ ơi, con nón quá.",
+      "canonical": "Mẹ ơi, con nóng quá.",
+      "sampleCount": 1,
+      "sourceRows": [
+        241
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "3–4 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-BA04BF0238CF",
+      "source": "Món này non quá.",
+      "canonical": "Món này ngon quá.",
+      "sampleCount": 1,
+      "sourceRows": [
+        242
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "3–4 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-2294140A3D6C",
+      "source": "Con xợ quá.",
+      "canonical": "Con sợ quá.",
+      "sampleCount": 1,
+      "sourceRows": [
+        243
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "3–4 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-A6D2FF9ED9A1",
+      "source": "Con thích uối.",
+      "canonical": "Con thích chuối.",
+      "sampleCount": 1,
+      "sourceRows": [
+        244
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "3–4 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-3BD20D30AFC5",
+      "source": "Bố ơi, con dau chân.",
+      "canonical": "Bố ơi, con đau chân.",
+      "sampleCount": 1,
+      "sourceRows": [
+        246
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "3–4 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-FB5F4C55E5D6",
+      "source": "Cho con cái tăn.",
+      "canonical": "Cho con cái chăn.",
+      "sampleCount": 1,
+      "sourceRows": [
+        247
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "3–4 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-E57EB2475EC4",
+      "source": "Con đến tông viên.",
+      "canonical": "Con đến công viên.",
+      "sampleCount": 1,
+      "sourceRows": [
+        248
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "3–4 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-1BDD9BABBD01",
+      "source": "Con đang sếp quần áo.",
+      "canonical": "Con đang xếp quần áo.",
+      "sampleCount": 1,
+      "sourceRows": [
+        249
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "3–4 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-35FB3531C1D6",
+      "source": "Con vẽ con tim.",
+      "canonical": "Con vẽ con chim.",
+      "sampleCount": 1,
+      "sourceRows": [
+        250
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "3–4 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-EB4DAC263CC0",
+      "source": "Con thích tạy ra sân.",
+      "canonical": "Con thích chạy ra sân.",
+      "sampleCount": 1,
+      "sourceRows": [
+        251
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "3–4 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-05B8ED906C60",
+      "source": "Mẹ ơi, con gói bụng.",
+      "canonical": "Mẹ ơi, con đói bụng.",
+      "sampleCount": 1,
+      "sourceRows": [
+        252
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "3–4 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-9938F855DEC3",
+      "source": "Con uống nướt.",
+      "canonical": "Con uống nước.",
+      "sampleCount": 1,
+      "sourceRows": [
+        253
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "3–4 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-5251E9DB7C7D",
+      "source": "Quả bóng tho quá.",
+      "canonical": "Quả bóng to quá.",
+      "sampleCount": 1,
+      "sourceRows": [
+        254
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "3–4 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-79667CD10738",
+      "source": "Con thích con èo.",
+      "canonical": "Con thích con mèo.",
+      "sampleCount": 1,
+      "sourceRows": [
+        255
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "3–4 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-57D7B44BB917",
+      "source": "Cô ơi, con hát nước.",
+      "canonical": "Cô ơi, con khát nước.",
+      "sampleCount": 1,
+      "sourceRows": [
+        256
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "3–4 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-73312B842A08",
+      "source": "Con uống nướt cam.",
+      "canonical": "Con uống nước cam.",
+      "sampleCount": 1,
+      "sourceRows": [
+        257
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "3–4 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-0FA6255C49DE",
+      "source": "Con thấy tông viên.",
+      "canonical": "Con thấy công viên.",
+      "sampleCount": 1,
+      "sourceRows": [
+        258
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "3–4 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-8ABD818BE073",
+      "source": "Con thích nàm bài.",
+      "canonical": "Con thích làm bài.",
+      "sampleCount": 1,
+      "sourceRows": [
+        260
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "3–4 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-E15DF19FFFAA",
+      "source": "Cô ơi, con hỏe rồi.",
+      "canonical": "Cô ơi, con khỏe rồi.",
+      "sampleCount": 1,
+      "sourceRows": [
+        261
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "3–4 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-E1C8DB269D3B",
+      "source": "Con muốn xinh tố.",
+      "canonical": "Con muốn sinh tố.",
+      "sampleCount": 1,
+      "sourceRows": [
+        262
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "3–4 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-62D3D6C7C962",
+      "source": "Mẹ ơi, con mệt qué.",
+      "canonical": "Mẹ ơi, con mệt quá.",
+      "sampleCount": 1,
+      "sourceRows": [
+        263
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "3–4 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-C8C2077CCC18",
+      "source": "Con biết dẽ tranh.",
+      "canonical": "Con biết vẽ tranh.",
+      "sampleCount": 1,
+      "sourceRows": [
+        265
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "3–4 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-08564BEA0214",
+      "source": "Con dau chân.",
+      "canonical": "Con đau chân.",
+      "sampleCount": 1,
+      "sourceRows": [
+        266
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "3–4 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-4F51ED7BC873",
+      "source": "Con vẽ con doi.",
+      "canonical": "Con vẽ con voi.",
+      "sampleCount": 1,
+      "sourceRows": [
+        267
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "3–4 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-12BCF7FE491D",
+      "source": "Con pùn ngủ.",
+      "canonical": "Con buồn ngủ.",
+      "sampleCount": 1,
+      "sourceRows": [
+        268
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "3–4 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-D085EE7474D5",
+      "source": "Con thích á.",
+      "canonical": "Con thích cá.",
+      "sampleCount": 1,
+      "sourceRows": [
+        269
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "3–4 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-36E40710E09A",
+      "source": "Cho con cái gói.",
+      "canonical": "Cho con cái gối.",
+      "sampleCount": 1,
+      "sourceRows": [
+        270
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "3–4 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-0D745A4AFA24",
+      "source": "Con đang tổi bong bóng.",
+      "canonical": "Con đang thổi bong bóng.",
+      "sampleCount": 1,
+      "sourceRows": [
+        271
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "3–4 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-43FBF80F2E6A",
+      "source": "Bố ơi, con hát nước.",
+      "canonical": "Bố ơi, con khát nước.",
+      "sampleCount": 1,
+      "sourceRows": [
+        272
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "3–4 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-AE691B2176A6",
+      "source": "Con uống ữa.",
+      "canonical": "Con uống sữa.",
+      "sampleCount": 1,
+      "sourceRows": [
+        273
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "3–4 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-A775347B5CC1",
+      "source": "Mẹ ơi, con pùn ngủ.",
+      "canonical": "Mẹ ơi, con buồn ngủ.",
+      "sampleCount": 1,
+      "sourceRows": [
+        275
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "3–4 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-9BB779443276",
+      "source": "Con tìm cái tìa hóa.",
+      "canonical": "Con tìm cái chìa khóa.",
+      "sampleCount": 1,
+      "sourceRows": [
+        276
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "3–4 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-41880295F6DE",
+      "source": "Con muốn dửa mặt.",
+      "canonical": "Con muốn rửa mặt.",
+      "sampleCount": 1,
+      "sourceRows": [
+        277
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "3–4 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-7342CDF7090C",
+      "source": "Con mệt qué.",
+      "canonical": "Con mệt quá.",
+      "sampleCount": 1,
+      "sourceRows": [
+        278
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "3–4 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-4C9D52EEAA65",
+      "source": "Cho con cái hộp xữa.",
+      "canonical": "Cho con cái hộp sữa.",
+      "sampleCount": 1,
+      "sourceRows": [
+        279
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "3–4 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-C1CFFE22A0B9",
+      "source": "Con thích con bớm.",
+      "canonical": "Con thích con bướm.",
+      "sampleCount": 1,
+      "sourceRows": [
+        280
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "3–4 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-6EBCA05E9CDB",
+      "source": "Con đến chường.",
+      "canonical": "Con đến trường.",
+      "sampleCount": 1,
+      "sourceRows": [
+        281
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "3–4 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-0039A86D5F41",
+      "source": "Con giấc vui.",
+      "canonical": "Con rất vui.",
+      "sampleCount": 1,
+      "sourceRows": [
+        282
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "3–4 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-0871BE23A13D",
+      "source": "Con ăn ì.",
+      "canonical": "Con ăn mì.",
+      "sampleCount": 1,
+      "sourceRows": [
+        283
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "3–4 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-1AF16646AEDB",
+      "source": "Cho con cái ón.",
+      "canonical": "Cho con cái nón.",
+      "sampleCount": 1,
+      "sourceRows": [
+        284
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "3–4 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-88BF09125C71",
+      "source": "Con thích con tỏ.",
+      "canonical": "Con thích con thỏ.",
+      "sampleCount": 1,
+      "sourceRows": [
+        285
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "3–4 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-F3224E205434",
+      "source": "Con đến nớp.",
+      "canonical": "Con đến lớp.",
+      "sampleCount": 1,
+      "sourceRows": [
+        286
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "3–4 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-1E755AA49D46",
+      "source": "Cô ơi, con dau bụng.",
+      "canonical": "Cô ơi, con đau bụng.",
+      "sampleCount": 1,
+      "sourceRows": [
+        287
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "3–4 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-12BAF555D72B",
+      "source": "Con đến bện viện.",
+      "canonical": "Con đến bệnh viện.",
+      "sampleCount": 1,
+      "sourceRows": [
+        288
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "3–4 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-A6E822833455",
+      "source": "Con chào lội.",
+      "canonical": "Con chào nội.",
+      "sampleCount": 1,
+      "sourceRows": [
+        289
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "3–4 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-04D2D26D221D",
+      "source": "Bố ơi, con dau bụng.",
+      "canonical": "Bố ơi, con đau bụng.",
+      "sampleCount": 1,
+      "sourceRows": [
+        290
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "3–4 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-14E9094FD1A1",
+      "source": "Con hỏe rồi.",
+      "canonical": "Con khỏe rồi.",
+      "sampleCount": 1,
+      "sourceRows": [
+        291
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "3–4 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-5029E2574DAB",
+      "source": "Con ở hồ pơi.",
+      "canonical": "Con ở hồ bơi.",
+      "sampleCount": 1,
+      "sourceRows": [
+        292
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "3–4 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-B602A73E36A0",
+      "source": "Con đang đánh dăng.",
+      "canonical": "Con đang đánh răng.",
+      "sampleCount": 1,
+      "sourceRows": [
+        293
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "3–4 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-9F3EE8B5C691",
+      "source": "Con tìm cái tốc.",
+      "canonical": "Con tìm cái cốc.",
+      "sampleCount": 1,
+      "sourceRows": [
+        294
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "3–4 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-BB62CD398519",
+      "source": "Con nhớ lội.",
+      "canonical": "Con nhớ nội.",
+      "sampleCount": 1,
+      "sourceRows": [
+        295
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "3–4 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-C53E5F0F6357",
+      "source": "Mẹ ơi, con xợ quá.",
+      "canonical": "Mẹ ơi, con sợ quá.",
+      "sampleCount": 1,
+      "sourceRows": [
+        296
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "3–4 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-13DF499C3EBA",
+      "source": "Con biết uốn nước.",
+      "canonical": "Con biết uống nước.",
+      "sampleCount": 1,
+      "sourceRows": [
+        297
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "3–4 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-F168B72673CC",
+      "source": "Cô ơi, con xợ quá.",
+      "canonical": "Cô ơi, con sợ quá.",
+      "sampleCount": 1,
+      "sourceRows": [
+        298
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "3–4 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-BB9733EC3444",
+      "source": "Mẹ ơi, con hỏe rồi.",
+      "canonical": "Mẹ ơi, con khỏe rồi.",
+      "sampleCount": 1,
+      "sourceRows": [
+        300
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "3–4 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-9BC1A2F5E5A3",
+      "source": "Mẹ ở bện viện.",
+      "canonical": "Mẹ ở bệnh viện.",
+      "sampleCount": 1,
+      "sourceRows": [
+        301
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "3–4 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-9E0D12383AC0",
+      "source": "Con đang tất đồ chơi.",
+      "canonical": "Con đang cất đồ chơi.",
+      "sampleCount": 1,
+      "sourceRows": [
+        302
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "3–4 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-1B49ABE7503C",
+      "source": "Bố ơi, con nạnh quá.",
+      "canonical": "Bố ơi, con lạnh quá.",
+      "sampleCount": 1,
+      "sourceRows": [
+        303
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "3–4 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-2F8156E9D88C",
+      "source": "Cô ơi, con nạnh quá.",
+      "canonical": "Cô ơi, con lạnh quá.",
+      "sampleCount": 1,
+      "sourceRows": [
+        304
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "3–4 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-F85765224463",
+      "source": "Cái bàn tho quá.",
+      "canonical": "Cái bàn to quá.",
+      "sampleCount": 1,
+      "sourceRows": [
+        305
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "3–4 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-B38E1D8D45FC",
+      "source": "Mẹ ơi, con nạnh quá.",
+      "canonical": "Mẹ ơi, con lạnh quá.",
+      "sampleCount": 1,
+      "sourceRows": [
+        306
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "3–4 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-CBD9797F1991",
+      "source": "Con vẽ con à.",
+      "canonical": "Con vẽ con gà.",
+      "sampleCount": 1,
+      "sourceRows": [
+        307
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "3–4 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-920C6D587C5B",
+      "source": "Con đến hồ pơi.",
+      "canonical": "Con đến hồ bơi.",
+      "sampleCount": 1,
+      "sourceRows": [
+        308
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "3–4 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-2FC0BF3E926F",
+      "source": "Con muốn gủ trưa.",
+      "canonical": "Con muốn ngủ trưa.",
+      "sampleCount": 1,
+      "sourceRows": [
+        309
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "3–4 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-0128F08EB2CC",
+      "source": "Cô ơi, con nón quá.",
+      "canonical": "Cô ơi, con nóng quá.",
+      "sampleCount": 1,
+      "sourceRows": [
+        310
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "3–4 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-68506831FB1E",
+      "source": "Món này tua quá.",
+      "canonical": "Món này chua quá.",
+      "sampleCount": 1,
+      "sourceRows": [
+        311
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "3–4 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-86A1FF7022F1",
+      "source": "Con biết mặt áo.",
+      "canonical": "Con biết mặc áo.",
+      "sampleCount": 1,
+      "sourceRows": [
+        312
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "3–4 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-BE283847FFE6",
+      "source": "Cô ơi, con dau chân.",
+      "canonical": "Cô ơi, con đau chân.",
+      "sampleCount": 1,
+      "sourceRows": [
+        313
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "3–4 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-4593448A8213",
+      "source": "Bố ơi, con mệt qué.",
+      "canonical": "Bố ơi, con mệt quá.",
+      "sampleCount": 1,
+      "sourceRows": [
+        314
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "3–4 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-74E03002F99D",
+      "source": "Con đang nau bàn.",
+      "canonical": "Con đang lau bàn.",
+      "sampleCount": 1,
+      "sourceRows": [
+        315
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "3–4 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-76CEB02E7717",
+      "source": "Con gói bụng.",
+      "canonical": "Con đói bụng.",
+      "sampleCount": 1,
+      "sourceRows": [
+        316
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "3–4 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-B58C326EEADF",
+      "source": "Cô ơi, con gói bụng.",
+      "canonical": "Cô ơi, con đói bụng.",
+      "sampleCount": 1,
+      "sourceRows": [
+        317
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "3–4 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-497FA6BF7DBF",
+      "source": "Con thích con ịt.",
+      "canonical": "Con thích con vịt.",
+      "sampleCount": 1,
+      "sourceRows": [
+        318
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "3–4 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-116F78E5D9E7",
+      "source": "Mẹ ơi, con dau chân.",
+      "canonical": "Mẹ ơi, con đau chân.",
+      "sampleCount": 1,
+      "sourceRows": [
+        319
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "3–4 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-460EBEF710E4",
+      "source": "Cho con cái tìa hóa.",
+      "canonical": "Cho con cái chìa khóa.",
+      "sampleCount": 1,
+      "sourceRows": [
+        320
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "3–4 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-FDCAAE742D91",
+      "source": "Bố ơi, con nón quá.",
+      "canonical": "Bố ơi, con nóng quá.",
+      "sampleCount": 1,
+      "sourceRows": [
+        321
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "3–4 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-196F4E2DA4AF",
+      "source": "Con đang nảy dây.",
+      "canonical": "Con đang nhảy dây.",
+      "sampleCount": 1,
+      "sourceRows": [
+        322
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "3–4 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-9585DEDEA3E9",
+      "source": "Bố ơi, con gói bụng.",
+      "canonical": "Bố ơi, con đói bụng.",
+      "sampleCount": 1,
+      "sourceRows": [
+        323
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "3–4 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-375DDAA47577",
+      "source": "Mẹ ơi, con hát nước.",
+      "canonical": "Mẹ ơi, con khát nước.",
+      "sampleCount": 1,
+      "sourceRows": [
+        325
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "3–4 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-1958FC96201D",
+      "source": "Đồ ăn non quá.",
+      "canonical": "Đồ ăn ngon quá.",
+      "sampleCount": 1,
+      "sourceRows": [
+        326
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "3–4 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-360B34008200",
+      "source": "Con tìm cái bàn tải.",
+      "canonical": "Con tìm cái bàn chải.",
+      "sampleCount": 1,
+      "sourceRows": [
+        327
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "3–4 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-0FC7C9738E94",
+      "source": "Cho con nướt lọc nhé.",
+      "canonical": "Cho con nước lọc nhé.",
+      "sampleCount": 1,
+      "sourceRows": [
+        328
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "3–4 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-05843DB7F44C",
+      "source": "Xe chạy tậm quá.",
+      "canonical": "Xe chạy chậm quá.",
+      "sampleCount": 1,
+      "sourceRows": [
+        329
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "3–4 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-71F8A080B1D2",
+      "source": "Con thích con tó.",
+      "canonical": "Con thích con chó.",
+      "sampleCount": 1,
+      "sourceRows": [
+        330
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "3–4 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-E1D02921BE8C",
+      "source": "Con ăn táo.",
+      "canonical": "Con ăn cháo.",
+      "sampleCount": 1,
+      "sourceRows": [
+        331
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "3–4 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-EFD09665FAB7",
+      "source": "Con ăn tè.",
+      "canonical": "Con ăn chè.",
+      "sampleCount": 1,
+      "sourceRows": [
+        333
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "3–4 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-0BECE8C6522D",
+      "source": "Con muốn đọt sách.",
+      "canonical": "Con muốn đọc sách.",
+      "sampleCount": 1,
+      "sourceRows": [
+        334
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "3–4 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-E11A2CDF99C6",
+      "source": "Cho con cái háo mưa.",
+      "canonical": "Cho con cái áo mưa.",
+      "sampleCount": 1,
+      "sourceRows": [
+        335
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "3–4 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-74B725B7E5CB",
+      "source": "Con đang buột dây giày.",
+      "canonical": "Con đang buộc dây giày.",
+      "sampleCount": 1,
+      "sourceRows": [
+        336
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "3–4 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-84E53524B473",
+      "source": "Con tìm cái ón.",
+      "canonical": "Con tìm cái nón.",
+      "sampleCount": 1,
+      "sourceRows": [
+        337
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "3–4 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-86E7B0D7A808",
+      "source": "Con thích con à.",
+      "canonical": "Con thích con gà.",
+      "sampleCount": 1,
+      "sourceRows": [
+        338
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "3–4 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-053B8567ADD0",
+      "source": "Con đang măn cơm.",
+      "canonical": "Con đang ăn cơm.",
+      "sampleCount": 1,
+      "sourceRows": [
+        339
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "3–4 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-D285822C6265",
+      "source": "Con tìm cái háo mưa.",
+      "canonical": "Con tìm cái áo mưa.",
+      "sampleCount": 1,
+      "sourceRows": [
+        340
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "3–4 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-101FD9050714",
+      "source": "Con muốn nên giường.",
+      "canonical": "Con muốn lên giường.",
+      "sampleCount": 1,
+      "sourceRows": [
+        341
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "3–4 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-01921DB9B8C2",
+      "source": "Con muốn dẽ tranh.",
+      "canonical": "Con muốn vẽ tranh.",
+      "sampleCount": 1,
+      "sourceRows": [
+        342
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "3–4 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-EC5394553CF5",
+      "source": "Con uống xinh tố.",
+      "canonical": "Con uống sinh tố.",
+      "sampleCount": 1,
+      "sourceRows": [
+        343
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "3–4 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-81DD72E9302B",
+      "source": "Con ăn áo.",
+      "canonical": "Con ăn táo.",
+      "sampleCount": 1,
+      "sourceRows": [
+        344
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "3–4 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-8F1E1067BB85",
+      "source": "Con tìm cái háo.",
+      "canonical": "Con tìm cái áo.",
+      "sampleCount": 1,
+      "sourceRows": [
+        345
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "3–4 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-ABD73A966EDB",
+      "source": "Con thích con tim.",
+      "canonical": "Con thích con chim.",
+      "sampleCount": 1,
+      "sourceRows": [
+        346
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "3–4 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-F2C3A20A351B",
+      "source": "Con lấy cái mái tính.",
+      "canonical": "Con lấy cái máy tính.",
+      "sampleCount": 1,
+      "sourceRows": [
+        347
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "3–4 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-2509C7F597DC",
+      "source": "Cho con ánh nhé.",
+      "canonical": "Cho con bánh nhé.",
+      "sampleCount": 1,
+      "sourceRows": [
+        348
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "3–4 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-7F761DFC597A",
+      "source": "Con tìm cái iện thoại.",
+      "canonical": "Con tìm cái điện thoại.",
+      "sampleCount": 1,
+      "sourceRows": [
+        349
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "3–4 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-3A8C94EC8F29",
+      "source": "Con lấy cái đồng ồ.",
+      "canonical": "Con lấy cái đồng hồ.",
+      "sampleCount": 1,
+      "sourceRows": [
+        350
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "3–4 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-5711E6E55F5C",
+      "source": "Món này ngọc quá.",
+      "canonical": "Món này ngọt quá.",
+      "sampleCount": 1,
+      "sourceRows": [
+        351
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "3–4 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-B6F89A4154B8",
+      "source": "Con tìm cái ạt.",
+      "canonical": "Con tìm cái quạt.",
+      "sampleCount": 1,
+      "sourceRows": [
+        352
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "3–4 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-AB2D82B078B4",
+      "source": "Đồ ăn ngọc quá.",
+      "canonical": "Đồ ăn ngọt quá.",
+      "sampleCount": 1,
+      "sourceRows": [
+        353
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "3–4 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-DFCD6CE9009F",
+      "source": "Cho con pánh mì nhé.",
+      "canonical": "Cho con bánh mì nhé.",
+      "sampleCount": 1,
+      "sourceRows": [
+        354
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "3–4 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-44FD3B60CBAB",
+      "source": "Con tìm cái tem đánh răng.",
+      "canonical": "Con tìm cái kem đánh răng.",
+      "sampleCount": 1,
+      "sourceRows": [
+        355
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "3–4 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-3F243B67E643",
+      "source": "Cái hộp nỏ quá.",
+      "canonical": "Cái hộp nhỏ quá.",
+      "sampleCount": 1,
+      "sourceRows": [
+        356
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "3–4 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-ACBB7001B6B1",
+      "source": "Con tìm cái e đồ chơi.",
+      "canonical": "Con tìm cái xe đồ chơi.",
+      "sampleCount": 1,
+      "sourceRows": [
+        357
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "3–4 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-469999BFB80A",
+      "source": "Con thích pánh mì.",
+      "canonical": "Con thích bánh mì.",
+      "sampleCount": 1,
+      "sourceRows": [
+        358
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "3–4 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-7A3249A1733F",
+      "source": "Cho con cái mái tính.",
+      "canonical": "Cho con cái máy tính.",
+      "sampleCount": 1,
+      "sourceRows": [
+        359
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "3–4 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-131E2218EC79",
+      "source": "Mẹ giúp con uét nhà.",
+      "canonical": "Mẹ giúp con quét nhà.",
+      "sampleCount": 1,
+      "sourceRows": [
+        360
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "4–5 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-3D5BEEF90949",
+      "source": "Con muốn đến chường.",
+      "canonical": "Con muốn đến trường.",
+      "sampleCount": 1,
+      "sourceRows": [
+        361
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "4–5 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-2165FA0CDF9D",
+      "source": "Hôm nay con nạnh quá.",
+      "canonical": "Hôm nay con lạnh quá.",
+      "sampleCount": 1,
+      "sourceRows": [
+        362
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "4–5 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-A3CBE59245B9",
+      "source": "Con chỉ vào cái pàn.",
+      "canonical": "Con chỉ vào cái bàn.",
+      "sampleCount": 1,
+      "sourceRows": [
+        363
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "4–5 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-1544BB5D4905",
+      "source": "Hôm nay con mệt qué.",
+      "canonical": "Hôm nay con mệt quá.",
+      "sampleCount": 1,
+      "sourceRows": [
+        365
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "4–5 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-C0B7C6F17B47",
+      "source": "Con để cái ạt trên bàn.",
+      "canonical": "Con để cái quạt trên bàn.",
+      "sampleCount": 1,
+      "sourceRows": [
+        366
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "4–5 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-1AFEA4545C6D",
+      "source": "Con muốn xem con tỏ.",
+      "canonical": "Con muốn xem con thỏ.",
+      "sampleCount": 1,
+      "sourceRows": [
+        367
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "4–5 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-2C0F1ED3D285",
+      "source": "Mẹ đưa con đến tợ.",
+      "canonical": "Mẹ đưa con đến chợ.",
+      "sampleCount": 1,
+      "sourceRows": [
+        368
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "4–5 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-7F9DF5FA78AB",
+      "source": "Con muốn đến xiêu thị.",
+      "canonical": "Con muốn đến siêu thị.",
+      "sampleCount": 1,
+      "sourceRows": [
+        369
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "4–5 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-2801CC08FE07",
+      "source": "Bây giờ con pùn ngủ.",
+      "canonical": "Bây giờ con buồn ngủ.",
+      "sampleCount": 1,
+      "sourceRows": [
+        370
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "4–5 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-15D041E86253",
+      "source": "Con làm đổ nướt cam rồi.",
+      "canonical": "Con làm đổ nước cam rồi.",
+      "sampleCount": 1,
+      "sourceRows": [
+        371
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "4–5 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-819CF5221785",
+      "source": "Mẹ giúp con tất đồ chơi.",
+      "canonical": "Mẹ giúp con cất đồ chơi.",
+      "sampleCount": 1,
+      "sourceRows": [
+        372
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "4–5 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-8292C8B6A41A",
+      "source": "Hôm nay con dau bụng.",
+      "canonical": "Hôm nay con đau bụng.",
+      "sampleCount": 1,
+      "sourceRows": [
+        373
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "4–5 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-40A15315155F",
+      "source": "Con muốn đến bện viện.",
+      "canonical": "Con muốn đến bệnh viện.",
+      "sampleCount": 1,
+      "sourceRows": [
+        374
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "4–5 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-F77CAA63FBB8",
+      "source": "Hôm nay con nón quá.",
+      "canonical": "Hôm nay con nóng quá.",
+      "sampleCount": 1,
+      "sourceRows": [
+        375
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "4–5 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-40BCBB490EF6",
+      "source": "Hôm nay con hỏe rồi.",
+      "canonical": "Hôm nay con khỏe rồi.",
+      "sampleCount": 1,
+      "sourceRows": [
+        376
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "4–5 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-FC64E41461E8",
+      "source": "Quả bóng này tho quá.",
+      "canonical": "Quả bóng này to quá.",
+      "sampleCount": 1,
+      "sourceRows": [
+        377
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "4–5 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-9689024FCD12",
+      "source": "Con sẽ gọn phòng ngay.",
+      "canonical": "Con sẽ dọn phòng ngay.",
+      "sampleCount": 1,
+      "sourceRows": [
+        378
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "4–5 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-5A896E0D9E76",
+      "source": "Mẹ cho con ăn xài.",
+      "canonical": "Mẹ cho con ăn xoài.",
+      "sampleCount": 1,
+      "sourceRows": [
+        379
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "4–5 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-96DA24CF6AB2",
+      "source": "Con thấy áo này tho quá.",
+      "canonical": "Con thấy áo này to quá.",
+      "sampleCount": 1,
+      "sourceRows": [
+        380
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "4–5 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-7F64F4D5C396",
+      "source": "Con làm đổ ữa rồi.",
+      "canonical": "Con làm đổ sữa rồi.",
+      "sampleCount": 1,
+      "sourceRows": [
+        381
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "4–5 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-C2D3A94664BD",
+      "source": "Con sẽ uét nhà ngay.",
+      "canonical": "Con sẽ quét nhà ngay.",
+      "sampleCount": 1,
+      "sourceRows": [
+        382
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "4–5 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-504BBA3B99BF",
+      "source": "Con muốn ăn tè.",
+      "canonical": "Con muốn ăn chè.",
+      "sampleCount": 1,
+      "sourceRows": [
+        383
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "4–5 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-8CA3B8567BA5",
+      "source": "Bát canh này non quá.",
+      "canonical": "Bát canh này ngon quá.",
+      "sampleCount": 1,
+      "sourceRows": [
+        384
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "4–5 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-F6306718F344",
+      "source": "Quả bóng này nỏ quá.",
+      "canonical": "Quả bóng này nhỏ quá.",
+      "sampleCount": 1,
+      "sourceRows": [
+        385
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "4–5 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-8BB396C2BD5B",
+      "source": "Hôm nay con sẽ đến xiêu thị.",
+      "canonical": "Hôm nay con sẽ đến siêu thị.",
+      "sampleCount": 1,
+      "sourceRows": [
+        386
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "5–6 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-795375F4CFC2",
+      "source": "Hôm nay con sẽ đến hồ pơi.",
+      "canonical": "Hôm nay con sẽ đến hồ bơi.",
+      "sampleCount": 1,
+      "sourceRows": [
+        387
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "5–6 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-43714566E44A",
+      "source": "Hôm nay con sẽ gọn phòng.",
+      "canonical": "Hôm nay con sẽ dọn phòng.",
+      "sampleCount": 1,
+      "sourceRows": [
+        388
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "5–6 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-D316B25E82F6",
+      "source": "Con muốn tô màu con tó.",
+      "canonical": "Con muốn tô màu con chó.",
+      "sampleCount": 1,
+      "sourceRows": [
+        389
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "5–6 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-2A93F86D668D",
+      "source": "Hôm nay con sẽ đến thư diện.",
+      "canonical": "Hôm nay con sẽ đến thư viện.",
+      "sampleCount": 1,
+      "sourceRows": [
+        390
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "5–6 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-C6C32E4ABDFD",
+      "source": "Con muốn tô màu con ghê.",
+      "canonical": "Con muốn tô màu con dê.",
+      "sampleCount": 1,
+      "sourceRows": [
+        391
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "5–6 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-612BBEEAF914",
+      "source": "Đi học về con thấy xợ quá.",
+      "canonical": "Đi học về con thấy sợ quá.",
+      "sampleCount": 1,
+      "sourceRows": [
+        392
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "5–6 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-1C6962A81DCB",
+      "source": "Con để quên áo ở chường.",
+      "canonical": "Con để quên áo ở trường.",
+      "sampleCount": 1,
+      "sourceRows": [
+        393
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "5–6 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-2D857C12436B",
+      "source": "Con không chơi nữa vì con gói bụng.",
+      "canonical": "Con không chơi nữa vì con đói bụng.",
+      "sampleCount": 1,
+      "sourceRows": [
+        394
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "5–6 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-64E62581CC60",
+      "source": "Con tập nảy dây mỗi ngày.",
+      "canonical": "Con tập nhảy dây mỗi ngày.",
+      "sampleCount": 1,
+      "sourceRows": [
+        395
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "5–6 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-8D88E2C915DD",
+      "source": "Đi học về con thấy nón quá.",
+      "canonical": "Đi học về con thấy nóng quá.",
+      "sampleCount": 1,
+      "sourceRows": [
+        396
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "5–6 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-BB3431CBC983",
+      "source": "Mẹ giúp con tìm cái tìa hóa.",
+      "canonical": "Mẹ giúp con tìm cái chìa khóa.",
+      "sampleCount": 1,
+      "sourceRows": [
+        397
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "5–6 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-BB56E0DFE9D2",
+      "source": "Đi học về con thấy nạnh quá.",
+      "canonical": "Đi học về con thấy lạnh quá.",
+      "sampleCount": 1,
+      "sourceRows": [
+        398
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "5–6 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-8B3A9354CFD2",
+      "source": "Hôm nay con muốn ăn au.",
+      "canonical": "Hôm nay con muốn ăn rau.",
+      "sampleCount": 1,
+      "sourceRows": [
+        399
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "5–6 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-56C74831CFCE",
+      "source": "Bố đang sửa cái èn.",
+      "canonical": "Bố đang sửa cái đèn.",
+      "sampleCount": 1,
+      "sourceRows": [
+        400
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "5–6 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-D35865384FB9",
+      "source": "Con để quên áo ở nà.",
+      "canonical": "Con để quên áo ở nhà.",
+      "sampleCount": 1,
+      "sourceRows": [
+        401
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "5–6 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-5E33D4ED7FA2",
+      "source": "Mẹ chờ con uét nhà nhé.",
+      "canonical": "Mẹ chờ con quét nhà nhé.",
+      "sampleCount": 1,
+      "sourceRows": [
+        402
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "5–6 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-9C11C6C5BD6C",
+      "source": "Con làm rơi cái háo mưa rồi.",
+      "canonical": "Con làm rơi cái áo mưa rồi.",
+      "sampleCount": 1,
+      "sourceRows": [
+        403
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "5–6 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-F48B98688A78",
+      "source": "Đi học về con thấy dau bụng.",
+      "canonical": "Đi học về con thấy đau bụng.",
+      "sampleCount": 1,
+      "sourceRows": [
+        404
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "5–6 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-DDF959AC8D72",
+      "source": "Hôm nay con muốn ăn áo.",
+      "canonical": "Hôm nay con muốn ăn táo.",
+      "sampleCount": 1,
+      "sourceRows": [
+        405
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "5–6 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-586A7BD8E989",
+      "source": "Hôm nay con sẽ đến nớp.",
+      "canonical": "Hôm nay con sẽ đến lớp.",
+      "sampleCount": 1,
+      "sourceRows": [
+        407
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "5–6 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-072E0DC2B808",
+      "source": "Hôm nay con muốn ăn á.",
+      "canonical": "Hôm nay con muốn ăn cá.",
+      "sampleCount": 1,
+      "sourceRows": [
+        408
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "5–6 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-C6B5291DF039",
+      "source": "Chiếc áo mới này tho quá.",
+      "canonical": "Chiếc áo mới này to quá.",
+      "sampleCount": 1,
+      "sourceRows": [
+        409
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "5–6 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-4B8102136295",
+      "source": "Con để quên áo ở hồ pơi.",
+      "canonical": "Con để quên áo ở hồ bơi.",
+      "sampleCount": 1,
+      "sourceRows": [
+        410
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "5–6 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-51555AD20C1C",
+      "source": "Sau khi chơi con thấy dau bụng.",
+      "canonical": "Sau khi chơi con thấy đau bụng.",
+      "sampleCount": 1,
+      "sourceRows": [
+        411
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "5–6 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-F3FD8A780946",
+      "source": "Con để quên áo ở tông viên.",
+      "canonical": "Con để quên áo ở công viên.",
+      "sampleCount": 1,
+      "sourceRows": [
+        413
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "5–6 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-083FC1F53C47",
+      "source": "Con làm rơi cái ón rồi.",
+      "canonical": "Con làm rơi cái nón rồi.",
+      "sampleCount": 1,
+      "sourceRows": [
+        414
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "5–6 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-01DF378D33EF",
+      "source": "Con không sợ con èo đâu.",
+      "canonical": "Con không sợ con mèo đâu.",
+      "sampleCount": 1,
+      "sourceRows": [
+        415
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "5–6 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-E7D76DCDA73E",
+      "source": "Con tập dẽ tranh mỗi ngày.",
+      "canonical": "Con tập vẽ tranh mỗi ngày.",
+      "sampleCount": 1,
+      "sourceRows": [
+        416
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "5–6 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-2D7FDB745D44",
+      "source": "Mẹ để chai nướt cam trong tủ.",
+      "canonical": "Mẹ để chai nước cam trong tủ.",
+      "sampleCount": 1,
+      "sourceRows": [
+        417
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "5–6 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-A0280D49BD85",
+      "source": "Sáng nay mẹ cho con táo.",
+      "canonical": "Sáng nay mẹ cho con cháo.",
+      "sampleCount": 1,
+      "sourceRows": [
+        418
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "5–6 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-C232E8CDF7CA",
+      "source": "Con làm rơi cái đồ tơi rồi.",
+      "canonical": "Con làm rơi cái đồ chơi rồi.",
+      "sampleCount": 1,
+      "sourceRows": [
+        419
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "5–6 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-9270404C41A5",
+      "source": "Con không sợ con tim đâu.",
+      "canonical": "Con không sợ con chim đâu.",
+      "sampleCount": 1,
+      "sourceRows": [
+        420
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "5–6 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-002CDE673CB2",
+      "source": "Mẹ chờ con hơi khăn nhé.",
+      "canonical": "Mẹ chờ con phơi khăn nhé.",
+      "sampleCount": 1,
+      "sourceRows": [
+        421
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "5–6 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-752D53D8D056",
+      "source": "Con làm rơi cái iện thoại rồi.",
+      "canonical": "Con làm rơi cái điện thoại rồi.",
+      "sampleCount": 1,
+      "sourceRows": [
+        422
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "5–6 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-296981840B0D",
+      "source": "Con muốn tô màu con á.",
+      "canonical": "Con muốn tô màu con cá.",
+      "sampleCount": 1,
+      "sourceRows": [
+        423
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "5–6 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-BF30E868ED9A",
+      "source": "Hôm nay con sẽ gủ trưa.",
+      "canonical": "Hôm nay con sẽ ngủ trưa.",
+      "sampleCount": 1,
+      "sourceRows": [
+        424
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "5–6 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-3F13E9112A24",
+      "source": "Con chia phần ở cho em.",
+      "canonical": "Con chia phần phở cho em.",
+      "sampleCount": 1,
+      "sourceRows": [
+        425
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "5–6 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-9111DA8302E9",
+      "source": "Con làm rơi cái tăn rồi.",
+      "canonical": "Con làm rơi cái chăn rồi.",
+      "sampleCount": 1,
+      "sourceRows": [
+        426
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "5–6 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-57ACD2FBB379",
+      "source": "Mẹ giúp con tìm cái háo mưa.",
+      "canonical": "Mẹ giúp con tìm cái áo mưa.",
+      "sampleCount": 1,
+      "sourceRows": [
+        427
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "5–6 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-B35E5F5F4298",
+      "source": "Mẹ giúp con tìm cái ạt.",
+      "canonical": "Mẹ giúp con tìm cái quạt.",
+      "sampleCount": 1,
+      "sourceRows": [
+        429
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "5–6 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-64F72A9FFEE1",
+      "source": "Mẹ chờ con buột dây giày nhé.",
+      "canonical": "Mẹ chờ con buộc dây giày nhé.",
+      "sampleCount": 1,
+      "sourceRows": [
+        430
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "5–6 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-753410AB4835",
+      "source": "Mẹ giúp con tìm cái ón.",
+      "canonical": "Mẹ giúp con tìm cái nón.",
+      "sampleCount": 1,
+      "sourceRows": [
+        431
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "5–6 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-A9A1BA8815D5",
+      "source": "Con cất cái hộp út vào tủ.",
+      "canonical": "Con cất cái hộp bút vào tủ.",
+      "sampleCount": 1,
+      "sourceRows": [
+        432
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "5–6 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-A7FB9571AF00",
+      "source": "Sáng nay mẹ cho con tịt.",
+      "canonical": "Sáng nay mẹ cho con thịt.",
+      "sampleCount": 1,
+      "sourceRows": [
+        433
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "5–6 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-CA4164520E67",
+      "source": "Con làm rơi cái ép rồi.",
+      "canonical": "Con làm rơi cái dép rồi.",
+      "sampleCount": 1,
+      "sourceRows": [
+        434
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "5–6 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-390DCDFF087E",
+      "source": "Mẹ chờ con mặt áo nhé.",
+      "canonical": "Mẹ chờ con mặc áo nhé.",
+      "sampleCount": 1,
+      "sourceRows": [
+        435
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "5–6 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-7EC27932C281",
+      "source": "Con tập đọt sách mỗi ngày.",
+      "canonical": "Con tập đọc sách mỗi ngày.",
+      "sampleCount": 1,
+      "sourceRows": [
+        436
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "5–6 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-4E4BC6829195",
+      "source": "Hôm nay con muốn ăn oài.",
+      "canonical": "Hôm nay con muốn ăn xoài.",
+      "sampleCount": 1,
+      "sourceRows": [
+        437
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "5–6 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-2509B40E0FD1",
+      "source": "Con làm rơi cái hộp xữa rồi.",
+      "canonical": "Con làm rơi cái hộp sữa rồi.",
+      "sampleCount": 1,
+      "sourceRows": [
+        438
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "5–6 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-EEC292E53995",
+      "source": "Hôm nay con sẽ sếp quần áo.",
+      "canonical": "Hôm nay con sẽ xếp quần áo.",
+      "sampleCount": 1,
+      "sourceRows": [
+        439
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "5–6 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-5B601730B60A",
+      "source": "Mẹ giúp con tìm cái hăn.",
+      "canonical": "Mẹ giúp con tìm cái khăn.",
+      "sampleCount": 1,
+      "sourceRows": [
+        440
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "5–6 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-D9054C81E18E",
+      "source": "Con làm rơi cái hăn rồi.",
+      "canonical": "Con làm rơi cái khăn rồi.",
+      "sampleCount": 1,
+      "sourceRows": [
+        441
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "5–6 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-EDC3E2328AA7",
+      "source": "Con tập sếp quần áo mỗi ngày.",
+      "canonical": "Con tập xếp quần áo mỗi ngày.",
+      "sampleCount": 1,
+      "sourceRows": [
+        442
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "5–6 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-C8AD7B5D73AD",
+      "source": "Con chia cốc chà với em.",
+      "canonical": "Con chia cốc trà với em.",
+      "sampleCount": 1,
+      "sourceRows": [
+        443
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "5–6 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-9BC2B83837D9",
+      "source": "Mẹ giúp con tìm cái đồng ồ.",
+      "canonical": "Mẹ giúp con tìm cái đồng hồ.",
+      "sampleCount": 1,
+      "sourceRows": [
+        444
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "5–6 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-B9833A5BC4D7",
+      "source": "Con làm rơi cái ạt rồi.",
+      "canonical": "Con làm rơi cái quạt rồi.",
+      "sampleCount": 1,
+      "sourceRows": [
+        445
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "5–6 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-F7FB60751100",
+      "source": "Hôm nay con muốn ăn pánh mì.",
+      "canonical": "Hôm nay con muốn ăn bánh mì.",
+      "sampleCount": 1,
+      "sourceRows": [
+        446
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "5–6 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-AD898CA39441",
+      "source": "Cái bàn trong phòng nỏ quá.",
+      "canonical": "Cái bàn trong phòng nhỏ quá.",
+      "sampleCount": 1,
+      "sourceRows": [
+        447
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "5–6 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-C4893B255C0C",
+      "source": "Mẹ chờ con nấy áo nhé.",
+      "canonical": "Mẹ chờ con lấy áo nhé.",
+      "sampleCount": 1,
+      "sourceRows": [
+        448
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "5–6 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-EB7EA549FD58",
+      "source": "Chiếc áo mới này nỏ quá.",
+      "canonical": "Chiếc áo mới này nhỏ quá.",
+      "sampleCount": 1,
+      "sourceRows": [
+        449
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "5–6 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-35F60AB82065",
+      "source": "Con làm rơi cái đồng ồ rồi.",
+      "canonical": "Con làm rơi cái đồng hồ rồi.",
+      "sampleCount": 1,
+      "sourceRows": [
+        450
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "5–6 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-13D08E44BBB4",
+      "source": "Trưa nay con ăn hết phần tịt.",
+      "canonical": "Trưa nay con ăn hết phần thịt.",
+      "sampleCount": 1,
+      "sourceRows": [
+        451
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "6–8 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-6A2A09511E50",
+      "source": "Sau khi ăn xong con đến xiêu thị.",
+      "canonical": "Sau khi ăn xong con đến siêu thị.",
+      "sampleCount": 1,
+      "sourceRows": [
+        452
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "6–8 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-95379C27EE56",
+      "source": "Sau giờ học con thấy mình dau bụng.",
+      "canonical": "Sau giờ học con thấy mình đau bụng.",
+      "sampleCount": 1,
+      "sourceRows": [
+        453
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "6–8 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-A9500CEFC772",
+      "source": "Sau giờ học con muốn ăn áo.",
+      "canonical": "Sau giờ học con muốn ăn táo.",
+      "sampleCount": 1,
+      "sourceRows": [
+        454
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "6–8 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-63C4112D583D",
+      "source": "Con đang cùng bố đi tới hồ pơi.",
+      "canonical": "Con đang cùng bố đi tới hồ bơi.",
+      "sampleCount": 1,
+      "sourceRows": [
+        455
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "6–8 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-D7C5DAE790D5",
+      "source": "Sau khi ăn xong con đến nớp.",
+      "canonical": "Sau khi ăn xong con đến lớp.",
+      "sampleCount": 1,
+      "sourceRows": [
+        456
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "6–8 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-4823C4AB6580",
+      "source": "Sáng nay con để quên cái hộp xữa.",
+      "canonical": "Sáng nay con để quên cái hộp sữa.",
+      "sampleCount": 1,
+      "sourceRows": [
+        457
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "6–8 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-3DF6D92FF532",
+      "source": "Hôm qua con vẽ một con ịt.",
+      "canonical": "Hôm qua con vẽ một con vịt.",
+      "sampleCount": 1,
+      "sourceRows": [
+        458
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "6–8 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-28879889E984",
+      "source": "Sau khi ăn xong con đến tông viên.",
+      "canonical": "Sau khi ăn xong con đến công viên.",
+      "sampleCount": 1,
+      "sourceRows": [
+        459
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "6–8 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-A91B838A11FB",
+      "source": "Trưa nay con ăn hết phần ánh.",
+      "canonical": "Trưa nay con ăn hết phần bánh.",
+      "sampleCount": 1,
+      "sourceRows": [
+        460
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "6–8 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-D7D403D7DD82",
+      "source": "Sáng nay con để quên cái mái tính.",
+      "canonical": "Sáng nay con để quên cái máy tính.",
+      "sampleCount": 1,
+      "sourceRows": [
+        461
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "6–8 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-8CB33A960354",
+      "source": "Sáng nay mẹ đưa con đến nớp.",
+      "canonical": "Sáng nay mẹ đưa con đến lớp.",
+      "sampleCount": 1,
+      "sourceRows": [
+        462
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "6–8 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-8D1439DA80ED",
+      "source": "Con đặt cái tăn xuống cạnh bàn.",
+      "canonical": "Con đặt cái chăn xuống cạnh bàn.",
+      "sampleCount": 1,
+      "sourceRows": [
+        464
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "6–8 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-6ED4BC5B1599",
+      "source": "Quả bóng mới của con tho quá.",
+      "canonical": "Quả bóng mới của con to quá.",
+      "sampleCount": 1,
+      "sourceRows": [
+        465
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "6–8 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-58EEBECA9265",
+      "source": "Con nhớ con à trong câu chuyện.",
+      "canonical": "Con nhớ con gà trong câu chuyện.",
+      "sampleCount": 1,
+      "sourceRows": [
+        466
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "6–8 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-576573A3E778",
+      "source": "Con đang cố gắng tự nau bàn.",
+      "canonical": "Con đang cố gắng tự lau bàn.",
+      "sampleCount": 1,
+      "sourceRows": [
+        467
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "6–8 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-8824E3BC35B3",
+      "source": "Sáng nay mẹ đưa con đến tông viên.",
+      "canonical": "Sáng nay mẹ đưa con đến công viên.",
+      "sampleCount": 1,
+      "sourceRows": [
+        468
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "6–8 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-6A3B85C846BD",
+      "source": "Con nhớ đường đi đến tông viên.",
+      "canonical": "Con nhớ đường đi đến công viên.",
+      "sampleCount": 1,
+      "sourceRows": [
+        469
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "6–8 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-487D54C7C82F",
+      "source": "Con nói cái hộp này tho quá.",
+      "canonical": "Con nói cái hộp này to quá.",
+      "sampleCount": 1,
+      "sourceRows": [
+        470
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "6–8 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-0BBEFDAA00E7",
+      "source": "Hôm qua con vẽ một con ết.",
+      "canonical": "Hôm qua con vẽ một con ếch.",
+      "sampleCount": 1,
+      "sourceRows": [
+        471
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "6–8 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-F0FEC1154A32",
+      "source": "Sáng nay con để quên cái hộp út.",
+      "canonical": "Sáng nay con để quên cái hộp bút.",
+      "sampleCount": 1,
+      "sourceRows": [
+        472
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "6–8 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-7C795F7BC1BE",
+      "source": "Hôm qua con vẽ một con èo.",
+      "canonical": "Hôm qua con vẽ một con mèo.",
+      "sampleCount": 1,
+      "sourceRows": [
+        473
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "6–8 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-22BF29125341",
+      "source": "Con đang cùng bố đi tới thư diện.",
+      "canonical": "Con đang cùng bố đi tới thư viện.",
+      "sampleCount": 1,
+      "sourceRows": [
+        474
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "6–8 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-0921314B80AB",
+      "source": "Hôm qua con vẽ một con nợn.",
+      "canonical": "Hôm qua con vẽ một con lợn.",
+      "sampleCount": 1,
+      "sourceRows": [
+        475
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "6–8 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-7233A4F0F6D4",
+      "source": "Sáng nay mẹ đưa con đến chường.",
+      "canonical": "Sáng nay mẹ đưa con đến trường.",
+      "sampleCount": 1,
+      "sourceRows": [
+        476
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "6–8 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-F302E14366B0",
+      "source": "Sáng nay con để quên cái iện thoại.",
+      "canonical": "Sáng nay con để quên cái điện thoại.",
+      "sampleCount": 1,
+      "sourceRows": [
+        478
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "6–8 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-8C136FD31625",
+      "source": "Con nhớ đường đi đến nớp.",
+      "canonical": "Con nhớ đường đi đến lớp.",
+      "sampleCount": 1,
+      "sourceRows": [
+        479
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "6–8 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-FD7F63F2D87A",
+      "source": "Con cho bạn mượn cái đồng ồ rồi.",
+      "canonical": "Con cho bạn mượn cái đồng hồ rồi.",
+      "sampleCount": 1,
+      "sourceRows": [
+        480
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "6–8 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-B8A98E401555",
+      "source": "Sau khi ăn xong con đến hồ pơi.",
+      "canonical": "Sau khi ăn xong con đến hồ bơi.",
+      "sampleCount": 1,
+      "sourceRows": [
+        481
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "6–8 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-39CE2D6AB024",
+      "source": "Hôm qua con vẽ một con tua.",
+      "canonical": "Hôm qua con vẽ một con cua.",
+      "sampleCount": 1,
+      "sourceRows": [
+        482
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "6–8 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-CE0E66CA1E4B",
+      "source": "Hôm qua con vẽ một con ỉ.",
+      "canonical": "Hôm qua con vẽ một con khỉ.",
+      "sampleCount": 1,
+      "sourceRows": [
+        484
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "6–8 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-67D0839525B0",
+      "source": "Con cho bạn mượn cái hăn rồi.",
+      "canonical": "Con cho bạn mượn cái khăn rồi.",
+      "sampleCount": 1,
+      "sourceRows": [
+        486
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "6–8 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-6E3956E1432E",
+      "source": "Sáng nay con để quên cái háo mưa.",
+      "canonical": "Sáng nay con để quên cái áo mưa.",
+      "sampleCount": 1,
+      "sourceRows": [
+        487
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "6–8 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-1B8A1C814F9D",
+      "source": "Sáng nay con để quên cái hăn.",
+      "canonical": "Sáng nay con để quên cái khăn.",
+      "sampleCount": 1,
+      "sourceRows": [
+        488
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "6–8 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-9FEA64E64C2F",
+      "source": "Sau giờ chơi con muốn uống nướt cam.",
+      "canonical": "Sau giờ chơi con muốn uống nước cam.",
+      "sampleCount": 1,
+      "sourceRows": [
+        489
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "6–8 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-69411C3FC56A",
+      "source": "Sáng nay con để quên cái háo.",
+      "canonical": "Sáng nay con để quên cái áo.",
+      "sampleCount": 1,
+      "sourceRows": [
+        490
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "6–8 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-A293946C873D",
+      "source": "Bố mua cho con một cái út.",
+      "canonical": "Bố mua cho con một cái bút.",
+      "sampleCount": 1,
+      "sourceRows": [
+        491
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "6–8 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-969B2C41D554",
+      "source": "Sau giờ chơi con muốn uống xữa.",
+      "canonical": "Sau giờ chơi con muốn uống sữa.",
+      "sampleCount": 1,
+      "sourceRows": [
+        492
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "6–8 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-9C7749644B6F",
+      "source": "Con cho bạn mượn cái háo mưa rồi.",
+      "canonical": "Con cho bạn mượn cái áo mưa rồi.",
+      "sampleCount": 1,
+      "sourceRows": [
+        493
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "6–8 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-DA395F90917D",
+      "source": "Sáng nay con để quên cái ạt.",
+      "canonical": "Sáng nay con để quên cái quạt.",
+      "sampleCount": 1,
+      "sourceRows": [
+        494
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "6–8 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-682B8C5EE2BB",
+      "source": "Hôm qua con vẽ một con tó.",
+      "canonical": "Hôm qua con vẽ một con chó.",
+      "sampleCount": 1,
+      "sourceRows": [
+        495
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "6–8 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-AB3F1B49AAF9",
+      "source": "Con nói chiếc xe này chạy nanh quá.",
+      "canonical": "Con nói chiếc xe này chạy nhanh quá.",
+      "sampleCount": 1,
+      "sourceRows": [
+        496
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "6–8 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-44E183963B6C",
+      "source": "Bố mua cho con một cái tướt.",
+      "canonical": "Bố mua cho con một cái thước.",
+      "sampleCount": 1,
+      "sourceRows": [
+        497
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "6–8 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-AD0764484DD3",
+      "source": "Hôm qua con vẽ một con tỏ.",
+      "canonical": "Hôm qua con vẽ một con thỏ.",
+      "sampleCount": 1,
+      "sourceRows": [
+        498
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "6–8 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-CDA5AB7D870F",
+      "source": "Sau giờ chơi con muốn uống xinh tố.",
+      "canonical": "Sau giờ chơi con muốn uống sinh tố.",
+      "sampleCount": 1,
+      "sourceRows": [
+        499
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "6–8 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-FE12B239226A",
+      "source": "Con cho bạn mượn cái ón rồi.",
+      "canonical": "Con cho bạn mượn cái nón rồi.",
+      "sampleCount": 1,
+      "sourceRows": [
+        500
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "6–8 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-F8468051300F",
+      "source": "Sáng nay con để quên cái ón.",
+      "canonical": "Sáng nay con để quên cái nón.",
+      "sampleCount": 1,
+      "sourceRows": [
+        501
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "6–8 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-C343A0F87030",
+      "source": "Con đang cố gắng tự gọn phòng.",
+      "canonical": "Con đang cố gắng tự dọn phòng.",
+      "sampleCount": 1,
+      "sourceRows": [
+        502
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "6–8 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-7399D63929BC",
+      "source": "Sau giờ chơi con muốn uống nướt lọc.",
+      "canonical": "Sau giờ chơi con muốn uống nước lọc.",
+      "sampleCount": 1,
+      "sourceRows": [
+        503
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "6–8 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-3274E571F1F7",
+      "source": "Con cho bạn mượn cái tốc rồi.",
+      "canonical": "Con cho bạn mượn cái cốc rồi.",
+      "sampleCount": 1,
+      "sourceRows": [
+        504
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "6–8 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-D68A43968891",
+      "source": "Con đang cố gắng tự nấy áo.",
+      "canonical": "Con đang cố gắng tự lấy áo.",
+      "sampleCount": 1,
+      "sourceRows": [
+        505
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "6–8 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-1D197E9C80A2",
+      "source": "Bố mua cho con một cái ép.",
+      "canonical": "Bố mua cho con một cái dép.",
+      "sampleCount": 1,
+      "sourceRows": [
+        506
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "6–8 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-F5597699E4B1",
+      "source": "Trước khi đi học con uống xữa.",
+      "canonical": "Trước khi đi học con uống sữa.",
+      "sampleCount": 1,
+      "sourceRows": [
+        507
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "6–8 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-2CF8852D875F",
+      "source": "Hôm qua con vẽ một con nựa.",
+      "canonical": "Hôm qua con vẽ một con ngựa.",
+      "sampleCount": 1,
+      "sourceRows": [
+        508
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "6–8 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-483701D56078",
+      "source": "Sau giờ học con muốn ăn ì.",
+      "canonical": "Sau giờ học con muốn ăn mì.",
+      "sampleCount": 1,
+      "sourceRows": [
+        509
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "6–8 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-D92AABD23A95",
+      "source": "Sau giờ học con muốn ăn uối.",
+      "canonical": "Sau giờ học con muốn ăn chuối.",
+      "sampleCount": 1,
+      "sourceRows": [
+        510
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "6–8 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-8869691E9F0D",
+      "source": "Sáng nay con để quên cái tướt.",
+      "canonical": "Sáng nay con để quên cái thước.",
+      "sampleCount": 1,
+      "sourceRows": [
+        511
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "6–8 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-2A1396A1D16A",
+      "source": "Sau giờ học con muốn ăn ánh.",
+      "canonical": "Sau giờ học con muốn ăn bánh.",
+      "sampleCount": 1,
+      "sourceRows": [
+        512
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "6–8 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-39EB3314CCE8",
+      "source": "Sau giờ chơi con muốn uống nướt.",
+      "canonical": "Sau giờ chơi con muốn uống nước.",
+      "sampleCount": 1,
+      "sourceRows": [
+        513
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "6–8 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-9FCD3BC24E36",
+      "source": "Sáng nay con để quên cái tặp xách.",
+      "canonical": "Sáng nay con để quên cái cặp sách.",
+      "sampleCount": 1,
+      "sourceRows": [
+        514
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "6–8 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-2D3150FF9858",
+      "source": "Con đang cố gắng tự đọt sách.",
+      "canonical": "Con đang cố gắng tự đọc sách.",
+      "sampleCount": 1,
+      "sourceRows": [
+        515
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "6–8 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-7A727256FE91",
+      "source": "Sau giờ học con muốn ăn tơm.",
+      "canonical": "Sau giờ học con muốn ăn cơm.",
+      "sampleCount": 1,
+      "sourceRows": [
+        517
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "6–8 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-6E6E9635D68A",
+      "source": "Con đứng bên cạnh cái gế.",
+      "canonical": "Con đứng bên cạnh cái ghế.",
+      "sampleCount": 1,
+      "sourceRows": [
+        518
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "6–8 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-4FC5703AC8F9",
+      "source": "Sau giờ học con muốn ăn ở.",
+      "canonical": "Sau giờ học con muốn ăn phở.",
+      "sampleCount": 1,
+      "sourceRows": [
+        519
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "6–8 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-336E23F930C2",
+      "source": "Quả bóng mới của con nỏ quá.",
+      "canonical": "Quả bóng mới của con nhỏ quá.",
+      "sampleCount": 1,
+      "sourceRows": [
+        520
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "6–8 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-A9F693672B0B",
+      "source": "Sau giờ chơi con muốn uống xữa chua.",
+      "canonical": "Sau giờ chơi con muốn uống sữa chua.",
+      "sampleCount": 1,
+      "sourceRows": [
+        521
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "6–8 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-D371053A7F9D",
+      "source": "con uống ước rồi ăn xáng.",
+      "canonical": "con uống nước rồi ăn sáng.",
+      "sampleCount": 1,
+      "sourceRows": [
+        522
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "3–4 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-73DBC99486BE",
+      "source": "chời nạnh nên con mặc háo khoác.",
+      "canonical": "trời lạnh nên con mặc áo khoác.",
+      "sampleCount": 1,
+      "sourceRows": [
+        523
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "3–4 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-D11D5E689219",
+      "source": "chời mưa nên con mặc háo mưa.",
+      "canonical": "trời mưa nên con mặc áo mưa.",
+      "sampleCount": 1,
+      "sourceRows": [
+        524
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "3–4 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-F0819F014B00",
+      "source": "con quên hộp út.",
+      "canonical": "con quên hộp bút.",
+      "sampleCount": 1,
+      "sourceRows": [
+        529
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "3–4 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-30FB2CADAD75",
+      "source": "hôm nay con được nghỉ ọc.",
+      "canonical": "hôm nay con được nghỉ học.",
+      "sampleCount": 1,
+      "sourceRows": [
+        530
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "3–4 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-E4D899CA0094",
+      "source": "Con cần háo khoác.",
+      "canonical": "Con cần áo khoác.",
+      "sampleCount": 1,
+      "sourceRows": [
+        531
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "3–4 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-CADDF958F70C",
+      "source": "Con cần háo mưa.",
+      "canonical": "Con cần áo mưa.",
+      "sampleCount": 1,
+      "sourceRows": [
+        532
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "3–4 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-12932BA93647",
+      "source": "Con cần bàn trải.",
+      "canonical": "Con cần bàn chải.",
+      "sampleCount": 1,
+      "sourceRows": [
+        533
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "3–4 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-C606A2DC1A9D",
+      "source": "Con cần cái tặp.",
+      "canonical": "Con cần cái cặp.",
+      "sampleCount": 1,
+      "sourceRows": [
+        534
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "3–4 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-2FC5652906B7",
+      "source": "Con cần cái èn.",
+      "canonical": "Con cần cái đèn.",
+      "sampleCount": 1,
+      "sourceRows": [
+        535
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "3–4 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-F7E1FBEF0BCC",
+      "source": "Con cần cái dường.",
+      "canonical": "Con cần cái giường.",
+      "sampleCount": 1,
+      "sourceRows": [
+        536
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "3–4 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-88CD002E3268",
+      "source": "Con cần cái gói.",
+      "canonical": "Con cần cái gối.",
+      "sampleCount": 1,
+      "sourceRows": [
+        537
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "3–4 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-A16E2AD91432",
+      "source": "Con cần cái ón.",
+      "canonical": "Con cần cái nón.",
+      "sampleCount": 1,
+      "sourceRows": [
+        538
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "3–4 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-A4717ABD330A",
+      "source": "Con cần đôi dày.",
+      "canonical": "Con cần đôi giày.",
+      "sampleCount": 1,
+      "sourceRows": [
+        539
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "3–4 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-B34D5D9650D9",
+      "source": "Con cần gói ôm.",
+      "canonical": "Con cần gối ôm.",
+      "sampleCount": 1,
+      "sourceRows": [
+        540
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "3–4 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-365C5D5E9156",
+      "source": "Con cần hộp út.",
+      "canonical": "Con cần hộp bút.",
+      "sampleCount": 1,
+      "sourceRows": [
+        541
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "3–4 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-574A6C3B9E9F",
+      "source": "Con cần hộp xữa.",
+      "canonical": "Con cần hộp sữa.",
+      "sampleCount": 1,
+      "sourceRows": [
+        542
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "3–4 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-971C9C0A2147",
+      "source": "Con cần tem đánh dăng.",
+      "canonical": "Con cần kem đánh răng.",
+      "sampleCount": 1,
+      "sourceRows": [
+        543
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "3–4 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-F1D538FC7CA2",
+      "source": "Con tìm háo khoác.",
+      "canonical": "Con tìm áo khoác.",
+      "sampleCount": 1,
+      "sourceRows": [
+        544
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "3–4 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-5BC82439F6DD",
+      "source": "Con tìm háo mưa.",
+      "canonical": "Con tìm áo mưa.",
+      "sampleCount": 1,
+      "sourceRows": [
+        545
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "3–4 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-0AC30DB09C8E",
+      "source": "Con tìm bàn trải.",
+      "canonical": "Con tìm bàn chải.",
+      "sampleCount": 1,
+      "sourceRows": [
+        546
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "3–4 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-3BD019B74936",
+      "source": "Con tìm pánh mì.",
+      "canonical": "Con tìm bánh mì.",
+      "sampleCount": 1,
+      "sourceRows": [
+        547
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "3–4 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-CED1D76ED8F9",
+      "source": "Mẹ đưa con háo khoác.",
+      "canonical": "Mẹ đưa con áo khoác.",
+      "sampleCount": 1,
+      "sourceRows": [
+        548
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "3–4 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-A1B1F9E5B848",
+      "source": "Mẹ đưa con háo mưa.",
+      "canonical": "Mẹ đưa con áo mưa.",
+      "sampleCount": 1,
+      "sourceRows": [
+        549
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "3–4 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-FB9B94DE596B",
+      "source": "Con biết mưa dồi.",
+      "canonical": "Con biết mưa rồi.",
+      "sampleCount": 1,
+      "sourceRows": [
+        550
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "3–4 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-3C462BCCB98C",
+      "source": "Con pị lạnh.",
+      "canonical": "Con bị lạnh.",
+      "sampleCount": 1,
+      "sourceRows": [
+        551
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "3–4 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-CBB08A4C488F",
+      "source": "Con dậy muộn dồi.",
+      "canonical": "Con dậy muộn rồi.",
+      "sampleCount": 1,
+      "sourceRows": [
+        553
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "3–4 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-EB403AE93A2D",
+      "source": "Con dậy xớm.",
+      "canonical": "Con dậy sớm.",
+      "sampleCount": 1,
+      "sourceRows": [
+        554
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "3–4 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-3E155ED3F294",
+      "source": "Con muốn ngủ một tút.",
+      "canonical": "Con muốn ngủ một chút.",
+      "sampleCount": 1,
+      "sourceRows": [
+        555
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "3–4 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-333F1068EEF6",
+      "source": "Con muốn ngủ năm pút.",
+      "canonical": "Con muốn ngủ năm phút.",
+      "sampleCount": 1,
+      "sourceRows": [
+        556
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "3–4 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-741D1252A391",
+      "source": "Con muốn ngủ tem.",
+      "canonical": "Con muốn ngủ thêm.",
+      "sampleCount": 1,
+      "sourceRows": [
+        557
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "3–4 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-51990CCF0F24",
+      "source": "Con ăn xáng.",
+      "canonical": "Con ăn sáng.",
+      "sampleCount": 1,
+      "sourceRows": [
+        558
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "3–4 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-5D986B06C45F",
+      "source": "Con bật èn.",
+      "canonical": "Con bật đèn.",
+      "sampleCount": 1,
+      "sourceRows": [
+        559
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "3–4 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-E62F64B3C220",
+      "source": "Con puộc dây dày.",
+      "canonical": "Con buộc dây giày.",
+      "sampleCount": 1,
+      "sourceRows": [
+        560
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "3–4 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-C783AFA6DD7E",
+      "source": "Con đang ăn xáng.",
+      "canonical": "Con đang ăn sáng.",
+      "sampleCount": 1,
+      "sourceRows": [
+        561
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "3–4 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-ED72D1F60E70",
+      "source": "Con đang đi ọc.",
+      "canonical": "Con đang đi học.",
+      "sampleCount": 1,
+      "sourceRows": [
+        562
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "3–4 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-0DBB06159F72",
+      "source": "Con đang đội ón.",
+      "canonical": "Con đang đội nón.",
+      "sampleCount": 1,
+      "sourceRows": [
+        563
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "3–4 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-15CF2145752C",
+      "source": "Con đang mang ép.",
+      "canonical": "Con đang mang dép.",
+      "sampleCount": 1,
+      "sourceRows": [
+        564
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "3–4 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-ABF2328E429A",
+      "source": "Con đang thay quần háo.",
+      "canonical": "Con đang thay quần áo.",
+      "sampleCount": 1,
+      "sourceRows": [
+        565
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "3–4 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-770010C0FC31",
+      "source": "Con đi ọc.",
+      "canonical": "Con đi học.",
+      "sampleCount": 1,
+      "sourceRows": [
+        566
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "3–4 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-F50CB544EF6A",
+      "source": "Con đi dệ xinh.",
+      "canonical": "Con đi vệ sinh.",
+      "sampleCount": 1,
+      "sourceRows": [
+        567
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": []
+    },
+    {
+      "id": "CHILD-ASR-V2-FA488AB2AA54",
+      "source": "Con đi vệ xinh.",
+      "canonical": "Con đi vệ sinh.",
+      "sampleCount": 1,
+      "sourceRows": [
+        568
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "3–4 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-0FC3620125C3",
+      "source": "Con đội ón.",
+      "canonical": "Con đội nón.",
+      "sampleCount": 1,
+      "sourceRows": [
+        569
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "3–4 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-3342030C6663",
+      "source": "Con mặc háo mưa.",
+      "canonical": "Con mặc áo mưa.",
+      "sampleCount": 1,
+      "sourceRows": [
+        570
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "3–4 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-B0F6FF924476",
+      "source": "Con muốn ăn xáng.",
+      "canonical": "Con muốn ăn sáng.",
+      "sampleCount": 1,
+      "sourceRows": [
+        571
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "3–4 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-CEA8A8350098",
+      "source": "Con muốn đi ọc.",
+      "canonical": "Con muốn đi học.",
+      "sampleCount": 1,
+      "sourceRows": [
+        572
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "3–4 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-3527E80C7FD9",
+      "source": "Con muốn đi dệ xinh",
+      "canonical": "Con muốn đi vệ sinh.",
+      "sampleCount": 1,
+      "sourceRows": [
+        573
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": []
+    },
+    {
+      "id": "CHILD-ASR-V2-DE7200189A57",
+      "source": "Con muốn đi vệ xinh.",
+      "canonical": "Con muốn đi vệ sinh.",
+      "sampleCount": 1,
+      "sourceRows": [
+        574
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "3–4 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-6CC70CC9830E",
+      "source": "Con muốn mặc háo mưa.",
+      "canonical": "Con muốn mặc áo mưa.",
+      "sampleCount": 1,
+      "sourceRows": [
+        575
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "3–4 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-6383EDD9A6B5",
+      "source": "Con muốn mặc háo.",
+      "canonical": "Con muốn mặc áo.",
+      "sampleCount": 1,
+      "sourceRows": [
+        576
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "3–4 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-3DBC69029FA1",
+      "source": "Con thay quần háo.",
+      "canonical": "Con thay quần áo.",
+      "sampleCount": 1,
+      "sourceRows": [
+        577
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "3–4 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-949D75C22BE8",
+      "source": "Mẹ ơi, con ăn xáng.",
+      "canonical": "Mẹ ơi, con ăn sáng.",
+      "sampleCount": 1,
+      "sourceRows": [
+        578
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "3–4 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-D449ACD40D8A",
+      "source": "Con sẽ ăn xáng ngay.",
+      "canonical": "Con sẽ ăn sáng ngay.",
+      "sampleCount": 1,
+      "sourceRows": [
+        579
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "4–5 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-E1DE6944D19B",
+      "source": "Con sẽ đến chường ngay.",
+      "canonical": "Con sẽ đến trường ngay.",
+      "sampleCount": 1,
+      "sourceRows": [
+        580
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "4–5 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-9683AB3EA0E6",
+      "source": "Con sẽ đi ọc ngay.",
+      "canonical": "Con sẽ đi học ngay.",
+      "sampleCount": 1,
+      "sourceRows": [
+        581
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "4–5 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-C5009CE81641",
+      "source": "Con tự ăn xáng.",
+      "canonical": "Con tự ăn sáng.",
+      "sampleCount": 1,
+      "sourceRows": [
+        582
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "4–5 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-FC4D1D2E673B",
+      "source": "Con tự đến chường.",
+      "canonical": "Con tự đến trường.",
+      "sampleCount": 1,
+      "sourceRows": [
+        583
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "4–5 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-500ED8CC56C4",
+      "source": "Con tự đi ọc.",
+      "canonical": "Con tự đi học.",
+      "sampleCount": 1,
+      "sourceRows": [
+        584
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "4–5 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-76135390E411",
+      "source": "Con nấy gối cho ông.",
+      "canonical": "Con lấy gối cho ông.",
+      "sampleCount": 1,
+      "sourceRows": [
+        588
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "3–4 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-C1745A142AC6",
+      "source": "Con nấy thuốc giúp mẹ.",
+      "canonical": "Con lấy thuốc giúp mẹ.",
+      "sampleCount": 1,
+      "sourceRows": [
+        590
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "3–4 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-42443BAD9031",
+      "source": "Con nhường đồ tơi cho em.",
+      "canonical": "Con nhường đồ chơi cho em.",
+      "sampleCount": 1,
+      "sourceRows": [
+        591
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "3–4 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-60AA1FBC9A90",
+      "source": "Ai nấy đồ của con?",
+      "canonical": "Ai lấy đồ của con?",
+      "sampleCount": 1,
+      "sourceRows": [
+        592
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "3–4 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-65B81305D05B",
+      "source": "Bố ở nhà pếp.",
+      "canonical": "Bố ở nhà bếp.",
+      "sampleCount": 1,
+      "sourceRows": [
+        595
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "3–4 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-8DA1CEFD218C",
+      "source": "Mẹ bật ti di cho con.",
+      "canonical": "Mẹ bật ti vi cho con.",
+      "sampleCount": 1,
+      "sourceRows": [
+        596
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "3–4 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-1290F6449030",
+      "source": "Mẹ puộc tóc cho con.",
+      "canonical": "Mẹ buộc tóc cho con.",
+      "sampleCount": 1,
+      "sourceRows": [
+        597
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "3–4 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-ED979A7CB1EA",
+      "source": "Mẹ nấy đồ chơi cho con.",
+      "canonical": "Mẹ lấy đồ chơi cho con.",
+      "sampleCount": 1,
+      "sourceRows": [
+        598
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "3–4 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-930742025E23",
+      "source": "Mẹ ơi, bật ti di cho con.",
+      "canonical": "Mẹ ơi, bật ti vi cho con.",
+      "sampleCount": 1,
+      "sourceRows": [
+        599
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "3–4 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-FABB4022E121",
+      "source": "Mẹ ơi, tơi với con.",
+      "canonical": "Mẹ ơi, chơi với con.",
+      "sampleCount": 1,
+      "sourceRows": [
+        600
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "3–4 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-3C46EA8603CF",
+      "source": "Mẹ ơi, đi tấc cho con.",
+      "canonical": "Mẹ ơi, đi tất cho con.",
+      "sampleCount": 1,
+      "sourceRows": [
+        601
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "3–4 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-76B3176463EF",
+      "source": "Mẹ ơi, đóng tửa sổ giúp con.",
+      "canonical": "Mẹ ơi, đóng cửa sổ giúp con.",
+      "sampleCount": 1,
+      "sourceRows": [
+        602
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "3–4 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-A55CE5E39E3B",
+      "source": "Mẹ ơi, kể tuyện ngày xưa.",
+      "canonical": "Mẹ ơi, kể chuyện ngày xưa.",
+      "sampleCount": 1,
+      "sourceRows": [
+        603
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "3–4 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-F4E29FE59299",
+      "source": "Mẹ ơi, mặc háo cho con.",
+      "canonical": "Mẹ ơi, mặc áo cho con.",
+      "sampleCount": 1,
+      "sourceRows": [
+        604
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "3–4 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-E1D07C4587AF",
+      "source": "Mẹ ơi, mở tửa cho con.",
+      "canonical": "Mẹ ơi, mở cửa cho con.",
+      "sampleCount": 1,
+      "sourceRows": [
+        605
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "3–4 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-4480C8C306D2",
+      "source": "Mẹ ơi, tìm xách giúp con.",
+      "canonical": "Mẹ ơi, tìm sách giúp con.",
+      "sampleCount": 1,
+      "sourceRows": [
+        606
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "3–4 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-9F5BE5A60E59",
+      "source": "Con nhớ nhà nắm.",
+      "canonical": "Con nhớ nhà lắm.",
+      "sampleCount": 1,
+      "sourceRows": [
+        607
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "3–4 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-4A59B8044EEF",
+      "source": "Con tảm ơn bà.",
+      "canonical": "Con cảm ơn bà.",
+      "sampleCount": 1,
+      "sourceRows": [
+        610
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "3–4 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-4250117EDDF6",
+      "source": "Con đi pộ với ông.",
+      "canonical": "Con đi bộ với ông.",
+      "sampleCount": 1,
+      "sourceRows": [
+        611
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "3–4 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-CD99D7F4B256",
+      "source": "Con đọc tuyện với mẹ.",
+      "canonical": "Con đọc truyện với mẹ.",
+      "sampleCount": 1,
+      "sourceRows": [
+        612
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "3–4 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-10841B83217E",
+      "source": "Con ngồi chơi ở nhà pếp.",
+      "canonical": "Con ngồi chơi ở nhà bếp.",
+      "sampleCount": 1,
+      "sourceRows": [
+        613
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "4–5 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-67DC0FC45FA5",
+      "source": "Con ngồi chơi ở phòng hách.",
+      "canonical": "Con ngồi chơi ở phòng khách.",
+      "sampleCount": 1,
+      "sourceRows": [
+        614
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "4–5 tuổi"
+      ]
+    },
+    {
+      "id": "CHILD-ASR-V2-5AD21B2D823D",
+      "source": "Con tìm mẹ ở tửa ra vào.",
+      "canonical": "Con tìm mẹ ở cửa ra vào.",
+      "sampleCount": 1,
+      "sourceRows": [
+        615
+      ],
+      "sourceWorkbook": "Dữ liệu test (1).xlsx",
+      "ageGroups": [
+        "4–5 tuổi"
+      ]
+    }
+  ]
+}
