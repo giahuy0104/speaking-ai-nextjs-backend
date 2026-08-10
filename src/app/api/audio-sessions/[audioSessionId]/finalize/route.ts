@@ -135,10 +135,11 @@ export async function POST(request: Request, context: RouteContext) {
     const rawBody = await request.text();
     requestHash = createHash("sha256").update(rawBody).digest("hex");
     const body = JSON.parse(rawBody) as FinalizeRequest;
+    const pcm16Wav = body.pcm16Wav;
     if (
       uploadClaims &&
-      ((uploadClaims.encoding === "pcm_s16le" && !body.pcm16Wav) ||
-        (uploadClaims.encoding === "encoded_audio" && body.pcm16Wav))
+      ((uploadClaims.encoding === "pcm_s16le" && !pcm16Wav) ||
+        (uploadClaims.encoding === "encoded_audio" && pcm16Wav))
     ) {
       throw new AppError(
         "AUDIO_SESSION_INVALID",
@@ -146,8 +147,8 @@ export async function POST(request: Request, context: RouteContext) {
         400,
       );
     }
-    if (uploadClaims && body.pcm16Wav) {
-      const pcm = body.pcm16Wav;
+    if (uploadClaims && pcm16Wav) {
+      const pcm = pcm16Wav;
       const durationMs =
         (pcm.pcmByteLength /
           (pcm.sampleRate * pcm.channelCount * (pcm.bitsPerSample / 8))) *
@@ -213,10 +214,9 @@ export async function POST(request: Request, context: RouteContext) {
     let prefetchTail:
       | Awaited<ReturnType<typeof validateAudioSessionPrefetchTail>>
       | undefined;
-    let prefetchCandidate = getBatchPrefetchCandidate(
-      body.prefetchId?.trim(),
-      audioSessionId,
-    );
+    let prefetchCandidate = pcm16Wav
+      ? getBatchPrefetchCandidate(body.prefetchId?.trim(), audioSessionId)
+      : undefined;
     let prefetchCandidateOrigin:
       | "explicit"
       | "latest"
@@ -278,7 +278,7 @@ export async function POST(request: Request, context: RouteContext) {
       audioFile = await finalizeAudioUploadSession(
         audioSessionId,
         body.mimeType,
-        body.pcm16Wav,
+        pcm16Wav,
         {
           onAssemblySource: (source) => {
             assemblySource = source;
@@ -287,18 +287,42 @@ export async function POST(request: Request, context: RouteContext) {
       );
       assembleMs = Math.round(performance.now() - assembleStartedAt);
 
-      if (!body.pcm16Wav) {
-        throw new AppError(
-          "AUDIO_SESSION_INVALID",
-          "Thiếu metadata PCM khi finalize Batch Chunks.",
-          400,
+      if (pcm16Wav) {
+        hedgedAsrPromise = transcribeAudioSessionOnce({
+          audioSessionId,
+          snapshot: pcm16Wav,
+          transcribe: () =>
+            transcribeVietnamese({
+              requestId,
+              clientId: body.clientId?.trim() || undefined,
+              context: practiceContext,
+              childAge: body.childAge ?? 6,
+              targetLanguage: "en",
+              sessionId: body.sessionId,
+              audioFile,
+              asrMode: "batch_chunks",
+              benchmark: { ...body.benchmark },
+            }),
+        }).then(
+          (shared) => ({
+            ok: true as const,
+            sourceText: shared.sourceText,
+            latencyMs: shared.asrLatencyMs,
+            waitLatencyMs: shared.waitLatencyMs,
+            joined: shared.joined,
+          }),
+          (error: unknown) => ({
+            ok: false as const,
+            error,
+            latencyMs: 0,
+            waitLatencyMs: 0,
+            joined: false,
+          }),
         );
-      }
-      hedgedAsrPromise = transcribeAudioSessionOnce({
-        audioSessionId,
-        snapshot: body.pcm16Wav,
-        transcribe: () =>
-          transcribeVietnamese({
+        preparedPipelinePromise = prepareAudioSessionPipelineOnce({
+          audioSessionId,
+          snapshot: pcm16Wav,
+          request: {
             requestId,
             clientId: body.clientId?.trim() || undefined,
             context: practiceContext,
@@ -308,102 +332,72 @@ export async function POST(request: Request, context: RouteContext) {
             audioFile,
             asrMode: "batch_chunks",
             benchmark: { ...body.benchmark },
-          }),
-      }).then(
-        (shared) => ({
-          ok: true as const,
-          sourceText: shared.sourceText,
-          latencyMs: shared.asrLatencyMs,
-          waitLatencyMs: shared.waitLatencyMs,
-          joined: shared.joined,
-        }),
-        (error: unknown) => ({
-          ok: false as const,
-          error,
-          latencyMs: 0,
-          waitLatencyMs: 0,
-          joined: false,
-        }),
-      );
-      preparedPipelinePromise = prepareAudioSessionPipelineOnce({
-        audioSessionId,
-        snapshot: body.pcm16Wav,
-        request: {
-          requestId,
-          clientId: body.clientId?.trim() || undefined,
+          },
+        });
+        // A validated older prefetch may win first. Keep a rejection observer
+        // on the exact-snapshot preparation until it is either used or awaited
+        // in the post-response task.
+        void preparedPipelinePromise.catch(() => undefined);
+
+        // The terminal preview normally represents the same speech plus only a
+        // short silent tail. Registering happens before preview ASR starts, so
+        // finalize can join the complete in-flight ASR -> text -> audio promise
+        // instead of waiting until the preview route has saved a candidate.
+        const terminalFlight = getLatestTerminalAudioSessionPipelineFlight({
+          audioSessionId,
           context: practiceContext,
           childAge: body.childAge ?? 6,
-          targetLanguage: "en",
-          sessionId: body.sessionId,
-          audioFile,
-          asrMode: "batch_chunks",
-          benchmark: { ...body.benchmark },
-        },
-      });
-      // A validated older prefetch may win first. Keep a rejection observer on
-      // the exact-snapshot preparation until it is either used or awaited in
-      // the post-response task.
-      void preparedPipelinePromise.catch(() => undefined);
-
-      // The terminal preview normally represents the same speech plus only a
-      // short silent tail. Registering happens before preview ASR starts, so
-      // finalize can join the complete in-flight ASR -> text -> audio promise
-      // instead of waiting until the preview route has saved a candidate.
-      const terminalFlight = getLatestTerminalAudioSessionPipelineFlight({
-        audioSessionId,
-        context: practiceContext,
-        childAge: body.childAge ?? 6,
-      });
-      if (
-        terminalFlight &&
-        terminalFlight.snapshot.chunkCount !== undefined &&
-        body.pcm16Wav.chunkCount !== undefined &&
-        terminalFlight.snapshot.chunkCount <= body.pcm16Wav.chunkCount &&
-        terminalFlight.snapshot.pcmByteLength <=
-          body.pcm16Wav.pcmByteLength
-      ) {
-        terminalPipelineAgeMs = Math.max(
-          0,
-          Date.now() - terminalFlight.startedAt,
-        );
-        terminalPipelineLeadBeforeFinalizeMs = Math.max(
-          0,
-          finalizeRequestReceivedAt - terminalFlight.startedAt,
-        );
-        const validationStartedAt = performance.now();
-        const terminalTail = await validateAudioSessionPrefetchTail(
-          audioSessionId,
-          terminalFlight.snapshot as Pcm16WavMetadata & {
-            chunkCount: number;
-          },
-          body.pcm16Wav as Pcm16WavMetadata & { chunkCount: number },
-          body.benchmark?.initialNoiseRms,
-        );
-        const terminalValidationMs = Math.round(
-          performance.now() - validationStartedAt,
-        );
-        prefetchValidationMs += terminalValidationMs;
-        terminalPipelineTailEligible = terminalTail.eligible;
-        assemblySource = terminalTail.assemblySource;
-        if (terminalTail.eligible) {
-          terminalPipelinePromise = terminalFlight.promise;
-          void terminalPipelinePromise.catch(() => undefined);
-        }
-        logEvent("info", "audio_session_terminal_pipeline_validated", {
-          requestId,
-          audioSessionId,
-          eligible: terminalTail.eligible,
-          reason: terminalTail.reason,
-          terminalPipelineAgeMs,
-          terminalPipelineLeadBeforeFinalizeMs,
-          terminalValidationMs,
-          tailDurationMs: terminalTail.tailDurationMs,
-          activeFrameRatio: terminalTail.activeFrameRatio,
-          longestSpeechRunMs: terminalTail.longestSpeechRunMs,
-          snapshotChunkCount: terminalFlight.snapshot.chunkCount,
-          finalChunkCount: body.pcm16Wav.chunkCount,
-          assemblySource: terminalTail.assemblySource,
         });
+        if (
+          terminalFlight &&
+          terminalFlight.snapshot.chunkCount !== undefined &&
+          pcm16Wav.chunkCount !== undefined &&
+          terminalFlight.snapshot.chunkCount <= pcm16Wav.chunkCount &&
+          terminalFlight.snapshot.pcmByteLength <= pcm16Wav.pcmByteLength
+        ) {
+          terminalPipelineAgeMs = Math.max(
+            0,
+            Date.now() - terminalFlight.startedAt,
+          );
+          terminalPipelineLeadBeforeFinalizeMs = Math.max(
+            0,
+            finalizeRequestReceivedAt - terminalFlight.startedAt,
+          );
+          const validationStartedAt = performance.now();
+          const terminalTail = await validateAudioSessionPrefetchTail(
+            audioSessionId,
+            terminalFlight.snapshot as Pcm16WavMetadata & {
+              chunkCount: number;
+            },
+            pcm16Wav as Pcm16WavMetadata & { chunkCount: number },
+            body.benchmark?.initialNoiseRms,
+          );
+          const terminalValidationMs = Math.round(
+            performance.now() - validationStartedAt,
+          );
+          prefetchValidationMs += terminalValidationMs;
+          terminalPipelineTailEligible = terminalTail.eligible;
+          assemblySource = terminalTail.assemblySource;
+          if (terminalTail.eligible) {
+            terminalPipelinePromise = terminalFlight.promise;
+            void terminalPipelinePromise.catch(() => undefined);
+          }
+          logEvent("info", "audio_session_terminal_pipeline_validated", {
+            requestId,
+            audioSessionId,
+            eligible: terminalTail.eligible,
+            reason: terminalTail.reason,
+            terminalPipelineAgeMs,
+            terminalPipelineLeadBeforeFinalizeMs,
+            terminalValidationMs,
+            tailDurationMs: terminalTail.tailDurationMs,
+            activeFrameRatio: terminalTail.activeFrameRatio,
+            longestSpeechRunMs: terminalTail.longestSpeechRunMs,
+            snapshotChunkCount: terminalFlight.snapshot.chunkCount,
+            finalChunkCount: pcm16Wav.chunkCount,
+            assemblySource: terminalTail.assemblySource,
+          });
+        }
       }
     }
 
@@ -422,7 +416,7 @@ export async function POST(request: Request, context: RouteContext) {
         candidate.stabilityCount < requiredPrefetchStability ||
         candidate.context !== body.context ||
         candidate.childAge !== (body.childAge ?? 6) ||
-        body.pcm16Wav?.chunkCount === undefined
+        pcm16Wav?.chunkCount === undefined
       ) {
         return false;
       }
@@ -430,7 +424,7 @@ export async function POST(request: Request, context: RouteContext) {
       prefetchTail = await validateAudioSessionPrefetchTail(
         audioSessionId,
         candidate.snapshot,
-        body.pcm16Wav as Pcm16WavMetadata & { chunkCount: number },
+        pcm16Wav as Pcm16WavMetadata & { chunkCount: number },
         body.benchmark?.initialNoiseRms,
       );
       prefetchValidationMs += Math.round(
@@ -462,7 +456,7 @@ export async function POST(request: Request, context: RouteContext) {
       return prefetchTail.eligible;
     };
 
-    if (!prefetchCandidate && asrMode === "batch_chunks") {
+    if (!prefetchCandidate && asrMode === "batch_chunks" && pcm16Wav) {
       prefetchCandidate = getLatestBatchPrefetchCandidate(audioSessionId);
       if (prefetchCandidate) prefetchCandidateOrigin = "latest";
     }
@@ -516,7 +510,7 @@ export async function POST(request: Request, context: RouteContext) {
         }
       | undefined;
 
-    if (!prefetchedSourceText && asrMode === "batch_chunks") {
+    if (!prefetchedSourceText && asrMode === "batch_chunks" && pcm16Wav) {
       const raceStartedAt = performance.now();
       candidateMonitorPromise = waitForValidPrefetchCandidate();
       activeCandidateMonitorPromise = candidateMonitorPromise;

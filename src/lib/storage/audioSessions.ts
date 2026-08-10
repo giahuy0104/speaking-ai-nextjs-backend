@@ -227,18 +227,23 @@ function normalizeMimeType(mimeType: string) {
 }
 
 function getAudioFilename(mimeType: string) {
-  const filename = allowedMimeTypes.get(normalizeMimeType(mimeType));
+  const normalizedMimeType = normalizeMimeType(mimeType);
+  const filename = allowedMimeTypes.get(normalizedMimeType);
 
-  if (!filename) {
-    throw new AudioUploadError(
-      "UNSUPPORTED_AUDIO_TYPE",
-      "Định dạng audio không được hỗ trợ.",
-      415,
-      { mimeType },
-    );
-  }
+  if (filename) return filename;
 
-  return filename;
+  const subtype = normalizedMimeType.match(
+    /^audio\/(?:x-)?([a-z0-9][a-z0-9.+-]{0,63})$/,
+  )?.[1];
+  const safeExtension = subtype?.replace(/[+.]/g, "-");
+  if (safeExtension) return `speech.${safeExtension}`;
+
+  throw new AudioUploadError(
+    "UNSUPPORTED_AUDIO_TYPE",
+    "Định dạng audio không được hỗ trợ.",
+    415,
+    { mimeType },
+  );
 }
 
 function validatePcm16WavMetadata(

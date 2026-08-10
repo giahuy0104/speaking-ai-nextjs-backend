@@ -17,6 +17,7 @@ import {
   supportsProgressiveEncodedAudioUpload,
   type AudioSessionUploadStats,
 } from "@/lib/client/audioSessionUploader";
+import { postCompleteAudioConversation } from "@/lib/client/conversationAudio";
 
 type SpeechRecognitionConstructor = new () => SpeechRecognitionLike;
 
@@ -89,19 +90,6 @@ function getPreferredRecorderMimeType() {
       ];
 
   return candidates.find((mimeType) => MediaRecorder.isTypeSupported(mimeType));
-}
-
-function getAudioFileName(mimeType: string) {
-  const normalized = mimeType.split(";", 1)[0]?.toLowerCase();
-  if (normalized === "audio/mp4" || normalized === "audio/m4a") {
-    return "speech.m4a";
-  }
-  if (normalized === "audio/ogg") return "speech.ogg";
-  if (normalized === "audio/mpeg") return "speech.mp3";
-  if (normalized === "audio/wav" || normalized === "audio/x-wav") {
-    return "speech.wav";
-  }
-  return "speech.webm";
 }
 
 function isBluetoothLabel(label: string) {
@@ -522,18 +510,10 @@ export function useConversationRecorder({
             ),
           );
         }
-        const formData = new FormData();
-        formData.append("context", context);
-        formData.append("childAge", "6");
-        formData.append("benchmark", JSON.stringify(benchmark));
-        formData.append(
-          "audio",
-          uploadAudio,
-          getAudioFileName(uploadAudio.type || mimeType),
-        );
-        response = await fetch("/api/conversation", {
-          method: "POST",
-          body: formData,
+        response = await postCompleteAudioConversation({
+          audio: uploadAudio,
+          context,
+          benchmark,
         });
       }
 

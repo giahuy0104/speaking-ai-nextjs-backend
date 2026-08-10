@@ -8,6 +8,9 @@ type AudioSessionCapabilities = {
   scopedUploadToken?: boolean;
   uploadProtocolVersion?: number;
   chunkStorageBackend?: "local" | "postgres" | "r2";
+  maxChunkBytes?: number;
+  maxSessionBytes?: number;
+  maxChunks?: number;
 };
 
 type AudioSessionResponse = {
@@ -45,6 +48,11 @@ type BrowserAudioSessionUploaderOptions = {
   maxConcurrentUploads?: number;
   fetchImpl?: FetchLike;
   now?: () => number;
+};
+
+type EnqueueCompleteFileOptions = {
+  preferredChunkBytes?: number;
+  onChunkQueued?: (queuedChunks: number, totalChunks: number) => void;
 };
 
 const defaultChunkIntervalMs = 500;
@@ -111,7 +119,7 @@ export class BrowserAudioSessionUploader {
   private sessionCreateMs = 0;
 
   constructor(options: BrowserAudioSessionUploaderOptions) {
-    this.fetchImpl = options.fetchImpl ?? fetch;
+    this.fetchImpl = options.fetchImpl ?? globalThis.fetch.bind(globalThis);
     this.now = options.now ?? (() => performance.now());
     this.startedAt = this.now();
     this.sourceChunkIntervalMs =
@@ -188,6 +196,54 @@ export class BrowserAudioSessionUploader {
       .catch((error) => {
         this.uploadFailure ??= error;
       });
+  }
+
+  async enqueueCompleteFile(
+    audio: Blob,
+    options: EnqueueCompleteFileOptions = {},
+  ) {
+    if (audio.size === 0) {
+      throw new Error("Audio session không có dữ liệu để upload.");
+    }
+
+    const session = await this.sessionPromise;
+    const capabilities = session.capabilities ?? {};
+    if (
+      capabilities.maxSessionBytes !== undefined &&
+      audio.size > capabilities.maxSessionBytes
+    ) {
+      throw new Error("Audio vượt giới hạn dung lượng của Cloudflare Batch Chunks.");
+    }
+
+    const preferredChunkBytes = Math.max(
+      1,
+      Math.round(options.preferredChunkBytes ?? 512 * 1024),
+    );
+    const chunkBytes = Math.min(
+      preferredChunkBytes,
+      capabilities.maxChunkBytes ?? preferredChunkBytes,
+    );
+    const totalChunks = Math.ceil(audio.size / chunkBytes);
+    if (
+      capabilities.maxChunks !== undefined &&
+      totalChunks > capabilities.maxChunks
+    ) {
+      throw new Error("Audio tạo ra quá nhiều chunks để xử lý.");
+    }
+
+    for (let sequence = 0; sequence < totalChunks; sequence += 1) {
+      const start = sequence * chunkBytes;
+      this.enqueue(
+        audio.slice(
+          start,
+          Math.min(start + chunkBytes, audio.size),
+          audio.type,
+        ),
+      );
+      options.onChunkQueued?.(sequence + 1, totalChunks);
+    }
+
+    return totalChunks;
   }
 
   private async uploadWithRetry(sequence: number, blob: Blob) {

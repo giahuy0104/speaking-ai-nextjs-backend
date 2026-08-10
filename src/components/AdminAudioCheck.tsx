@@ -13,6 +13,9 @@ import {
   downloadAudioCheckWorkbook,
   type AudioCheckWorkbookRow,
 } from "@/lib/client/exportAudioCheckWorkbook";
+import { trimRecordedAudio } from "@/lib/audio/trimRecordedAudio";
+import { BrowserAudioSessionUploader } from "@/lib/client/audioSessionUploader";
+import { postCompleteAudioConversation } from "@/lib/client/conversationAudio";
 import type {
   ConversationResponse,
   PracticeContext,
@@ -25,15 +28,6 @@ type ReviewVerdict = Extract<AudioCheckStatus, "approved" | "rejected">;
 type AudioErrorReason = "" | "translation_error" | "spelling_error";
 type SelectedAudioErrorReason = Exclude<AudioErrorReason, "">;
 type ProgressReporter = (value: number) => void;
-
-type AudioSessionResponse = {
-  audioSessionId: string;
-  capabilities?: {
-    maxChunkBytes?: number;
-    maxSessionBytes?: number;
-    maxChunks?: number;
-  };
-};
 
 type AudioCheckResult = {
   conversation: ConversationResponse;
@@ -338,24 +332,30 @@ export function AdminAudioCheck() {
     selectedContext: PracticeContext,
     reportProgress: ProgressReporter,
   ) {
-    const formData = new FormData();
-    formData.append("audio", audioFile, audioFile.name);
-    formData.append("context", selectedContext);
-    formData.append("childAge", "6");
-    formData.append(
-      "benchmark",
-      JSON.stringify({
-        requestedAsrMode: "batch_chunks",
-        batchTransport: "admin_standard_upload",
-        audioChunkCount: 1,
-        uploadedAudioBytes: audioFile.size,
-      }),
-    );
-    reportProgress(20);
+    reportProgress(10);
+    const preparedAudio = await trimRecordedAudio(audioFile);
+    const uploadAudio = preparedAudio.blob;
+    reportProgress(35);
 
-    const response = await fetch("/api/conversation", {
-      method: "POST",
-      body: formData,
+    const response = await postCompleteAudioConversation({
+      audio: uploadAudio,
+      context: selectedContext,
+      benchmark: {
+        requestedAsrMode: "batch_chunks",
+        clientAudioTrimmed: preparedAudio.trimmed,
+        clientAudioTrimReason: preparedAudio.reason,
+        clientAudioOriginalDurationMs: preparedAudio.originalDurationMs,
+        clientAudioRetainedDurationMs: preparedAudio.retainedDurationMs,
+        clientAudioTrimThreshold: preparedAudio.threshold,
+        batchTransport: preparedAudio.trimmed
+          ? "single_complete_file_vad_trimmed"
+          : "single_complete_file",
+        audioChunkCount: 1,
+        transportChunkCount: 1,
+        uploadedAudioBytes: uploadAudio.size,
+        retainedAudioBytes: uploadAudio.size,
+        originalRecordedAudioBytes: audioFile.size,
+      },
     });
     reportProgress(90);
 
@@ -369,129 +369,84 @@ export function AdminAudioCheck() {
     };
   }
 
-  async function runBatchChunksCheck(
+  async function runCloudflareBatchCheck(
     audioFile: File,
     selectedContext: PracticeContext,
     reportProgress: ProgressReporter,
   ) {
-    let audioSessionId = "";
+    reportProgress(8);
+    const preparedAudio = await trimRecordedAudio(audioFile);
+    const uploadAudio = preparedAudio.blob;
+    if (uploadAudio.size === 0) {
+      throw new Error(pick("Audio không có dữ liệu.", "音频没有数据。"));
+    }
+
+    const mimeType = uploadAudio.type || audioFile.type || "audio/webm";
+    const uploader = new BrowserAudioSessionUploader({
+      mimeType,
+      requestedSampleRate: 48_000,
+      sourceChunkIntervalMs: 500,
+      maxDurationMs: 60_000,
+      maxConcurrentUploads: 2,
+    });
 
     try {
-      const sessionResponse = await fetch("/api/audio-sessions", {
-        method: "POST",
+      const chunkCount = await uploader.enqueueCompleteFile(uploadAudio, {
+        preferredChunkBytes: defaultChunkBytes,
+        onChunkQueued: (queued, total) =>
+          reportProgress(18 + Math.round((queued / total) * 37)),
       });
-      if (!sessionResponse.ok) {
-        throw new Error(await getResponseError(sessionResponse));
-      }
+      const stats = await uploader.drain(performance.now());
+      reportProgress(78);
 
-      const session = (await sessionResponse.json()) as AudioSessionResponse;
-      audioSessionId = session.audioSessionId;
-      const serverChunkLimit = session.capabilities?.maxChunkBytes;
-      const chunkBytes =
-        typeof serverChunkLimit === "number" && serverChunkLimit > 0
-          ? Math.min(defaultChunkBytes, serverChunkLimit)
-          : defaultChunkBytes;
-      const maxSessionBytes = session.capabilities?.maxSessionBytes;
-
-      if (
-        typeof maxSessionBytes === "number" &&
-        maxSessionBytes > 0 &&
-        audioFile.size > maxSessionBytes
-      ) {
-        throw new Error(
-          pick(
-            "Audio vượt giới hạn " +
-              formatBytes(maxSessionBytes) +
-              " của Batch Chunks.",
-            "音频超过 Batch Chunks 的 " +
-              formatBytes(maxSessionBytes) +
-              " 限制。",
-          ),
-        );
-      }
-
-      const chunkCount = Math.ceil(audioFile.size / chunkBytes);
-      if (
-        typeof session.capabilities?.maxChunks === "number" &&
-        chunkCount > session.capabilities.maxChunks
-      ) {
-        throw new Error(
-          pick(
-            "Audio tạo ra quá nhiều chunks để xử lý.",
-            "音频分块数量过多，无法处理。",
-          ),
-        );
-      }
-
-      reportProgress(8);
-      for (let sequence = 0; sequence < chunkCount; sequence += 1) {
-        const start = sequence * chunkBytes;
-        const chunk = audioFile.slice(
-          start,
-          Math.min(start + chunkBytes, audioFile.size),
-          audioFile.type,
-        );
-        const formData = new FormData();
-        formData.append("sequence", String(sequence));
-        formData.append("audio", chunk, "chunk-" + sequence + ".part");
-
-        const uploadResponse = await fetch(
-          "/api/audio-sessions/" +
-            encodeURIComponent(audioSessionId) +
-            "/chunks",
-          { method: "POST", body: formData },
-        );
-        if (!uploadResponse.ok) {
-          throw new Error(await getResponseError(uploadResponse));
-        }
-
-        reportProgress(
-          8 + Math.round(((sequence + 1) / chunkCount) * 67),
-        );
-      }
-
-      const finalizeResponse = await fetch(
-        "/api/audio-sessions/" +
-          encodeURIComponent(audioSessionId) +
-          "/finalize",
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            context: selectedContext,
-            childAge: 6,
-            targetLanguage: "en",
-            asrMode: "batch_chunks",
-            mimeType: audioFile.type,
-            benchmark: {
-              requestedAsrMode: "batch_chunks",
-              batchTransport: "admin_cloudflare_batch_chunks",
-              audioChunkCount: chunkCount,
-              uploadedAudioBytes: audioFile.size,
-              chunkIntervalMs: 0,
-            },
-          }),
+      const response = await uploader.finalize({
+        context: selectedContext,
+        childAge: 6,
+        targetLanguage: "en",
+        asrMode: "batch_chunks",
+        mimeType,
+        benchmark: {
+          requestedAsrMode: "batch_chunks",
+          clientAudioTrimmed: preparedAudio.trimmed,
+          clientAudioTrimReason: preparedAudio.reason,
+          clientAudioOriginalDurationMs: preparedAudio.originalDurationMs,
+          clientAudioRetainedDurationMs: preparedAudio.retainedDurationMs,
+          clientAudioTrimThreshold: preparedAudio.threshold,
+          batchTransport: "admin_cloudflare_batch_chunks",
+          chunkIntervalMs: 0,
+          audioChunkCount: chunkCount,
+          transportChunkCount: stats.transportChunkCount,
+          maxConcurrentChunkUploads: stats.maxConcurrentChunkUploads,
+          uploadedAudioBytes: stats.uploadedAudioBytes,
+          retainedAudioBytes: uploadAudio.size,
+          originalRecordedAudioBytes: audioFile.size,
+          chunkChecksumSha256: stats.chunkChecksumSha256,
+          missingChunkRecovery: stats.missingChunkRecovery,
+          uploadProtocolVersion: stats.uploadProtocolVersion,
+          chunkStorageBackend: stats.chunkStorageBackend,
+          scopedUploadToken: stats.scopedUploadToken,
+          firstChunkAckMs: stats.firstChunkAckMs,
+          chunkUploadP50Ms: stats.chunkUploadP50Ms,
+          chunkUploadP95Ms: stats.chunkUploadP95Ms,
+          chunkRetryCount: stats.chunkRetryCount,
+          batchUploadSessionMs: stats.batchUploadSessionMs,
+          sessionCreateMs: stats.sessionCreateMs,
+          uploadDrainAfterStopMs: stats.uploadDrainAfterStopMs,
+          retryStrategy: stats.retryStrategy,
         },
-      );
+      });
       reportProgress(92);
 
-      if (!finalizeResponse.ok) {
-        throw new Error(await getResponseError(finalizeResponse));
+      if (!response.ok) {
+        throw new Error(await getResponseError(response));
       }
 
       return {
-        conversation: (await finalizeResponse.json()) as ConversationResponse,
+        conversation: (await response.json()) as ConversationResponse,
         chunkCount,
       };
     } catch (batchError) {
-      if (audioSessionId) {
-        await fetch(
-          "/api/audio-sessions/" +
-            encodeURIComponent(audioSessionId) +
-            "/chunks",
-          { method: "DELETE" },
-        ).catch(() => undefined);
-      }
+      await uploader.discard();
       throw batchError;
     }
   }
@@ -595,7 +550,7 @@ export function AdminAudioCheck() {
                   selectedContext,
                   reportProgress,
                 )
-              : await runBatchChunksCheck(
+              : await runCloudflareBatchCheck(
                   audioFile,
                   selectedContext,
                   reportProgress,
@@ -808,9 +763,7 @@ export function AdminAudioCheck() {
         vietnameseText: item.result?.conversation.vietnameseText ?? "",
         englishText: item.result?.conversation.englishText ?? "",
         recognitionMode: item.result
-          ? item.result.mode === "standard"
-            ? "Chế độ tiêu chuẩn"
-            : "Cloudflare Batch Chunks"
+          ? modeLabels[item.result.mode]
           : "",
         context: contextVietnameseLabels[item.result?.context ?? context],
         asrMs: item.result?.conversation.latency.asrMs ?? null,
@@ -988,12 +941,12 @@ export function AdminAudioCheck() {
                     <span className="mt-2 block text-xs leading-5 text-slate-400">
                       {value === "standard"
                         ? pick(
-                            "Gửi lần lượt từng file trong một request riêng.",
-                            "依次为每个文件发送单独请求。",
+                            "Gửi file hoàn chỉnh qua pipeline giống Bắt đầu nói.",
+                            "通过与开始说话相同的流程发送完整文件。",
                           )
                         : pick(
-                            "Chia từng file thành chunks, upload rồi finalize.",
-                            "将每个文件分块上传后再完成处理。",
+                            "Chia file thành chunks, upload an toàn rồi xử lý bằng Cloudflare.",
+                            "将文件安全分块上传，然后通过 Cloudflare 处理。",
                           )}
                     </span>
                   </button>
@@ -1197,11 +1150,37 @@ export function AdminAudioCheck() {
                             {item.result.conversation.englishText}
                           </p>
                         </div>
+                        {item.result.conversation.audioUrl ? (
+                          <div>
+                            <p className="text-xs text-slate-500">
+                              {pick("Phản hồi tiếng Anh", "英文回复音频")}
+                            </p>
+                            <audio
+                              aria-label={pick(
+                                "Phản hồi tiếng Anh",
+                                "英文回复音频",
+                              )}
+                              controls
+                              preload="none"
+                              src={item.result.conversation.audioUrl}
+                              className="mt-2 h-10 w-full"
+                            >
+                              {pick(
+                                "Trình duyệt không phát được audio phản hồi.",
+                                "浏览器无法播放回复音频。",
+                              )}
+                            </audio>
+                          </div>
+                        ) : null}
                         <p className="text-xs text-slate-500">
                           {modeLabels[item.result.mode]} · ASR{" "}
                           {item.result.conversation.latency.asrMs} ms ·{" "}
                           {item.result.totalMs} ms · {item.result.chunkCount}{" "}
-                          chunks
+                          {item.result.mode === "standard"
+                            ? "request"
+                            : item.result.chunkCount === 1
+                              ? "chunk"
+                              : "chunks"}
                         </p>
                       </div>
                     ) : item.error ? (

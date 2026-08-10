@@ -112,3 +112,48 @@ test("retries a transient chunk failure with the same idempotency key", async ()
     "chunk:audio_test:0",
   ]);
 });
+
+test("splits a complete audio file using the server chunk limit", async () => {
+  const uploadedChunkSizes: number[] = [];
+  const queuedProgress: string[] = [];
+  const fetchImpl: typeof fetch = async (input, init) => {
+    const url = String(input);
+    if (url === "/api/audio-sessions") {
+      return Response.json({
+        audioSessionId: "audio_v2-complete",
+        capabilities: {
+          maxChunkBytes: 4,
+          maxSessionBytes: 20,
+          maxChunks: 5,
+        },
+      });
+    }
+    if (url.endsWith("/chunks")) {
+      const formData = init?.body as FormData;
+      uploadedChunkSizes.push((formData.get("audio") as File).size);
+    }
+    return Response.json({ uploaded: true });
+  };
+  const uploader = new BrowserAudioSessionUploader({
+    mimeType: "audio/aac",
+    requestedSampleRate: 48_000,
+    fetchImpl,
+  });
+
+  const chunkCount = await uploader.enqueueCompleteFile(
+    new Blob(["123456789"], { type: "audio/aac" }),
+    {
+      preferredChunkBytes: 6,
+      onChunkQueued: (queued, total) =>
+        queuedProgress.push(`${queued}/${total}`),
+    },
+  );
+  const stats = await uploader.drain(performance.now());
+
+  assert.equal(chunkCount, 3);
+  assert.equal(stats.transportChunkCount, 3);
+  assert.deepEqual(uploadedChunkSizes.sort((left, right) => right - left), [
+    4, 4, 1,
+  ]);
+  assert.deepEqual(queuedProgress, ["1/3", "2/3", "3/3"]);
+});

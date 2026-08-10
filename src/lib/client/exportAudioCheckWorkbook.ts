@@ -218,7 +218,7 @@ function buildWorksheet(rows: AudioCheckWorkbookRow[]) {
     "Ngữ cảnh",
     "ASR (ms)",
     "Tổng thời gian (ms)",
-    "Số chunks",
+    "Số request/chunks",
     "Dung lượng (byte)",
     "Lỗi kỹ thuật",
     "Conversation ID",
