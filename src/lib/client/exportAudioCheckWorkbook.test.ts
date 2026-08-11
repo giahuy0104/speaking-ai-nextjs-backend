@@ -12,6 +12,8 @@ const sampleRow: AudioCheckWorkbookRow = {
   errorReason: "Sai chính tả",
   processingStatus: "Đã nhận diện",
   vietnameseText: "Con chào mẹ",
+  standardMatch: "Khớp",
+  matchedStandardSentence: "Con chào mẹ.",
   englishText: "Hello, Mom.",
   recognitionMode: "Chế độ tiêu chuẩn",
   context: "Ở nhà",
@@ -41,5 +43,7 @@ test("builds a valid stored ZIP container with the Excel workbook parts", () => 
   assert.match(decoded, /xl\/worksheets\/sheet1\.xml/);
   assert.match(decoded, /ThuMuc\/BeA\/cau-chao\.wav/);
   assert.match(decoded, /Sai chính tả/);
-  assert.match(decoded, /autoFilter ref="A1:O2"/);
+  assert.match(decoded, /Đối chiếu câu chuẩn/);
+  assert.match(decoded, /Con chào mẹ\./);
+  assert.match(decoded, /autoFilter ref="A1:Q2"/);
 });

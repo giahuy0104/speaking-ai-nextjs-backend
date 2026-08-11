@@ -4,6 +4,7 @@ import Link from "next/link";
 import {
   type InputHTMLAttributes,
   useEffect,
+  useMemo,
   useRef,
   useState,
 } from "react";
@@ -14,6 +15,10 @@ import {
   type AudioCheckWorkbookRow,
 } from "@/lib/client/exportAudioCheckWorkbook";
 import { trimRecordedAudio } from "@/lib/audio/trimRecordedAudio";
+import {
+  findVietnameseStandardSentenceMatch,
+  parseVietnameseStandardSentences,
+} from "@/lib/audio/standardSentenceMatching";
 import { BrowserAudioSessionUploader } from "@/lib/client/audioSessionUploader";
 import { postCompleteAudioConversation } from "@/lib/client/conversationAudio";
 import type {
@@ -54,7 +59,6 @@ type AudioCheckItem = {
 
 const defaultChunkBytes = 512 * 1024;
 const defaultMaxAudioBytes = 10 * 1024 * 1024;
-const maxBatchFiles = 50;
 const directoryInputAttributes = {
   webkitdirectory: "",
   directory: "",
@@ -181,12 +185,17 @@ export function AdminAudioCheck() {
   const previewUrlsRef = useRef<string[]>([]);
   const [mode, setMode] = useState<AudioCheckMode>("standard");
   const [context, setContext] = useState<PracticeContext>("home");
+  const [standardSentenceInput, setStandardSentenceInput] = useState("");
   const [items, setItems] = useState<AudioCheckItem[]>([]);
   const [isProcessing, setIsProcessing] = useState(false);
   const [overallProgress, setOverallProgress] = useState(0);
   const [activeFileLabel, setActiveFileLabel] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
+  const standardSentences = useMemo(
+    () => parseVietnameseStandardSentences(standardSentenceInput),
+    [standardSentenceInput],
+  );
 
   useEffect(
     () => () => {
@@ -223,7 +232,55 @@ export function AdminAudioCheck() {
   const rejectedCount = items.filter(
     (item) => item.reviewStatus === "rejected",
   ).length;
+  const standardComparedCount = standardSentences.length
+    ? items.filter((item) => item.result).length
+    : 0;
+  const standardMatchedCount = standardSentences.length
+    ? items.filter(
+        (item) =>
+          item.result &&
+          findVietnameseStandardSentenceMatch(
+            item.result.conversation.vietnameseText,
+            standardSentences,
+          ),
+      ).length
+    : 0;
   const totalBytes = items.reduce((sum, item) => sum + item.file.size, 0);
+
+  function renderStandardSentenceComparison(recognizedText: string) {
+    if (!standardSentences.length) return null;
+
+    const matchedSentence = findVietnameseStandardSentenceMatch(
+      recognizedText,
+      standardSentences,
+    );
+    return (
+      <div
+        className={
+          "rounded-xl border px-3 py-2.5 " +
+          (matchedSentence
+            ? "border-emerald-400/25 bg-emerald-400/10"
+            : "border-rose-400/25 bg-rose-400/10")
+        }
+      >
+        <p
+          className={
+            "text-xs font-bold " +
+            (matchedSentence ? "text-emerald-200" : "text-rose-200")
+          }
+        >
+          {matchedSentence
+            ? "✓ " + pick("Khớp câu tiêu chuẩn", "匹配标准句子")
+            : "× " + pick("Không khớp danh sách", "不匹配标准列表")}
+        </p>
+        {matchedSentence ? (
+          <p className="mt-1 text-xs leading-5 text-slate-300">
+            {pick("Câu tiêu chuẩn", "标准句子")}: {matchedSentence}
+          </p>
+        ) : null}
+      </div>
+    );
+  }
 
   function updateItem(
     itemId: string,
@@ -284,9 +341,8 @@ export function AdminAudioCheck() {
       return;
     }
 
-    const limitedFiles = audioFiles.slice(0, maxBatchFiles);
     const selectionId = Date.now();
-    const nextItems = limitedFiles.map((nextFile, index) => {
+    const nextItems = audioFiles.map((nextFile, index) => {
       const validationError = validateFile(nextFile);
       const previewUrl = validationError ? "" : URL.createObjectURL(nextFile);
       if (previewUrl) {
@@ -317,14 +373,7 @@ export function AdminAudioCheck() {
     });
 
     setItems(nextItems);
-    setError(
-      audioFiles.length > maxBatchFiles
-        ? pick(
-            "Mỗi lượt tối đa 50 file. Chỉ 50 file đầu tiên đã được thêm.",
-            "每批最多 50 个文件，仅添加了前 50 个。",
-          )
-        : null,
-    );
+    setError(null);
   }
 
   async function runStandardCheck(
@@ -750,6 +799,13 @@ export function AdminAudioCheck() {
             : item.processingStatus === "processing"
               ? "Đang xử lý"
               : "Chờ xử lý";
+      const matchedStandardSentence =
+        item.result && standardSentences.length
+          ? findVietnameseStandardSentenceMatch(
+              item.result.conversation.vietnameseText,
+              standardSentences,
+            )
+          : null;
 
       return {
         audioPath: getAudioRelativePath(item.file),
@@ -761,6 +817,14 @@ export function AdminAudioCheck() {
             : "",
         processingStatus,
         vietnameseText: item.result?.conversation.vietnameseText ?? "",
+        standardMatch: item.result
+          ? standardSentences.length
+            ? matchedStandardSentence
+              ? "Khớp"
+              : "Không khớp"
+            : "Chưa nhập danh sách"
+          : "",
+        matchedStandardSentence: matchedStandardSentence ?? "",
         englishText: item.result?.conversation.englishText ?? "",
         recognitionMode: item.result
           ? modeLabels[item.result.mode]
@@ -843,8 +907,8 @@ export function AdminAudioCheck() {
             </h2>
             <p className="mt-2 text-sm text-slate-400">
               {pick(
-                "Hiển thị đường dẫn tương đối trong thư mục. Tối đa 50 audio mỗi lượt, 10 MB mỗi file.",
-                "显示文件夹内的相对路径。每批最多 50 个音频，每个文件最大 10 MB。",
+                "Hiển thị đường dẫn tương đối trong thư mục. Không giới hạn số lượng audio mỗi lượt, tối đa 10 MB mỗi file.",
+                "显示文件夹内的相对路径。每批音频数量不限，每个文件最大 10 MB。",
               )}
             </p>
           </div>
@@ -974,6 +1038,44 @@ export function AdminAudioCheck() {
           </label>
         </div>
 
+        <div className="mt-6 rounded-2xl border border-violet-400/20 bg-violet-400/5 p-4 sm:p-5">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <label
+              htmlFor="standard-vietnamese-sentences"
+              className="text-sm font-semibold text-slate-200"
+            >
+              03 · {pick(
+                "Danh sách câu tiếng Việt tiêu chuẩn",
+                "越南语标准句子列表",
+              )}
+            </label>
+            <span className="rounded-full border border-violet-400/20 bg-violet-400/10 px-3 py-1 text-xs font-semibold text-violet-200">
+              {standardSentences.length} {pick("câu", "句")}
+            </span>
+          </div>
+          <textarea
+            id="standard-vietnamese-sentences"
+            aria-label={pick(
+              "Danh sách câu tiếng Việt tiêu chuẩn",
+              "越南语标准句子列表",
+            )}
+            rows={6}
+            value={standardSentenceInput}
+            onChange={(event) => setStandardSentenceInput(event.target.value)}
+            disabled={isProcessing}
+            placeholder={
+              "Con tên là Bé Mây.\nCon yêu mẹ.\nHôm nay con đi học."
+            }
+            className="mt-4 w-full resize-y rounded-xl border border-slate-700 bg-slate-950 px-3 py-3 text-sm leading-6 text-white outline-none ring-violet-400 placeholder:text-slate-600 focus:ring-2 disabled:cursor-wait disabled:opacity-60"
+          />
+          <p className="mt-2 text-xs leading-5 text-slate-400">
+            {pick(
+              "Mỗi dòng một câu. Không phân biệt chữ hoa/thường, khoảng trắng và dấu câu; vẫn phân biệt dấu tiếng Việt.",
+              "每行一句。不区分大小写、空格和标点，但保留越南语声调区别。",
+            )}
+          </p>
+        </div>
+
         <button
           type="button"
           onClick={() => void runAllChecks()}
@@ -1038,7 +1140,7 @@ export function AdminAudioCheck() {
         <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.2em] text-violet-300">
-              03 · {pick("Kết quả cuối cùng", "最终结果")}
+              04 · {pick("Kết quả cuối cùng", "最终结果")}
             </p>
             <h2 className="mt-2 text-xl font-semibold text-white">
               {pick("Đường dẫn audio và đánh giá", "音频路径与评估")}
@@ -1064,6 +1166,12 @@ export function AdminAudioCheck() {
                 <span className="rounded-full border border-rose-400/20 bg-rose-400/10 px-3 py-1.5 text-rose-200">
                   {pick("Lỗi", "错误")} {rejectedCount + failedCount}
                 </span>
+                {standardSentences.length ? (
+                  <span className="rounded-full border border-violet-400/20 bg-violet-400/10 px-3 py-1.5 text-violet-200">
+                    {pick("Khớp câu chuẩn", "匹配标准句")} {standardMatchedCount}/
+                    {standardComparedCount}
+                  </span>
+                ) : null}
               </div>
             </div>
           ) : null}
@@ -1142,6 +1250,9 @@ export function AdminAudioCheck() {
                             {item.result.conversation.vietnameseText}
                           </p>
                         </div>
+                        {renderStandardSentenceComparison(
+                          item.result.conversation.vietnameseText,
+                        )}
                         <div>
                           <p className="text-xs text-slate-500">
                             {pick("Tiếng Anh", "英语")}

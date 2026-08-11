@@ -5,6 +5,8 @@ export type AudioCheckWorkbookRow = {
   errorReason: string;
   processingStatus: string;
   vietnameseText: string;
+  standardMatch: string;
+  matchedStandardSentence: string;
   englishText: string;
   recognitionMode: string;
   context: string;
@@ -205,6 +207,12 @@ function evaluationStyle(value: string) {
   return 7;
 }
 
+function standardMatchStyle(value: string) {
+  if (value === "Khớp") return 4;
+  if (value === "Không khớp") return 5;
+  return 6;
+}
+
 function buildWorksheet(rows: AudioCheckWorkbookRow[]) {
   const headers = [
     "Đường dẫn audio",
@@ -213,6 +221,8 @@ function buildWorksheet(rows: AudioCheckWorkbookRow[]) {
     "Loại lỗi",
     "Trạng thái xử lý",
     "Tiếng Việt nhận diện",
+    "Đối chiếu câu chuẩn",
+    "Câu tiêu chuẩn khớp",
     "Tiếng Anh",
     "Chế độ",
     "Ngữ cảnh",
@@ -223,7 +233,9 @@ function buildWorksheet(rows: AudioCheckWorkbookRow[]) {
     "Lỗi kỹ thuật",
     "Conversation ID",
   ];
-  const widths = [42, 24, 18, 22, 20, 38, 38, 28, 16, 14, 20, 14, 20, 38, 38];
+  const widths = [
+    42, 24, 18, 22, 20, 38, 22, 38, 38, 28, 16, 14, 20, 14, 20, 38, 38,
+  ];
   const headerCells = headers
     .map((header, index) => textCell(columnName(index) + "1", header, 1))
     .join("");
@@ -237,6 +249,8 @@ function buildWorksheet(rows: AudioCheckWorkbookRow[]) {
         row.errorReason,
         row.processingStatus,
         row.vietnameseText,
+        row.standardMatch,
+        row.matchedStandardSentence,
         row.englishText,
         row.recognitionMode,
         row.context,
@@ -246,19 +260,23 @@ function buildWorksheet(rows: AudioCheckWorkbookRow[]) {
           textCell(
             columnName(columnIndex) + String(excelRow),
             value,
-            columnIndex === 2 ? evaluationStyle(row.evaluation) : 2,
+            columnIndex === 2
+              ? evaluationStyle(row.evaluation)
+              : columnIndex === 6
+                ? standardMatchStyle(row.standardMatch)
+                : 2,
           ),
         )
         .join("");
       const numericCells = [
-        numberCell("J" + String(excelRow), row.asrMs),
-        numberCell("K" + String(excelRow), row.totalMs),
-        numberCell("L" + String(excelRow), row.chunkCount),
-        numberCell("M" + String(excelRow), row.fileSizeBytes),
+        numberCell("L" + String(excelRow), row.asrMs),
+        numberCell("M" + String(excelRow), row.totalMs),
+        numberCell("N" + String(excelRow), row.chunkCount),
+        numberCell("O" + String(excelRow), row.fileSizeBytes),
       ].join("");
       const trailingCells =
-        textCell("N" + String(excelRow), row.technicalError, 2) +
-        textCell("O" + String(excelRow), row.conversationId, 2);
+        textCell("P" + String(excelRow), row.technicalError, 2) +
+        textCell("Q" + String(excelRow), row.conversationId, 2);
       return (
         '<row r="' +
         String(excelRow) +
@@ -296,7 +314,7 @@ function buildWorksheet(rows: AudioCheckWorkbookRow[]) {
     "</row>" +
     dataRows +
     "</sheetData>" +
-    '<autoFilter ref="A1:O' +
+    '<autoFilter ref="A1:Q' +
     String(lastRow) +
     '"/>' +
     "</worksheet>"
