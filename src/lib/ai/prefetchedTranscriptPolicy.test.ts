@@ -1,6 +1,23 @@
 import assert from "node:assert/strict";
 import test from "node:test";
+import { AppError } from "@/lib/appError";
 import { resolvePrefetchedTranscriptForPipeline } from "./prefetchedTranscriptPolicy";
+
+function assertLowConfidencePrefetch(sourceText: string) {
+  assert.throws(
+    () =>
+      resolvePrefetchedTranscriptForPipeline({
+        sourceText,
+        latencyMs: 500,
+      }),
+    (error: unknown) => {
+      assert.ok(error instanceof AppError);
+      assert.equal(error.code, "ASR_LOW_CONFIDENCE");
+      assert.equal(error.status, 422);
+      return true;
+    },
+  );
+}
 
 test("repairs Web Worker prefetched transcripts before cache and translation", () => {
   const result = resolvePrefetchedTranscriptForPipeline(
@@ -81,6 +98,50 @@ test("repairs a reviewed tested-audio alias before Web cache and translation", (
   assert.equal(result.canReuseDownstreamPrefetch, false);
   assert.equal(result.repair.correctionId, "TESTED-AUDIO-001");
   assert.equal(result.repair.strategy, "reviewed_tested_audio_alias");
+});
+
+test("repairs a confirmed production Web retest variant before cache", () => {
+  const result = resolvePrefetchedTranscriptForPipeline({
+    sourceText: "Canh hít màu đỏ",
+    latencyMs: 12,
+  });
+
+  assert.equal(result.sourceText, "Con thích màu đỏ.");
+  assert.equal(result.changed, true);
+  assert.equal(result.canReuseDownstreamPrefetch, false);
+  assert.equal(result.repair.correctionId, "WEB-RETEST-20260811-001");
+  assert.equal(result.repair.strategy, "reviewed_web_retest_audio_alias");
+});
+
+test("rejects Web Worker subscribe hallucinations before repair and cache", () => {
+  assertLowConfidencePrefetch(
+    "Hãy subscribe cho kênh Ghiền Mì Gõ để không bỏ lỡ những video hấp dẫn.",
+  );
+  assertLowConfidencePrefetch(
+    "Các bạn hãy subscribe cho kênh Ghiền Mì Gõ để không bỏ lỡ những video hấp dẫn.",
+  );
+  assertLowConfidencePrefetch(
+    "Các bạn hãy subcrise cho kênh để không bỏ lỡ video.",
+  );
+});
+
+test("rejects Batch prefetched video outros before translation and TTS", () => {
+  assertLowConfidencePrefetch(
+    "Cảm ơn các bạn đã theo dõi và hẹn gặp lại trong video tiếp theo.",
+  );
+});
+
+test("keeps legitimate child video and registration phrases", () => {
+  for (const sourceText of [
+    "Con muốn xem video về con mèo.",
+    "Con muốn đăng ký học bơi.",
+  ]) {
+    const result = resolvePrefetchedTranscriptForPipeline({
+      sourceText,
+      latencyMs: 400,
+    });
+    assert.equal(result.sourceText, sourceText);
+  }
 });
 
 test("keeps downstream prefetch reusable when the transcript is unchanged", () => {

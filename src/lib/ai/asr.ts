@@ -5,9 +5,8 @@ import { logEvent } from "@/lib/observability";
 import { transcribeAudioToVietnamese } from "./cloudflareWorkersAi";
 import { resolveCloudflareAsrVadPolicy } from "./cloudflareWorkersAiRequest";
 import { sampleVietnameseByContext } from "./prompts";
-import { containsUnexpectedEastAsianScript } from "./languageValidation";
 import { repairVietnameseChildSpeechLayers } from "./childSpeechTranscriptRepair";
-import { getVietnameseTranscriptQualityIssue } from "./transcriptQuality";
+import { assertVietnameseTranscriptIsUsable } from "./vietnameseTranscriptValidation";
 
 function repairVietnameseTranscriptFromChildSpeech(
   text: string,
@@ -51,25 +50,18 @@ function assertVietnameseTranscript(
     utteranceDurationMs?: number;
   } = {},
 ) {
-  const unexpectedScript = containsUnexpectedEastAsianScript(text);
-  const qualityIssue = getVietnameseTranscriptQualityIssue(text, segments, {
+  assertVietnameseTranscriptIsUsable(text, segments, {
     utteranceDurationMs: options.utteranceDurationMs,
+    onRejected: ({ reason }) => {
+      logEvent("warn", "asr_transcript_rejected", {
+        requestId: options.requestId,
+        provider: options.provider,
+        reason,
+        utteranceDurationMs: options.utteranceDurationMs,
+        transcriptLength: text.trim().length,
+      });
+    },
   });
-  if (!unexpectedScript && !qualityIssue) return;
-
-  logEvent("warn", "asr_transcript_rejected", {
-    requestId: options.requestId,
-    provider: options.provider,
-    reason: unexpectedScript ? "unexpected_script" : qualityIssue,
-    utteranceDurationMs: options.utteranceDurationMs,
-    transcriptLength: text.trim().length,
-  });
-
-  throw new AppError(
-    "ASR_LOW_CONFIDENCE",
-    "Mình chưa nghe rõ. Con đưa micro lại gần và nói rõ hơn nhé.",
-    422,
-  );
 }
 
 async function transcribeAudio(input: ConversationRequest) {

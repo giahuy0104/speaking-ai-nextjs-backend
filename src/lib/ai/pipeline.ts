@@ -61,7 +61,23 @@ export async function prepareConversationPipeline(
 ): Promise<PreparedConversationPipeline> {
   const startedAt = nowMs();
   const resolvedPrefetchedTranscript = options.prefetchedTranscript
-    ? resolvePrefetchedTranscriptForPipeline(options.prefetchedTranscript)
+    ? resolvePrefetchedTranscriptForPipeline(options.prefetchedTranscript, {
+        requestId: input.requestId,
+        provider: input.asrMode === "batch_chunks" ? "cloudflare" : "device",
+        utteranceDurationMs: input.benchmark?.utteranceDurationMs,
+        onRejected: (reason) => {
+          logEvent("warn", "asr_transcript_rejected", {
+            requestId: input.requestId,
+            provider:
+              input.asrMode === "batch_chunks" ? "cloudflare" : "device",
+            reason,
+            utteranceDurationMs: input.benchmark?.utteranceDurationMs,
+            transcriptLength:
+              options.prefetchedTranscript?.sourceText.trim().length ?? 0,
+            prefetchedTranscript: true,
+          });
+        },
+      })
     : null;
   const canReuseDownstreamPrefetch =
     resolvedPrefetchedTranscript?.canReuseDownstreamPrefetch !== false;

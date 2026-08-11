@@ -27,6 +27,8 @@ const commonHallucinationFragments = [
   "cam on cac ban da xem video nay",
   "cam on moi nguoi da theo doi",
   "dang ky kenh",
+  "hay subcribe cho kenh",
+  "hay subcrise cho kenh",
   "hay subscribe cho kenh",
   "hen gap lai cac ban trong video",
   "khong bo lo nhung video hap dan",
@@ -40,7 +42,7 @@ const commonHallucinationFragments = [
 // combinations are stock Whisper completions observed repeatedly in noisy or
 // low-speech child recordings, not useful communication utterances.
 const commonHallucinationPatterns = [
-  /\b(?:hay )?subscribe (?:cho )?kenh\b/u,
+  /\b(?:hay )?sub(?:scribe|cribe|crise) (?:cho )?kenh\b/u,
   /\b(?:hay )?dang ky kenh\b/u,
   /\bung ho kenh(?: cua minh)?\b/u,
   /\bkhong bo lo (?:nhung )?video\b/u,

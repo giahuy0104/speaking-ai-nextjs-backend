@@ -15,6 +15,7 @@ import { findReviewedBook1AudioAlias } from "./reviewedBook1AudioAliases";
 import { findReviewedBook2AudioAlias } from "./reviewedBook2AudioAliases";
 import { findReviewedLegacyAudioAlias } from "./reviewedLegacyAudioAliases";
 import { findReviewedTestedAudioAlias } from "./reviewedTestedAudioAliases";
+import { findReviewedWebRetestAudioAlias } from "./reviewedWebRetestAudioAliases";
 
 export type TranscriptCorpusRepairStrategy =
   | "asr_folded"
@@ -24,6 +25,7 @@ export type TranscriptCorpusRepairStrategy =
   | "reviewed_book1_audio_alias"
   | "reviewed_book2_audio_alias"
   | "reviewed_tested_audio_alias"
+  | "reviewed_web_retest_audio_alias"
   | "reviewed_legacy_audio_alias"
   | "observed_asr_alias"
   | "regional_alias"
@@ -631,6 +633,22 @@ export function repairVietnameseTranscriptWithCorpus(
       ruleId: canonicalRule?.id,
       correctionId: reviewedTestedAudioAlias.id,
       strategy: "reviewed_tested_audio_alias",
+      score: 1,
+      margin: 1,
+    };
+  }
+
+  const reviewedWebRetestAudioAlias = findReviewedWebRetestAudioAlias(trimmed);
+  if (reviewedWebRetestAudioAlias) {
+    const canonicalRule = reviewedRuleByCanonicalVietnamese.get(
+      normalizeVietnameseForExactMatch(reviewedWebRetestAudioAlias.canonical),
+    );
+    return {
+      text: canonicalRule?.vietnamese ?? reviewedWebRetestAudioAlias.canonical,
+      repaired: true,
+      ruleId: canonicalRule?.id,
+      correctionId: reviewedWebRetestAudioAlias.id,
+      strategy: "reviewed_web_retest_audio_alias",
       score: 1,
       margin: 1,
     };

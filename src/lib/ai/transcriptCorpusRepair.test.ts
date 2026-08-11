@@ -32,6 +32,11 @@ import {
   reviewedTestedAudioAliasStats,
 } from "./reviewedTestedAudioAliases";
 import {
+  quarantinedWebRetestTranscriptsV1,
+  reviewedWebRetestAudioAliasesV1,
+  reviewedWebRetestAudioAliasStats,
+} from "./reviewedWebRetestAudioAliases";
+import {
   rejectedReviewedLegacyAudioAliasesV1,
   reviewedLegacyAudioAliasesV1,
   reviewedLegacyAudioAliasStats,
@@ -299,6 +304,56 @@ test("tested-audio exact aliases do not expand to longer or accent-folded senten
     assert.notEqual(
       repaired.strategy,
       "reviewed_tested_audio_alias",
+      source,
+    );
+  }
+});
+
+test("Web retest activates only the three unambiguous Raw ASR variants", () => {
+  assert.equal(reviewedWebRetestAudioAliasStats.activeAliasCount, 3);
+  assert.equal(reviewedWebRetestAudioAliasStats.quarantinedTranscriptCount, 8);
+  assert.equal(reviewedWebRetestAudioAliasesV1.length, 3);
+  assert.equal(quarantinedWebRetestTranscriptsV1.length, 8);
+
+  for (const alias of reviewedWebRetestAudioAliasesV1) {
+    const repaired = repairVietnameseTranscriptWithCorpus(alias.source);
+    assert.equal(
+      normalizeVietnameseForExactMatch(repaired.text),
+      normalizeVietnameseForExactMatch(alias.canonical),
+      alias.id,
+    );
+    assert.equal(
+      repaired.strategy,
+      "reviewed_web_retest_audio_alias",
+      alias.id,
+    );
+    assert.equal(repaired.correctionId, alias.id, alias.id);
+  }
+});
+
+test("Web retest keeps uncertain, truncated and protected-role transcripts unchanged", () => {
+  for (const decision of quarantinedWebRetestTranscriptsV1) {
+    const repaired = repairVietnameseTranscriptWithCorpus(decision.source);
+    assert.equal(repaired.text, decision.source, decision.source);
+    assert.equal(repaired.repaired, false, decision.source);
+    assert.notEqual(
+      repaired.strategy,
+      "reviewed_web_retest_audio_alias",
+      decision.source,
+    );
+  }
+});
+
+test("Web retest aliases remain exact-only", () => {
+  for (const source of [
+    "Canh hit mau do",
+    "Canh hít màu đỏ hôm nay",
+    "Chú nói tạm ngài nhé hôm nay",
+  ]) {
+    const repaired = repairVietnameseTranscriptWithCorpus(source);
+    assert.notEqual(
+      repaired.strategy,
+      "reviewed_web_retest_audio_alias",
       source,
     );
   }

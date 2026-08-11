@@ -1,4 +1,5 @@
 import { repairVietnameseChildSpeechLayers } from "./childSpeechTranscriptRepair";
+import { assertVietnameseTranscriptIsUsable } from "./vietnameseTranscriptValidation";
 
 export type PrefetchedTranscript = {
   sourceText: string;
@@ -12,6 +13,13 @@ export type ResolvedPrefetchedTranscript = PrefetchedTranscript & {
   transcriptRepairMs: number;
 };
 
+export type PrefetchedTranscriptValidationContext = {
+  requestId?: string;
+  provider?: "cloudflare" | "device";
+  utteranceDurationMs?: number;
+  onRejected?: (reason: string) => void;
+};
+
 /**
  * Every early ASR result must pass through the same child-speech repair used by
  * the authoritative ASR path. If the transcript changes, any translation or
@@ -19,8 +27,13 @@ export type ResolvedPrefetchedTranscript = PrefetchedTranscript & {
  */
 export function resolvePrefetchedTranscriptForPipeline(
   prefetchedTranscript: PrefetchedTranscript,
+  validationContext: PrefetchedTranscriptValidationContext = {},
 ): ResolvedPrefetchedTranscript {
   const originalSourceText = prefetchedTranscript.sourceText.trim();
+  assertVietnameseTranscriptIsUsable(originalSourceText, [], {
+    utteranceDurationMs: validationContext.utteranceDurationMs,
+    onRejected: ({ reason }) => validationContext.onRejected?.(reason),
+  });
   const repairStartedAt = performance.now();
   const repair = repairVietnameseChildSpeechLayers(originalSourceText);
   const transcriptRepairMs = Number(
