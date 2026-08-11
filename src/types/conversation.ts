@@ -40,6 +40,12 @@ export type BenchmarkMetadata = {
   workerAsrPilotRttMs?: number;
   workerAsrPilotAsrMs?: number;
   workerAsrPilotAudioBytes?: number;
+  workerAsrPilotOriginalAudioBytes?: number;
+  workerAsrPilotTrimmedAudioMs?: number;
+  workerAsrPilotSourceStartByte?: number;
+  workerAsrPilotSourceEndByte?: number;
+  workerAsrPilotRequestReadMs?: number;
+  workerAsrPilotServerTotalMs?: number;
   workerAsrPilotAttempted?: boolean;
   workerAsrPilotFallbackCode?: string;
   workerAsrPilotFallbackMs?: number;

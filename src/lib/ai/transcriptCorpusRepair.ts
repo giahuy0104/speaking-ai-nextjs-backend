@@ -4,12 +4,21 @@ import {
   reviewedExactRulesV1,
   type ExactTranslationRule,
 } from "./exactRules";
-import { findObservedChildSpeechAlias } from "./observedChildSpeechAliases";
+import {
+  findObservedChildSpeechAlias,
+  findObservedChildSpeechAliasFolded,
+  getObservedChildSpeechAliasCandidates,
+  type ObservedChildSpeechAlias,
+} from "./observedChildSpeechAliases";
 import { buildReviewedRegionalAliases } from "./regionalVocabulary";
+import { findReviewedLegacyAudioAlias } from "./reviewedLegacyAudioAliases";
 
 export type TranscriptCorpusRepairStrategy =
   | "asr_folded"
   | "observed_child_alias"
+  | "observed_child_folded"
+  | "observed_child_fuzzy"
+  | "reviewed_legacy_audio_alias"
   | "observed_asr_alias"
   | "regional_alias"
   | "regional_fuzzy";
@@ -105,10 +114,57 @@ for (const [groupIndex, group] of knownTokenConfusionGroups.entries()) {
 
 const optionalChildSpeechTokens = new Set(["con", "oi", "a", "nhe"]);
 const negationTokens = new Set(["khong", "chua", "chang"]);
+const protectedMeaningTokens = new Set([
+  "không",
+  "chưa",
+  "chẳng",
+  "đừng",
+  "con",
+  "cô",
+  "thầy",
+  "bố",
+  "mẹ",
+  "ba",
+  "má",
+  "anh",
+  "chị",
+  "em",
+  "ông",
+  "bà",
+  "bé",
+  "cháu",
+  "bạn",
+  "bác",
+  "cậu",
+  "dì",
+  "chú",
+  "thím",
+  "mợ",
+  "dượng",
+  "chồng",
+  "vợ",
+  "mình",
+  "tôi",
+  "một",
+  "hai",
+  "ba",
+  "bốn",
+  "năm",
+  "sáu",
+  "bảy",
+  "tám",
+  "chín",
+  "mười",
+]);
 
 function tokensForSpeechMatch(text: string) {
   const normalized = normalizeVietnameseForAsrRuleMatch(text);
   return normalized ? normalized.split(" ") : [];
+}
+
+function hasVietnameseDiacritics(text: string) {
+  const exact = normalizeVietnameseForExactMatch(text);
+  return exact !== normalizeVietnameseForAsrRuleMatch(text);
 }
 
 function phoneticCode(token: string) {
@@ -187,6 +243,22 @@ function haveSameNegation(
   return sourceNegation.join(" ") === canonicalNegation.join(" ");
 }
 
+function protectedMeaningSignature(text: string) {
+  return normalizeVietnameseForExactMatch(text)
+    .split(" ")
+    .filter(
+      (token) => protectedMeaningTokens.has(token) || /^\d+$/.test(token),
+    )
+    .join(" ");
+}
+
+function haveSameProtectedMeaning(sourceText: string, candidateText: string) {
+  return (
+    protectedMeaningSignature(sourceText) ===
+    protectedMeaningSignature(candidateText)
+  );
+}
+
 function removeOneOptionalToken(tokens: readonly string[]) {
   const variants: string[][] = [];
   for (const [index, token] of tokens.entries()) {
@@ -216,12 +288,18 @@ function alignTokenCounts(
   return [];
 }
 
-function scoreCandidate(sourceText: string, rule: ExactTranslationRule) {
+function scoreCandidateText(
+  sourceText: string,
+  candidateText: string,
+  options: { protectMeaning?: boolean } = {},
+) {
   const sourceTokens = tokensForSpeechMatch(sourceText);
-  const canonicalTokens = tokensForSpeechMatch(rule.vietnamese);
+  const canonicalTokens = tokensForSpeechMatch(candidateText);
   if (
     sourceTokens.length < 2 ||
-    !haveSameNegation(sourceTokens, canonicalTokens)
+    !haveSameNegation(sourceTokens, canonicalTokens) ||
+    (options.protectMeaning &&
+      !haveSameProtectedMeaning(sourceText, candidateText))
   ) {
     return null;
   }
@@ -254,6 +332,10 @@ function scoreCandidate(sourceText: string, rule: ExactTranslationRule) {
   }
 
   return bestScore;
+}
+
+function scoreCandidate(sourceText: string, rule: ExactTranslationRule) {
+  return scoreCandidateText(sourceText, rule.vietnamese);
 }
 
 const foldedRuleByVietnamese = new Map<
@@ -378,6 +460,100 @@ export const regionalCorpusRuntimeStats = {
   ].filter((rule) => rule === null).length,
 } as const;
 
+function buildObservedChildAliasRepair(
+  alias: ObservedChildSpeechAlias,
+  strategy:
+    | "observed_child_alias"
+    | "observed_child_folded"
+    | "observed_child_fuzzy",
+  score: number,
+  margin: number,
+): TranscriptCorpusRepairResult {
+  const canonicalRule = reviewedRuleByCanonicalVietnamese.get(
+    normalizeVietnameseForExactMatch(alias.canonical),
+  );
+  return {
+    text: canonicalRule?.vietnamese ?? alias.canonical,
+    repaired: true,
+    ruleId: canonicalRule?.id,
+    correctionId: alias.id,
+    strategy,
+    score: Number(score.toFixed(3)),
+    margin: Number(margin.toFixed(3)),
+  };
+}
+
+function isSafeFoldedObservedAlias(
+  foldedTranscript: string,
+  alias: ObservedChildSpeechAlias,
+) {
+  if (!foldedRuleByVietnamese.has(foldedTranscript)) return true;
+
+  const canonicalCollision = foldedRuleByVietnamese.get(foldedTranscript);
+  return (
+    canonicalCollision !== null &&
+    canonicalCollision !== undefined &&
+    normalizeVietnameseForExactMatch(canonicalCollision.vietnamese) ===
+      normalizeVietnameseForExactMatch(alias.canonical)
+  );
+}
+
+function findControlledObservedChildAliasMatch(text: string) {
+  const sourceTokenCount = tokensForSpeechMatch(text).length;
+  const bestByCanonical = new Map<
+    string,
+    { alias: ObservedChildSpeechAlias; score: number; sameTokenCount: boolean }
+  >();
+
+  for (const alias of getObservedChildSpeechAliasCandidates(text)) {
+    if (
+      hasVietnameseDiacritics(text) &&
+      normalizeVietnameseForAsrRuleMatch(text) ===
+        normalizeVietnameseForAsrRuleMatch(alias.source) &&
+      normalizeVietnameseForExactMatch(text) !==
+        normalizeVietnameseForExactMatch(alias.source)
+    ) {
+      // A fully accented Vietnamese transcript can fold to another legitimate
+      // sentence (for example ba/bà or quả/quà). Do not treat tone changes as
+      // fuzzy evidence unless the reviewed exact alias itself matches.
+      continue;
+    }
+
+    const score = scoreCandidateText(text, alias.source, {
+      protectMeaning: true,
+    });
+    if (score === null) continue;
+
+    const canonicalKey = normalizeVietnameseForExactMatch(alias.canonical);
+    const candidate = {
+      alias,
+      score,
+      sameTokenCount:
+        sourceTokenCount === tokensForSpeechMatch(alias.source).length,
+    };
+    const existing = bestByCanonical.get(canonicalKey);
+    if (!existing || candidate.score > existing.score) {
+      bestByCanonical.set(canonicalKey, candidate);
+    }
+  }
+
+  const ranked = [...bestByCanonical.values()].sort(
+    (left, right) => right.score - left.score,
+  );
+  const best = ranked[0];
+  if (!best) return null;
+
+  const secondScore = ranked[1]?.score ?? 0;
+  const margin = best.score - secondScore;
+  // A one-token optional particle costs 0.45 and is allowed only when the
+  // token counts differ. Same-length candidates require a stricter score.
+  const minimumScore = best.sameTokenCount ? 0.9 : 0.875;
+  const minimumMargin = sourceTokenCount <= 4 ? 0.1 : 0.08;
+  if (best.score < minimumScore || margin < minimumMargin) return null;
+
+  return { alias: best.alias, score: best.score, margin };
+}
+
 export function repairVietnameseTranscriptWithCorpus(
   text: string,
 ): TranscriptCorpusRepairResult {
@@ -390,20 +566,46 @@ export function repairVietnameseTranscriptWithCorpus(
     return { text: trimmed, repaired: false, ruleId: exactRule.id };
   }
 
-  const observedChildAlias = findObservedChildSpeechAlias(trimmed);
-  if (observedChildAlias) {
+  const reviewedLegacyAudioAlias = findReviewedLegacyAudioAlias(trimmed);
+  if (reviewedLegacyAudioAlias) {
     const canonicalRule = reviewedRuleByCanonicalVietnamese.get(
-      normalizeVietnameseForExactMatch(observedChildAlias.canonical),
+      normalizeVietnameseForExactMatch(reviewedLegacyAudioAlias.canonical),
     );
     return {
-      text: canonicalRule?.vietnamese ?? observedChildAlias.canonical,
+      text: canonicalRule?.vietnamese ?? reviewedLegacyAudioAlias.canonical,
       repaired: true,
       ruleId: canonicalRule?.id,
-      correctionId: observedChildAlias.id,
-      strategy: "observed_child_alias",
+      correctionId: reviewedLegacyAudioAlias.id,
+      strategy: "reviewed_legacy_audio_alias",
       score: 1,
       margin: 1,
     };
+  }
+
+  const observedChildAlias = findObservedChildSpeechAlias(trimmed);
+  if (observedChildAlias) {
+    return buildObservedChildAliasRepair(
+      observedChildAlias,
+      "observed_child_alias",
+      1,
+      1,
+    );
+  }
+
+  const folded = normalizeVietnameseForAsrRuleMatch(trimmed);
+  const foldedObservedChildAlias =
+    findObservedChildSpeechAliasFolded(trimmed);
+  if (
+    !hasVietnameseDiacritics(trimmed) &&
+    foldedObservedChildAlias &&
+    isSafeFoldedObservedAlias(folded, foldedObservedChildAlias)
+  ) {
+    return buildObservedChildAliasRepair(
+      foldedObservedChildAlias,
+      "observed_child_folded",
+      1,
+      1,
+    );
   }
 
   const observedCorrection = observedAsrCorrectionByFoldedText.get(
@@ -435,7 +637,6 @@ export function repairVietnameseTranscriptWithCorpus(
     };
   }
 
-  const folded = normalizeVietnameseForAsrRuleMatch(trimmed);
   const foldedRule = foldedRuleByVietnamese.get(folded);
   if (foldedRule) {
     return {
@@ -459,6 +660,17 @@ export function repairVietnameseTranscriptWithCorpus(
       score: 1,
       margin: 1,
     };
+  }
+
+  const observedChildFuzzyMatch =
+    findControlledObservedChildAliasMatch(trimmed);
+  if (observedChildFuzzyMatch) {
+    return buildObservedChildAliasRepair(
+      observedChildFuzzyMatch.alias,
+      "observed_child_fuzzy",
+      observedChildFuzzyMatch.score,
+      observedChildFuzzyMatch.margin,
+    );
   }
 
   const ranked = regionalChildSpeechRulesV1
