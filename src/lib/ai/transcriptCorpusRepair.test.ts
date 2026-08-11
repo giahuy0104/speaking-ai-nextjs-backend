@@ -134,6 +134,27 @@ test("legacy-audio aliases never expand through fuzzy or accent-folded matching"
   }
 });
 
+test("legacy-audio aliases allow only an equivalent final politeness particle", () => {
+  for (const source of [
+    "Cô chú nó chậm lại nha",
+    "Cô chú nó chậm lại nhá.",
+  ]) {
+    const repaired = repairVietnameseTranscriptWithCorpus(source);
+    assert.equal(repaired.text, "Cô chú nói chậm lại nhé", source);
+    assert.equal(repaired.correctionId, "LEGACY-AUDIO-030", source);
+    assert.equal(repaired.strategy, "reviewed_legacy_audio_alias", source);
+  }
+
+  for (const source of [
+    "Cô chú không chậm lại nha",
+    "Cô chú nó nói chậm lại nha",
+    "Cảm ơn tôi với bạn nha",
+  ]) {
+    const repaired = repairVietnameseTranscriptWithCorpus(source);
+    assert.notEqual(repaired.strategy, "reviewed_legacy_audio_alias", source);
+  }
+});
+
 test("keeps negation and protected speaker roles unchanged in every V2 alias", () => {
   const negationTokens = new Set(["không", "chưa", "chẳng"]);
   const protectedRoleTokens = new Set([

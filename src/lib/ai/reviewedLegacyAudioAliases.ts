@@ -15,10 +15,11 @@ export type RejectedReviewedLegacyAudioAlias = ReviewedLegacyAudioAlias & {
 /**
  * Human-reviewed ASR results from `Test audio cũ.xlsx`, sheet `Trang tính1`.
  *
- * These mappings are deliberately exact-only. Several rows change pronouns,
+ * These mappings are deliberately content-exact. Several rows change pronouns,
  * negation or a personal name, so they must never participate in accent-folded
- * or fuzzy matching. Punctuation and case are normalized by the exact lookup,
- * while the words themselves must match the reviewed ASR transcript.
+ * or fuzzy matching. Punctuation and case are normalized by the exact lookup.
+ * The only controlled variation is an equivalent final politeness particle
+ * (`nha`/`nhá`/`nhé`); every content word must still match the reviewed ASR.
  */
 export const reviewedLegacyAudioAliasesV1 = Object.freeze<
   ReviewedLegacyAudioAlias[]
@@ -70,6 +71,20 @@ export const rejectedReviewedLegacyAudioAliasesV1 = Object.freeze<
 ]);
 
 const aliasByExactTranscript = new Map<string, ReviewedLegacyAudioAlias>();
+const aliasByFinalPolitenessTranscript = new Map<
+  string,
+  ReviewedLegacyAudioAlias
+>();
+const ambiguousFinalPolitenessTranscripts = new Set<string>();
+const finalPolitenessParticles = new Set(["nha", "nhá", "nhé"]);
+
+function normalizeFinalPolitenessTranscript(text: string) {
+  const tokens = normalizeVietnameseForExactMatch(text).split(" ");
+  if (!finalPolitenessParticles.has(tokens.at(-1) ?? "")) return null;
+  tokens[tokens.length - 1] = "<politeness>";
+  return tokens.join(" ");
+}
+
 for (const alias of reviewedLegacyAudioAliasesV1) {
   const sourceKey = normalizeVietnameseForExactMatch(alias.source);
   const canonicalKey = normalizeVietnameseForExactMatch(alias.canonical);
@@ -86,6 +101,24 @@ for (const alias of reviewedLegacyAudioAliasesV1) {
     );
   }
   aliasByExactTranscript.set(sourceKey, Object.freeze({ ...alias }));
+
+  const finalPolitenessKey = normalizeFinalPolitenessTranscript(alias.source);
+  if (!finalPolitenessKey) continue;
+  const existingFinalPolitenessAlias = aliasByFinalPolitenessTranscript.get(
+    finalPolitenessKey,
+  );
+  if (
+    existingFinalPolitenessAlias &&
+    normalizeVietnameseForExactMatch(existingFinalPolitenessAlias.canonical) !==
+      canonicalKey
+  ) {
+    aliasByFinalPolitenessTranscript.delete(finalPolitenessKey);
+    ambiguousFinalPolitenessTranscripts.add(finalPolitenessKey);
+    continue;
+  }
+  if (!ambiguousFinalPolitenessTranscripts.has(finalPolitenessKey)) {
+    aliasByFinalPolitenessTranscript.set(finalPolitenessKey, alias);
+  }
 }
 
 export const reviewedLegacyAudioAliasStats = Object.freeze({
@@ -103,6 +136,9 @@ export const reviewedLegacyAudioAliasStats = Object.freeze({
     0,
   ),
   aliasCount: aliasByExactTranscript.size,
+  finalPolitenessAliasCount: aliasByFinalPolitenessTranscript.size,
+  ambiguousFinalPolitenessAliasCount:
+    ambiguousFinalPolitenessTranscripts.size,
   rejectedAliasCount: rejectedReviewedLegacyAudioAliasesV1.length,
   rejectedRowCount: rejectedReviewedLegacyAudioAliasesV1.reduce(
     (total, alias) => total + alias.sampleCount,
@@ -112,9 +148,17 @@ export const reviewedLegacyAudioAliasStats = Object.freeze({
 
 export function findReviewedLegacyAudioAlias(transcript: string) {
   if (process.env.CHILD_SPEECH_ALIASES_ENABLED === "false") return null;
-  return (
-    aliasByExactTranscript.get(
-      normalizeVietnameseForExactMatch(transcript),
-    ) ?? null
+  const exactAlias = aliasByExactTranscript.get(
+    normalizeVietnameseForExactMatch(transcript),
   );
+  if (exactAlias) return exactAlias;
+
+  const finalPolitenessKey = normalizeFinalPolitenessTranscript(transcript);
+  if (
+    !finalPolitenessKey ||
+    ambiguousFinalPolitenessTranscripts.has(finalPolitenessKey)
+  ) {
+    return null;
+  }
+  return aliasByFinalPolitenessTranscript.get(finalPolitenessKey) ?? null;
 }
