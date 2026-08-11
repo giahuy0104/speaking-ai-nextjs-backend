@@ -14,6 +14,11 @@ import {
   observedChildSpeechAliasRuntimeStats,
 } from "./observedChildSpeechAliases";
 import {
+  rejectedReviewedLegacyAudioAliasesV1,
+  reviewedLegacyAudioAliasesV1,
+  reviewedLegacyAudioAliasStats,
+} from "./reviewedLegacyAudioAliases";
+import {
   regionalChildSpeechRulesV1,
   regionalCorpusMatchRulesV1,
   regionalCorpusRulesV1,
@@ -75,6 +80,58 @@ test("loads only unambiguous reviewed child-speech sentence aliases", () => {
   assert.ok(
     observedChildSpeechAliasRuntimeStats.ambiguousFoldedAliasCount > 0,
   );
+});
+
+test("repairs every reviewed legacy-audio transcript with exact-only aliases", () => {
+  assert.equal(reviewedLegacyAudioAliasStats.sourceRowCount, 37);
+  assert.equal(reviewedLegacyAudioAliasStats.generatedFromRows, 35);
+  assert.equal(reviewedLegacyAudioAliasStats.aliasCount, 30);
+  assert.equal(reviewedLegacyAudioAliasesV1.length, 30);
+  assert.equal(reviewedLegacyAudioAliasStats.rejectedAliasCount, 1);
+  assert.equal(reviewedLegacyAudioAliasStats.rejectedRowCount, 2);
+  assert.equal(rejectedReviewedLegacyAudioAliasesV1.length, 1);
+
+  for (const alias of reviewedLegacyAudioAliasesV1) {
+    const repaired = repairVietnameseTranscriptWithCorpus(alias.source);
+    assert.equal(
+      normalizeVietnameseForExactMatch(repaired.text),
+      normalizeVietnameseForExactMatch(alias.canonical),
+      alias.id,
+    );
+    assert.equal(repaired.strategy, "reviewed_legacy_audio_alias", alias.id);
+    assert.equal(repaired.correctionId, alias.id, alias.id);
+  }
+});
+
+test("quarantines risky reviewed legacy-audio mappings", () => {
+  for (const alias of rejectedReviewedLegacyAudioAliasesV1) {
+    const repaired = repairVietnameseTranscriptWithCorpus(alias.source);
+    assert.equal(repaired.text, alias.source, alias.id);
+    assert.equal(repaired.repaired, false, alias.id);
+    assert.notEqual(
+      repaired.strategy,
+      "reviewed_legacy_audio_alias",
+      alias.id,
+    );
+    assert.equal(repaired.correctionId, undefined, alias.id);
+  }
+});
+
+test("legacy-audio aliases never expand through fuzzy or accent-folded matching", () => {
+  for (const source of [
+    "Con thịt ăn cơm hôm nay",
+    "Tao muốn uống nước lạnh",
+    "Con không thể không đi",
+    "Anh ta là bé Mây thật",
+    "Con ten la Be May",
+  ]) {
+    const repaired = repairVietnameseTranscriptWithCorpus(source);
+    assert.notEqual(
+      repaired.strategy,
+      "reviewed_legacy_audio_alias",
+      source,
+    );
+  }
 });
 
 test("keeps negation and protected speaker roles unchanged in every V2 alias", () => {

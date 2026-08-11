@@ -11,12 +11,14 @@ import {
   type ObservedChildSpeechAlias,
 } from "./observedChildSpeechAliases";
 import { buildReviewedRegionalAliases } from "./regionalVocabulary";
+import { findReviewedLegacyAudioAlias } from "./reviewedLegacyAudioAliases";
 
 export type TranscriptCorpusRepairStrategy =
   | "asr_folded"
   | "observed_child_alias"
   | "observed_child_folded"
   | "observed_child_fuzzy"
+  | "reviewed_legacy_audio_alias"
   | "observed_asr_alias"
   | "regional_alias"
   | "regional_fuzzy";
@@ -562,6 +564,22 @@ export function repairVietnameseTranscriptWithCorpus(
   const exactRule = exactRuleByVietnamese.get(normalizedExact);
   if (exactRule) {
     return { text: trimmed, repaired: false, ruleId: exactRule.id };
+  }
+
+  const reviewedLegacyAudioAlias = findReviewedLegacyAudioAlias(trimmed);
+  if (reviewedLegacyAudioAlias) {
+    const canonicalRule = reviewedRuleByCanonicalVietnamese.get(
+      normalizeVietnameseForExactMatch(reviewedLegacyAudioAlias.canonical),
+    );
+    return {
+      text: canonicalRule?.vietnamese ?? reviewedLegacyAudioAlias.canonical,
+      repaired: true,
+      ruleId: canonicalRule?.id,
+      correctionId: reviewedLegacyAudioAlias.id,
+      strategy: "reviewed_legacy_audio_alias",
+      score: 1,
+      margin: 1,
+    };
   }
 
   const observedChildAlias = findObservedChildSpeechAlias(trimmed);
