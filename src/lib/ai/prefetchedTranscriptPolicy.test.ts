@@ -57,6 +57,19 @@ test("repairs the reviewed Book1 alias before Web cache and translation", () => 
   assert.equal(result.repair.strategy, "reviewed_book1_audio_alias");
 });
 
+test("repairs a reviewed Book2 alias before Web cache and translation", () => {
+  const result = resolvePrefetchedTranscriptForPipeline({
+    sourceText: "Con thái con mẹ",
+    latencyMs: 520,
+  });
+
+  assert.equal(result.sourceText, "Con thấy con mèo.");
+  assert.equal(result.changed, true);
+  assert.equal(result.canReuseDownstreamPrefetch, false);
+  assert.equal(result.repair.correctionId, "BOOK2-AUDIO-002");
+  assert.equal(result.repair.strategy, "reviewed_book2_audio_alias");
+});
+
 test("keeps downstream prefetch reusable when the transcript is unchanged", () => {
   const result = resolvePrefetchedTranscriptForPipeline(
     {

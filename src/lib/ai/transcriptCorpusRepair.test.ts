@@ -20,6 +20,12 @@ import {
   reviewedBook1AudioAliasStats,
 } from "./reviewedBook1AudioAliases";
 import {
+  existingBook2AudioEvidenceV1,
+  rejectedBook2AudioAliasesV1,
+  reviewedBook2AudioAliasesV1,
+  reviewedBook2AudioAliasStats,
+} from "./reviewedBook2AudioAliases";
+import {
   rejectedReviewedLegacyAudioAliasesV1,
   reviewedLegacyAudioAliasesV1,
   reviewedLegacyAudioAliasStats,
@@ -159,6 +165,66 @@ test("Book1 does not rewrite valid speaker roles or relationships", () => {
     assert.equal(repaired.repaired, false, alias.id);
     assert.notEqual(repaired.strategy, "reviewed_book1_audio_alias", alias.id);
     assert.equal(repaired.correctionId, undefined, alias.id);
+  }
+});
+
+test("Book2 loads every reviewed exact alias and preserves its audit totals", () => {
+  assert.equal(reviewedBook2AudioAliasStats.sourceRowCount, 64);
+  assert.equal(reviewedBook2AudioAliasStats.uniqueSourceCount, 56);
+  assert.equal(reviewedBook2AudioAliasStats.activeAliasCount, 38);
+  assert.equal(reviewedBook2AudioAliasStats.activeRowCount, 43);
+  assert.equal(reviewedBook2AudioAliasStats.existingEvidenceCount, 2);
+  assert.equal(reviewedBook2AudioAliasStats.existingEvidenceRowCount, 5);
+  assert.equal(reviewedBook2AudioAliasStats.rejectedAliasCount, 16);
+  assert.equal(reviewedBook2AudioAliasStats.rejectedRowCount, 16);
+  assert.equal(reviewedBook2AudioAliasesV1.length, 38);
+  assert.equal(existingBook2AudioEvidenceV1.length, 2);
+  assert.equal(rejectedBook2AudioAliasesV1.length, 16);
+
+  for (const alias of reviewedBook2AudioAliasesV1) {
+    const repaired = repairVietnameseTranscriptWithCorpus(alias.source);
+    assert.equal(
+      normalizeVietnameseForExactMatch(repaired.text),
+      normalizeVietnameseForExactMatch(alias.canonical),
+      alias.id,
+    );
+    assert.equal(repaired.strategy, "reviewed_book2_audio_alias", alias.id);
+    assert.equal(repaired.correctionId, alias.id, alias.id);
+  }
+});
+
+test("Book2 keeps existing active and rejected decisions unchanged", () => {
+  const existingActive = repairVietnameseTranscriptWithCorpus(
+    existingBook2AudioEvidenceV1[0]!.source,
+  );
+  assert.equal(existingActive.correctionId, "LEGACY-AUDIO-011");
+  assert.equal(existingActive.strategy, "reviewed_legacy_audio_alias");
+
+  const existingRejected = repairVietnameseTranscriptWithCorpus(
+    existingBook2AudioEvidenceV1[1]!.source,
+  );
+  assert.equal(existingRejected.repaired, false);
+  assert.equal(existingRejected.correctionId, undefined);
+});
+
+test("Book2 never loads rejected meaning, negation or role changes", () => {
+  for (const alias of rejectedBook2AudioAliasesV1) {
+    const repaired = repairVietnameseTranscriptWithCorpus(alias.source);
+    assert.equal(repaired.text, alias.source, alias.id);
+    assert.equal(repaired.repaired, false, alias.id);
+    assert.notEqual(repaired.strategy, "reviewed_book2_audio_alias", alias.id);
+    assert.equal(repaired.correctionId, undefined, alias.id);
+  }
+});
+
+test("Book2 exact aliases do not expand to longer or accent-folded sentences", () => {
+  for (const source of [
+    "Con thái con mẹ hôm nay",
+    "Con muon trao voi bon",
+    "Câu mũi ngớp lạnh",
+  ]) {
+    const repaired = repairVietnameseTranscriptWithCorpus(source);
+    assert.notEqual(repaired.strategy, "reviewed_book2_audio_alias", source);
   }
 });
 
