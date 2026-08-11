@@ -70,6 +70,19 @@ test("repairs a reviewed Book2 alias before Web cache and translation", () => {
   assert.equal(result.repair.strategy, "reviewed_book2_audio_alias");
 });
 
+test("repairs a reviewed tested-audio alias before Web cache and translation", () => {
+  const result = resolvePrefetchedTranscriptForPipeline({
+    sourceText: "Mũ trời chia bát.",
+    latencyMs: 540,
+  });
+
+  assert.equal(result.sourceText, "Con muốn chơi với bạn.");
+  assert.equal(result.changed, true);
+  assert.equal(result.canReuseDownstreamPrefetch, false);
+  assert.equal(result.repair.correctionId, "TESTED-AUDIO-001");
+  assert.equal(result.repair.strategy, "reviewed_tested_audio_alias");
+});
+
 test("keeps downstream prefetch reusable when the transcript is unchanged", () => {
   const result = resolvePrefetchedTranscriptForPipeline(
     {

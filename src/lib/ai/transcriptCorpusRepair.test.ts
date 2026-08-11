@@ -26,6 +26,12 @@ import {
   reviewedBook2AudioAliasStats,
 } from "./reviewedBook2AudioAliases";
 import {
+  existingTestedAudioEvidenceV1,
+  rejectedTestedAudioAliasesV1,
+  reviewedTestedAudioAliasesV1,
+  reviewedTestedAudioAliasStats,
+} from "./reviewedTestedAudioAliases";
+import {
   rejectedReviewedLegacyAudioAliasesV1,
   reviewedLegacyAudioAliasesV1,
   reviewedLegacyAudioAliasStats,
@@ -225,6 +231,76 @@ test("Book2 exact aliases do not expand to longer or accent-folded sentences", (
   ]) {
     const repaired = repairVietnameseTranscriptWithCorpus(source);
     assert.notEqual(repaired.strategy, "reviewed_book2_audio_alias", source);
+  }
+});
+
+test("tested-audio workbook loads every safe exact alias and preserves audit totals", () => {
+  assert.equal(reviewedTestedAudioAliasStats.sourceRowCount, 72);
+  assert.equal(reviewedTestedAudioAliasStats.uniqueSourceCount, 62);
+  assert.equal(reviewedTestedAudioAliasStats.activeAliasCount, 13);
+  assert.equal(reviewedTestedAudioAliasStats.activeRowCount, 13);
+  assert.equal(reviewedTestedAudioAliasStats.existingEvidenceCount, 35);
+  assert.equal(reviewedTestedAudioAliasStats.existingEvidenceRowCount, 43);
+  assert.equal(reviewedTestedAudioAliasStats.rejectedAliasCount, 14);
+  assert.equal(reviewedTestedAudioAliasStats.rejectedRowCount, 16);
+  assert.equal(reviewedTestedAudioAliasesV1.length, 13);
+  assert.equal(existingTestedAudioEvidenceV1.length, 35);
+  assert.equal(rejectedTestedAudioAliasesV1.length, 14);
+
+  for (const alias of reviewedTestedAudioAliasesV1) {
+    const repaired = repairVietnameseTranscriptWithCorpus(alias.source);
+    assert.equal(
+      normalizeVietnameseForExactMatch(repaired.text),
+      normalizeVietnameseForExactMatch(alias.canonical),
+      alias.id,
+    );
+    assert.equal(repaired.strategy, "reviewed_tested_audio_alias", alias.id);
+    assert.equal(repaired.correctionId, alias.id, alias.id);
+  }
+});
+
+test("tested-audio workbook reuses all previously active evidence", () => {
+  for (const evidence of existingTestedAudioEvidenceV1) {
+    const repaired = repairVietnameseTranscriptWithCorpus(evidence.source);
+    assert.equal(
+      normalizeVietnameseForExactMatch(repaired.text),
+      normalizeVietnameseForExactMatch(evidence.canonical),
+      evidence.id,
+    );
+    assert.notEqual(
+      repaired.strategy,
+      "reviewed_tested_audio_alias",
+      evidence.id,
+    );
+  }
+});
+
+test("tested-audio workbook never loads rejected meaning, negation or role changes", () => {
+  for (const alias of rejectedTestedAudioAliasesV1) {
+    const repaired = repairVietnameseTranscriptWithCorpus(alias.source);
+    assert.equal(repaired.text, alias.source, alias.id);
+    assert.equal(repaired.repaired, false, alias.id);
+    assert.notEqual(
+      repaired.strategy,
+      "reviewed_tested_audio_alias",
+      alias.id,
+    );
+    assert.equal(repaired.correctionId, undefined, alias.id);
+  }
+});
+
+test("tested-audio exact aliases do not expand to longer or accent-folded sentences", () => {
+  for (const source of [
+    "Mũ trời chia bát hôm nay.",
+    "Hom nay trong rat troi.",
+    "Con muon be",
+  ]) {
+    const repaired = repairVietnameseTranscriptWithCorpus(source);
+    assert.notEqual(
+      repaired.strategy,
+      "reviewed_tested_audio_alias",
+      source,
+    );
   }
 });
 
