@@ -71,6 +71,10 @@ test("loads only unambiguous reviewed child-speech sentence aliases", () => {
     new Set(observedChildSpeechAliases.map((alias) => alias.id)).size,
     observedChildSpeechAliases.length,
   );
+  assert.ok(observedChildSpeechAliasRuntimeStats.foldedAliasCount > 1_000);
+  assert.ok(
+    observedChildSpeechAliasRuntimeStats.ambiguousFoldedAliasCount > 0,
+  );
 });
 
 test("keeps negation and protected speaker roles unchanged in every V2 alias", () => {
@@ -154,12 +158,50 @@ test("does not auto-correct ambiguous or meaning-reversing workbook rows", () =>
   }
 });
 
-test("observed child aliases require an exact whole-sentence match", () => {
+test("does not fuzzy-match unrelated whole-sentence extensions", () => {
   const repaired = repairVietnameseTranscriptWithCorpus(
     "Con muốn ăn áo hôm nay.",
   );
   assert.notEqual(repaired.strategy, "observed_child_alias");
   assert.equal(repaired.correctionId, undefined);
+});
+
+test("repairs an unambiguous observed child alias when ASR drops accents", () => {
+  const repaired = repairVietnameseTranscriptWithCorpus("Con hat nuoc.");
+  assert.equal(repaired.text, "Con khát nước.");
+  assert.equal(repaired.strategy, "observed_child_folded");
+  assert.match(repaired.correctionId ?? "", /^CHILD-ASR-V2-[A-F0-9]{12}$/);
+});
+
+test("fuzzy-matches reviewed child aliases with one optional particle", () => {
+  const cases = new Map([
+    ["Con hát nước ạ.", "Con khát nước."],
+    ["Con muốn dửa tay ạ.", "Con muốn rửa tay."],
+    ["Món này non quá ạ.", "Món này ngon quá."],
+  ]);
+
+  for (const [source, expected] of cases) {
+    const repaired = repairVietnameseTranscriptWithCorpus(source);
+    assert.equal(repaired.text, expected, source);
+    assert.equal(repaired.strategy, "observed_child_fuzzy", source);
+    assert.ok((repaired.score ?? 0) >= 0.875, source);
+    assert.ok((repaired.margin ?? 0) >= 0.1, source);
+  }
+});
+
+test("controlled child fuzzy matching preserves meaning-bearing words", () => {
+  for (const source of [
+    "Con không hát nước.",
+    "Bố hát nước ạ.",
+    "Con hát một bài.",
+    "Còn có một quà báo?",
+  ]) {
+    const repaired = repairVietnameseTranscriptWithCorpus(source);
+    assert.equal(repaired.text, source);
+    assert.equal(repaired.repaired, false);
+    assert.notEqual(repaired.strategy, "observed_child_fuzzy");
+    assert.notEqual(repaired.strategy, "observed_child_folded");
+  }
 });
 
 test("repairs only the safe new exact aliases from the second child dataset", () => {

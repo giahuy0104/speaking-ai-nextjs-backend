@@ -16,6 +16,7 @@ function repairTranscriptFromChildSpeech(
   input: ConversationRequest,
   provider: "cloudflare" | "device",
 ) {
+  const repairStartedAt = performance.now();
   const subjectRepaired = repairVietnameseChildTranscript(text);
   const corpusRepair = repairVietnameseTranscriptWithCorpus(subjectRepaired);
   const regionalNormalization = corpusRepair.ruleId || corpusRepair.repaired
@@ -37,6 +38,9 @@ function repairTranscriptFromChildSpeech(
       strategy: corpusRepair.strategy,
       score: corpusRepair.score,
       margin: corpusRepair.margin,
+      transcriptRepairMs: Number(
+        (performance.now() - repairStartedAt).toFixed(3),
+      ),
       regionalVocabularyApplied: regionalNormalization?.normalized === true,
       regionalVocabularyReplacementCount:
         regionalNormalization?.replacements.length ?? 0,
