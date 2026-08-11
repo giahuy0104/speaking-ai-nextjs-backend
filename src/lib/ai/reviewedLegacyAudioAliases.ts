@@ -12,6 +12,11 @@ export type RejectedReviewedLegacyAudioAlias = ReviewedLegacyAudioAlias & {
   reason: string;
 };
 
+export type SupersededReviewedLegacyAudioAlias = ReviewedLegacyAudioAlias & {
+  reason: string;
+  supersededBy: string;
+};
+
 /**
  * Human-reviewed ASR results from `Test audio cũ.xlsx`, sheet `Trang tính1`.
  *
@@ -58,6 +63,10 @@ export const reviewedLegacyAudioAliasesV1 = Object.freeze<
 
 export const rejectedReviewedLegacyAudioAliasesV1 = Object.freeze<
   RejectedReviewedLegacyAudioAlias[]
+>([]);
+
+export const supersededReviewedLegacyAudioAliasesV1 = Object.freeze<
+  SupersededReviewedLegacyAudioAlias[]
 >([
   {
     id: "LEGACY-AUDIO-010",
@@ -66,7 +75,8 @@ export const rejectedReviewedLegacyAudioAliasesV1 = Object.freeze<
     sampleCount: 2,
     sourceRows: [11, 22],
     reason:
-      "Quarantined because it changes several meaning-bearing words and conflicts with the existing child-speech safety regression.",
+      "Originally quarantined, then promoted after two additional reviewed samples in Book1.xlsx.",
+    supersededBy: "BOOK1-AUDIO-001",
   },
 ]);
 
@@ -127,6 +137,7 @@ export const reviewedLegacyAudioAliasStats = Object.freeze({
   sourceRowCount: [
     ...reviewedLegacyAudioAliasesV1,
     ...rejectedReviewedLegacyAudioAliasesV1,
+    ...supersededReviewedLegacyAudioAliasesV1,
   ].reduce(
     (total, alias) => total + alias.sampleCount,
     0,
@@ -141,6 +152,11 @@ export const reviewedLegacyAudioAliasStats = Object.freeze({
     ambiguousFinalPolitenessTranscripts.size,
   rejectedAliasCount: rejectedReviewedLegacyAudioAliasesV1.length,
   rejectedRowCount: rejectedReviewedLegacyAudioAliasesV1.reduce(
+    (total, alias) => total + alias.sampleCount,
+    0,
+  ),
+  supersededAliasCount: supersededReviewedLegacyAudioAliasesV1.length,
+  supersededRowCount: supersededReviewedLegacyAudioAliasesV1.reduce(
     (total, alias) => total + alias.sampleCount,
     0,
   ),

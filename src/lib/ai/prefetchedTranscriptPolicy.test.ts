@@ -44,6 +44,32 @@ test("repairs a Web prefetch with an equivalent final politeness particle", () =
   assert.equal(result.repair.correctionId, "LEGACY-AUDIO-030");
 });
 
+test("repairs the reviewed Book1 alias before Web cache and translation", () => {
+  const result = resolvePrefetchedTranscriptForPipeline({
+    sourceText: "Còn có một quà báo?",
+    latencyMs: 460,
+  });
+
+  assert.equal(result.sourceText, "Con có một quả bóng");
+  assert.equal(result.changed, true);
+  assert.equal(result.canReuseDownstreamPrefetch, false);
+  assert.equal(result.repair.correctionId, "BOOK1-AUDIO-001");
+  assert.equal(result.repair.strategy, "reviewed_book1_audio_alias");
+});
+
+test("repairs a reviewed Book2 alias before Web cache and translation", () => {
+  const result = resolvePrefetchedTranscriptForPipeline({
+    sourceText: "Con thái con mẹ",
+    latencyMs: 520,
+  });
+
+  assert.equal(result.sourceText, "Con thấy con mèo.");
+  assert.equal(result.changed, true);
+  assert.equal(result.canReuseDownstreamPrefetch, false);
+  assert.equal(result.repair.correctionId, "BOOK2-AUDIO-002");
+  assert.equal(result.repair.strategy, "reviewed_book2_audio_alias");
+});
+
 test("keeps downstream prefetch reusable when the transcript is unchanged", () => {
   const result = resolvePrefetchedTranscriptForPipeline(
     {
