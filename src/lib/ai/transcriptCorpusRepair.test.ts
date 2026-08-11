@@ -14,9 +14,16 @@ import {
   observedChildSpeechAliasRuntimeStats,
 } from "./observedChildSpeechAliases";
 import {
+  existingBook1AudioEvidenceV1,
+  rejectedBook1AudioAliasesV1,
+  reviewedBook1AudioAliasesV1,
+  reviewedBook1AudioAliasStats,
+} from "./reviewedBook1AudioAliases";
+import {
   rejectedReviewedLegacyAudioAliasesV1,
   reviewedLegacyAudioAliasesV1,
   reviewedLegacyAudioAliasStats,
+  supersededReviewedLegacyAudioAliasesV1,
 } from "./reviewedLegacyAudioAliases";
 import {
   regionalChildSpeechRulesV1,
@@ -87,9 +94,12 @@ test("repairs every reviewed legacy-audio transcript with exact-only aliases", (
   assert.equal(reviewedLegacyAudioAliasStats.generatedFromRows, 35);
   assert.equal(reviewedLegacyAudioAliasStats.aliasCount, 30);
   assert.equal(reviewedLegacyAudioAliasesV1.length, 30);
-  assert.equal(reviewedLegacyAudioAliasStats.rejectedAliasCount, 1);
-  assert.equal(reviewedLegacyAudioAliasStats.rejectedRowCount, 2);
-  assert.equal(rejectedReviewedLegacyAudioAliasesV1.length, 1);
+  assert.equal(reviewedLegacyAudioAliasStats.rejectedAliasCount, 0);
+  assert.equal(reviewedLegacyAudioAliasStats.rejectedRowCount, 0);
+  assert.equal(rejectedReviewedLegacyAudioAliasesV1.length, 0);
+  assert.equal(reviewedLegacyAudioAliasStats.supersededAliasCount, 1);
+  assert.equal(reviewedLegacyAudioAliasStats.supersededRowCount, 2);
+  assert.equal(supersededReviewedLegacyAudioAliasesV1.length, 1);
 
   for (const alias of reviewedLegacyAudioAliasesV1) {
     const repaired = repairVietnameseTranscriptWithCorpus(alias.source);
@@ -103,16 +113,51 @@ test("repairs every reviewed legacy-audio transcript with exact-only aliases", (
   }
 });
 
-test("quarantines risky reviewed legacy-audio mappings", () => {
-  for (const alias of rejectedReviewedLegacyAudioAliasesV1) {
+test("records the legacy decision superseded by the Book1 review", () => {
+  assert.equal(supersededReviewedLegacyAudioAliasesV1[0]?.id, "LEGACY-AUDIO-010");
+  assert.equal(
+    supersededReviewedLegacyAudioAliasesV1[0]?.supersededBy,
+    "BOOK1-AUDIO-001",
+  );
+});
+
+test("Book1 promotes only the reviewed content-safe exact alias", () => {
+  assert.equal(reviewedBook1AudioAliasStats.sourceRowCount, 9);
+  assert.equal(reviewedBook1AudioAliasStats.uniqueSourceCount, 5);
+  assert.equal(reviewedBook1AudioAliasStats.activeAliasCount, 1);
+  assert.equal(reviewedBook1AudioAliasStats.activeRowCount, 2);
+  assert.equal(reviewedBook1AudioAliasStats.existingEvidenceCount, 1);
+  assert.equal(reviewedBook1AudioAliasStats.existingEvidenceRowCount, 2);
+  assert.equal(reviewedBook1AudioAliasStats.rejectedAliasCount, 3);
+  assert.equal(reviewedBook1AudioAliasStats.rejectedRowCount, 5);
+  assert.equal(reviewedBook1AudioAliasesV1.length, 1);
+  assert.equal(existingBook1AudioEvidenceV1.length, 1);
+  assert.equal(rejectedBook1AudioAliasesV1.length, 3);
+
+  const repaired = repairVietnameseTranscriptWithCorpus(
+    "Còn có một quà báo?",
+  );
+  assert.equal(
+    normalizeVietnameseForExactMatch(repaired.text),
+    normalizeVietnameseForExactMatch("Con có một quả bóng"),
+  );
+  assert.equal(repaired.strategy, "reviewed_book1_audio_alias");
+  assert.equal(repaired.correctionId, "BOOK1-AUDIO-001");
+});
+
+test("Book1 retains duplicate evidence without replacing the existing alias", () => {
+  const repaired = repairVietnameseTranscriptWithCorpus("Con ơn đi chơi");
+  assert.equal(repaired.text, "Con muốn đi chơi.");
+  assert.equal(repaired.strategy, "reviewed_legacy_audio_alias");
+  assert.equal(repaired.correctionId, "LEGACY-AUDIO-011");
+});
+
+test("Book1 does not rewrite valid speaker roles or relationships", () => {
+  for (const alias of rejectedBook1AudioAliasesV1) {
     const repaired = repairVietnameseTranscriptWithCorpus(alias.source);
     assert.equal(repaired.text, alias.source, alias.id);
     assert.equal(repaired.repaired, false, alias.id);
-    assert.notEqual(
-      repaired.strategy,
-      "reviewed_legacy_audio_alias",
-      alias.id,
-    );
+    assert.notEqual(repaired.strategy, "reviewed_book1_audio_alias", alias.id);
     assert.equal(repaired.correctionId, undefined, alias.id);
   }
 });
@@ -272,7 +317,7 @@ test("controlled child fuzzy matching preserves meaning-bearing words", () => {
     "Con không hát nước.",
     "Bố hát nước ạ.",
     "Con hát một bài.",
-    "Còn có một quà báo?",
+    "Con có một quả báo?",
   ]) {
     const repaired = repairVietnameseTranscriptWithCorpus(source);
     assert.equal(repaired.text, source);
@@ -301,7 +346,6 @@ test("does not load duplicate, negation, role or conflicting rows from the secon
   for (const source of [
     "Công công hiểu.",
     "Con chào pố.",
-    "Còn có một quà báo?",
     "Con muốn chơi với bác.",
   ]) {
     const repaired = repairVietnameseTranscriptWithCorpus(source);
