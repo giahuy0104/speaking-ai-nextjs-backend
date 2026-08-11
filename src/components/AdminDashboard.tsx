@@ -404,12 +404,6 @@ export function AdminDashboard() {
           </div>
           <div className="flex flex-wrap items-center gap-3">
             <Link
-              href="/admin/child-speech-test"
-              className="rounded-xl border border-violet-300/30 bg-violet-300/10 px-4 py-2.5 text-sm font-semibold text-violet-100 transition hover:bg-violet-300/20"
-            >
-              {pick("Test giọng trẻ em", "儿童语音测试")}
-            </Link>
-            <Link
               href="/admin/audio-check"
               className="rounded-xl border border-cyan-300/30 bg-cyan-300/10 px-4 py-2.5 text-sm font-semibold text-cyan-100 transition hover:bg-cyan-300/20"
             >

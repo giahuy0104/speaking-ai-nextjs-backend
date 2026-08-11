@@ -6,42 +6,59 @@ import { transcribeAudioToVietnamese } from "./cloudflareWorkersAi";
 import { resolveCloudflareAsrVadPolicy } from "./cloudflareWorkersAiRequest";
 import { sampleVietnameseByContext } from "./prompts";
 import { containsUnexpectedEastAsianScript } from "./languageValidation";
+import { repairVietnameseChildTranscript } from "./transcriptRepair";
+import { repairVietnameseTranscriptWithCorpus } from "./transcriptCorpusRepair";
+import { normalizeRegionalVietnameseOutsideCorpus } from "./regionalVocabularyNormalizer";
 import { getVietnameseTranscriptQualityIssue } from "./transcriptQuality";
-import { diagnoseChildSpeechTranscript } from "./childSpeechTranscriptDiagnostic";
 
 function repairTranscriptFromChildSpeech(
   text: string,
   input: ConversationRequest,
   provider: "cloudflare" | "device",
 ) {
-  const diagnostic = diagnoseChildSpeechTranscript(text);
+  const repairStartedAt = performance.now();
+  const subjectRepaired = repairVietnameseChildTranscript(text);
+  const corpusRepair = repairVietnameseTranscriptWithCorpus(subjectRepaired);
+  const regionalNormalization = corpusRepair.ruleId || corpusRepair.repaired
+    ? null
+    : normalizeRegionalVietnameseOutsideCorpus(corpusRepair.text);
 
   if (
-    diagnostic.subjectRepairApplied ||
-    diagnostic.corpusRepairApplied ||
-    diagnostic.regionalVocabularyApplied
+    subjectRepaired !== text ||
+    corpusRepair.repaired ||
+    regionalNormalization?.normalized
   ) {
     logEvent("info", "asr_transcript_repaired", {
       requestId: input.requestId,
       provider,
-      subjectRepairApplied: diagnostic.subjectRepairApplied,
-      corpusRepairApplied: diagnostic.corpusRepairApplied,
-      corpusRuleId: diagnostic.corpusRuleId,
-      correctionId: diagnostic.correctionId,
-      strategy: diagnostic.strategy,
-      score: diagnostic.score,
-      margin: diagnostic.margin,
-      transcriptRepairMs: diagnostic.repairMs,
-      regionalVocabularyApplied: diagnostic.regionalVocabularyApplied,
+      subjectRepairApplied: subjectRepaired !== text,
+      corpusRepairApplied: corpusRepair.repaired,
+      corpusRuleId: corpusRepair.ruleId,
+      correctionId: corpusRepair.correctionId,
+      strategy: corpusRepair.strategy,
+      score: corpusRepair.score,
+      margin: corpusRepair.margin,
+      transcriptRepairMs: Number(
+        (performance.now() - repairStartedAt).toFixed(3),
+      ),
+      regionalVocabularyApplied: regionalNormalization?.normalized === true,
       regionalVocabularyReplacementCount:
-        diagnostic.regionalVocabularyReplacementCount,
-      regionalVocabularySourceRows: diagnostic.regionalVocabularySourceRows,
+        regionalNormalization?.replacements.length ?? 0,
+      regionalVocabularySourceRows: regionalNormalization
+        ? [
+            ...new Set(
+              regionalNormalization.replacements.flatMap(
+                (replacement) => replacement.sourceRows,
+              ),
+            ),
+          ]
+        : [],
       unresolvedRegionalVariantCount:
-        diagnostic.unresolvedRegionalVariantCount,
+        regionalNormalization?.unresolvedVariants.length ?? 0,
     });
   }
 
-  return diagnostic.text;
+  return regionalNormalization?.text ?? corpusRepair.text;
 }
 
 function assertVietnameseTranscript(
