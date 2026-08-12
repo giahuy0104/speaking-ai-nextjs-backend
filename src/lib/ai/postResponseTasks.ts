@@ -14,7 +14,23 @@ export function scheduleConversationPostResponseTasks(
   after(async () => {
     const startedAt = Date.now();
     try {
-      await appendConversationHistory(result, inputMode);
+      const cloudinaryConfigured = isCloudinaryUserAudioConfigured();
+      await appendConversationHistory(
+        result,
+        inputMode,
+        inputMode === "audio"
+          ? {
+              userAudioStatus:
+                userAudioFile?.size && !cloudinaryConfigured
+                  ? "not_configured"
+                  : "pending",
+              userAudioError:
+                userAudioFile?.size && !cloudinaryConfigured
+                  ? "Máy chủ chưa cấu hình Cloudinary để lưu audio người dùng."
+                  : null,
+            }
+          : undefined,
+      );
       const backgroundTasks: Promise<unknown>[] = [
         maybeLearnFromRepeatedUse(result).catch((error) => {
           logEvent("error", "conversation_learning_failed", {
@@ -25,7 +41,7 @@ export function scheduleConversationPostResponseTasks(
         }),
       ];
       if (userAudioFile?.size) {
-        if (isCloudinaryUserAudioConfigured()) {
+        if (cloudinaryConfigured) {
           backgroundTasks.push(
             archiveUserSpokenAudio({
               conversationId: result.conversationId,

@@ -180,9 +180,11 @@ export function AdminDashboard() {
     return withJson ? { "Content-Type": "application/json" } : {};
   }, []);
 
-  const loadOverview = useCallback(async () => {
-    setIsLoading(true);
-    setError(null);
+  const loadOverview = useCallback(async (silent = false) => {
+    if (!silent) {
+      setIsLoading(true);
+      setError(null);
+    }
 
     try {
       const params = new URLSearchParams({ status, limit: "200" });
@@ -237,13 +239,17 @@ export function AdminDashboard() {
         setSelectedClientId(nextSelectedClientId);
       }
     } catch (loadError) {
-      setError(
-        loadError instanceof Error
-          ? loadError.message
-          : pick("Không tải được dữ liệu quản trị.", "无法加载管理数据。"),
-      );
+      if (!silent) {
+        setError(
+          loadError instanceof Error
+            ? loadError.message
+            : pick("Không tải được dữ liệu quản trị.", "无法加载管理数据。"),
+        );
+      }
     } finally {
-      setIsLoading(false);
+      if (!silent) {
+        setIsLoading(false);
+      }
     }
   }, [adminHeaders, pick, selectedClientId, status]);
 
@@ -251,8 +257,21 @@ export function AdminDashboard() {
     const timeoutId = window.setTimeout(() => {
       void loadOverview();
     }, 0);
+    const refreshWhenVisible = () => {
+      if (document.visibilityState === "visible") {
+        void loadOverview(true);
+      }
+    };
+    const intervalId = window.setInterval(refreshWhenVisible, 5_000);
+    window.addEventListener("focus", refreshWhenVisible);
+    document.addEventListener("visibilitychange", refreshWhenVisible);
 
-    return () => window.clearTimeout(timeoutId);
+    return () => {
+      window.clearTimeout(timeoutId);
+      window.clearInterval(intervalId);
+      window.removeEventListener("focus", refreshWhenVisible);
+      document.removeEventListener("visibilitychange", refreshWhenVisible);
+    };
   }, [loadOverview]);
 
   const selectedDevice = overview?.devices.find(
@@ -666,6 +685,34 @@ export function AdminDashboard() {
                             "浏览器无法播放此音频。",
                           )}
                         </audio>
+                      </div>
+                    ) : conversation.inputMode === "audio" ? (
+                      <div
+                        className={`mt-4 rounded-lg border p-3 text-xs ${
+                          conversation.userAudioStatus === "failed" ||
+                          conversation.userAudioStatus === "not_configured"
+                            ? "border-rose-400/20 bg-rose-400/5 text-rose-200"
+                            : conversation.userAudioStatus === "pending"
+                              ? "border-amber-400/20 bg-amber-400/5 text-amber-200"
+                              : "border-slate-700 bg-slate-900/70 text-slate-400"
+                        }`}
+                      >
+                        {conversation.userAudioStatus === "pending"
+                          ? pick(
+                              "Audio người dùng đang được lưu lên Cloudinary…",
+                              "用户音频正在保存到 Cloudinary…",
+                            )
+                          : conversation.userAudioStatus === "failed" ||
+                              conversation.userAudioStatus === "not_configured"
+                            ? conversation.userAudioError ??
+                              pick(
+                                "Không lưu được audio người dùng.",
+                                "无法保存用户音频。",
+                              )
+                            : pick(
+                                "Lượt nói cũ này không có file audio đã lưu.",
+                                "这条旧记录没有已保存的音频文件。",
+                              )}
                       </div>
                     ) : null}
                     <div className="mt-4 flex flex-wrap gap-x-4 gap-y-1 text-xs text-slate-500">

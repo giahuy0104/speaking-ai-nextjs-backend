@@ -156,6 +156,14 @@ function applyConversationHistoryPatch(
       patch.userAudioUrl !== undefined
         ? patch.userAudioUrl
         : entry.userAudioUrl,
+    userAudioStatus:
+      patch.userAudioStatus !== undefined
+        ? patch.userAudioStatus
+        : entry.userAudioStatus,
+    userAudioError:
+      patch.userAudioError !== undefined
+        ? patch.userAudioError
+        : entry.userAudioError,
     latency: {
       ...entry.latency,
       ...patch.latency,
@@ -176,9 +184,14 @@ function applyConversationHistoryPatch(
 export async function appendConversationHistory(
   conversation: ConversationResponse,
   inputMode: ConversationHistoryEntry["inputMode"],
+  userAudio?: Pick<
+    ConversationHistoryEntry,
+    "userAudioStatus" | "userAudioError"
+  >,
 ) {
   const entry: ConversationHistoryEntry = {
     ...conversation,
+    ...userAudio,
     createdAt: new Date().toISOString(),
     inputMode,
     reviewStatus: "unreviewed",

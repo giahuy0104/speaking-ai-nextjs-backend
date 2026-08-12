@@ -7,11 +7,15 @@ import {
   uploadUserAudioToCloudinary,
 } from "@/lib/storage/cloudinaryUserAudio";
 
-export async function archiveUserSpokenAudio(options: {
+type ArchiveUserSpokenAudioOptions = {
   conversationId: string;
   clientId?: string;
   audioFile: File;
-}) {
+};
+
+async function archiveUserSpokenAudioInternal(
+  options: ArchiveUserSpokenAudioOptions,
+) {
   if (!isCloudinaryUserAudioConfigured()) {
     throw new Error("Cloudinary chưa được cấu hình để lưu audio người dùng.");
   }
@@ -44,6 +48,8 @@ export async function archiveUserSpokenAudio(options: {
     conversationId: options.conversationId,
     clientId: options.clientId,
     userAudioUrl: uploaded.url,
+    userAudioStatus: "ready",
+    userAudioError: null,
   });
 
   if (!updatedConversation) {
@@ -51,4 +57,25 @@ export async function archiveUserSpokenAudio(options: {
   }
 
   return { conversation: updatedConversation, ...uploaded };
+}
+
+export async function archiveUserSpokenAudio(
+  options: ArchiveUserSpokenAudioOptions,
+) {
+  try {
+    return await archiveUserSpokenAudioInternal(options);
+  } catch (error) {
+    await updateConversationHistory({
+      conversationId: options.conversationId,
+      clientId: options.clientId,
+      userAudioStatus: isCloudinaryUserAudioConfigured()
+        ? "failed"
+        : "not_configured",
+      userAudioError:
+        error instanceof Error
+          ? error.message.slice(0, 300)
+          : "Không lưu được audio người dùng.",
+    }).catch(() => undefined);
+    throw error;
+  }
 }
