@@ -655,7 +655,7 @@ export function AdminDashboard() {
                         <audio
                           className="h-10 w-full"
                           controls
-                          preload="none"
+                          preload="metadata"
                           src={conversation.userAudioUrl}
                         >
                           {pick(

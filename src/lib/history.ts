@@ -18,6 +18,7 @@ import {
   clearRecords,
   deleteRecord,
   deleteRecordsOlderThan,
+  getRecord,
   insertRecordIfAbsent,
   listRecords,
   putRecord,
@@ -257,6 +258,23 @@ export async function readConversationHistory(limit = maxHistoryResponseItems) {
     }
 
     return [...retainedEntries].reverse().slice(0, safeLimit);
+  });
+}
+
+export async function getConversationHistoryEntry(conversationId: string) {
+  if (isPostgresStorageEnabled()) {
+    const record = await getRecord<ConversationHistoryEntry>(
+      historyNamespace,
+      conversationId,
+    );
+    return record?.value ?? null;
+  }
+
+  return enqueueMutation(async () => {
+    const { entries } = await readHistoryFile();
+    return (
+      entries.find((entry) => entry.conversationId === conversationId) ?? null
+    );
   });
 }
 

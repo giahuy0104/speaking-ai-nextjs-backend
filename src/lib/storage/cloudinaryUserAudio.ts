@@ -65,9 +65,46 @@ export function getConversationUserAudioUrl(conversationId: string) {
   return `/api/admin/conversations/${encodeURIComponent(conversationId)}/user-audio`;
 }
 
+function normalizedAudioMimeType(value: string | undefined) {
+  const mimeType = value?.split(";", 1)[0]?.trim().toLowerCase() ?? "";
+  return mimeType.startsWith("audio/") ? mimeType : "";
+}
+
+export function detectUserAudioMimeType(
+  bytes: Uint8Array,
+  declaredMimeType?: string,
+) {
+  const ascii = (start: number, end: number) =>
+    String.fromCharCode(...bytes.subarray(start, end));
+
+  if (ascii(0, 4) === "RIFF" && ascii(8, 12) === "WAVE") {
+    return "audio/wav";
+  }
+  if (
+    bytes[0] === 0x1a &&
+    bytes[1] === 0x45 &&
+    bytes[2] === 0xdf &&
+    bytes[3] === 0xa3
+  ) {
+    return "audio/webm";
+  }
+  if (ascii(0, 4) === "OggS") return "audio/ogg";
+  if (ascii(0, 4) === "fLaC") return "audio/flac";
+  if (ascii(4, 8) === "ftyp") return "audio/mp4";
+  if (
+    ascii(0, 3) === "ID3" ||
+    (bytes[0] === 0xff && (bytes[1] ?? 0) >= 0xe0)
+  ) {
+    return "audio/mpeg";
+  }
+
+  return normalizedAudioMimeType(declaredMimeType);
+}
+
 export async function uploadConversationUserAudio(
   conversationId: string,
   audio: Blob,
+  declaredMimeType?: string,
 ): Promise<ConversationUserAudio> {
   if (audio.size <= 0) {
     throw new Error("Audio người dùng trống.");
@@ -75,6 +112,13 @@ export async function uploadConversationUserAudio(
 
   const config = configureCloudinary();
   const buffer = Buffer.from(await audio.arrayBuffer());
+  const mimeType = detectUserAudioMimeType(
+    buffer.subarray(0, 16),
+    declaredMimeType || audio.type,
+  );
+  if (!mimeType) {
+    throw new Error("Tệp gửi lên không phải định dạng audio được hỗ trợ.");
+  }
 
   const result = await new Promise<Awaited<ReturnType<typeof cloudinary.uploader.upload>>>(
     (resolve, reject) => {
@@ -115,7 +159,7 @@ export async function uploadConversationUserAudio(
     format: result.format,
     version: result.version,
     bytes: result.bytes,
-    mimeType: audio.type || `audio/${result.format}`,
+    mimeType,
     resourceType: "video",
     deliveryType: "authenticated",
   };

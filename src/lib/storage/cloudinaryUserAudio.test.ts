@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { after, beforeEach, test } from "node:test";
 import {
+  detectUserAudioMimeType,
   getConversationUserAudioDownloadUrl,
   getConversationUserAudioUrl,
   isCloudinaryUserAudioConfigured,
@@ -42,6 +43,26 @@ test("builds an encoded admin-only conversation audio URL", () => {
   assert.equal(
     getConversationUserAudioUrl("conv id/1"),
     "/api/admin/conversations/conv%20id%2F1/user-audio",
+  );
+});
+
+test("detects WAV bytes even when a multipart client declares octet-stream", () => {
+  const wavHeader = Uint8Array.from([
+    0x52, 0x49, 0x46, 0x46, 0, 0, 0, 0, 0x57, 0x41, 0x56, 0x45,
+  ]);
+  assert.equal(
+    detectUserAudioMimeType(wavHeader, "application/octet-stream"),
+    "audio/wav",
+  );
+});
+
+test("rejects unknown bytes without a declared audio type", () => {
+  assert.equal(
+    detectUserAudioMimeType(
+      Uint8Array.from([1, 2, 3, 4]),
+      "application/octet-stream",
+    ),
+    "",
   );
 });
 
