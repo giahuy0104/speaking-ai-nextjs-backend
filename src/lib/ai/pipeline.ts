@@ -5,6 +5,7 @@ import type {
 import { measureStep, nowMs } from "@/lib/latency";
 import { logEvent } from "@/lib/observability";
 import { transcribeVietnamese } from "./asr";
+import { resolvePrefetchedTranscriptForPipeline } from "./prefetchedTranscriptPolicy";
 import {
   generateEnglishSentence,
   type EnglishGenerationResult,
@@ -59,14 +60,76 @@ export async function prepareConversationPipeline(
   options: ConversationPipelineOptions = {},
 ): Promise<PreparedConversationPipeline> {
   const startedAt = nowMs();
-  const asr = options.prefetchedTranscript
+  const resolvedPrefetchedTranscript = options.prefetchedTranscript
+    ? resolvePrefetchedTranscriptForPipeline(options.prefetchedTranscript, {
+        requestId: input.requestId,
+        provider: input.asrMode === "batch_chunks" ? "cloudflare" : "device",
+        utteranceDurationMs: input.benchmark?.utteranceDurationMs,
+        onRejected: (reason) => {
+          logEvent("warn", "asr_transcript_rejected", {
+            requestId: input.requestId,
+            provider:
+              input.asrMode === "batch_chunks" ? "cloudflare" : "device",
+            reason,
+            utteranceDurationMs: input.benchmark?.utteranceDurationMs,
+            transcriptLength:
+              options.prefetchedTranscript?.sourceText.trim().length ?? 0,
+            prefetchedTranscript: true,
+          });
+        },
+      })
+    : null;
+  const canReuseDownstreamPrefetch =
+    resolvedPrefetchedTranscript?.canReuseDownstreamPrefetch !== false;
+  const prefetchedTranslation = canReuseDownstreamPrefetch
+    ? options.prefetchedTranslation
+    : undefined;
+  const prefetchedAudio = canReuseDownstreamPrefetch
+    ? options.prefetchedAudio
+    : undefined;
+
+  if (resolvedPrefetchedTranscript?.repair.applied) {
+    const repair = resolvedPrefetchedTranscript.repair;
+    logEvent("info", "asr_transcript_repaired", {
+      requestId: input.requestId,
+      provider: input.asrMode === "batch_chunks" ? "cloudflare" : "device",
+      subjectRepairApplied: repair.subjectRepairApplied,
+      corpusRepairApplied: repair.corpusRepairApplied,
+      corpusRuleId: repair.corpusRuleId,
+      correctionId: repair.correctionId,
+      strategy: repair.strategy,
+      score: repair.score,
+      margin: repair.margin,
+      transcriptRepairMs: resolvedPrefetchedTranscript.transcriptRepairMs,
+      regionalVocabularyApplied: repair.regionalVocabularyApplied,
+      regionalVocabularyReplacementCount:
+        repair.regionalVocabularyReplacementCount,
+      regionalVocabularySourceRows: repair.regionalVocabularySourceRows,
+      unresolvedRegionalVariantCount: repair.unresolvedRegionalVariantCount,
+      prefetchedTranscript: true,
+    });
+  }
+
+  if (
+    resolvedPrefetchedTranscript?.changed &&
+    (options.prefetchedTranslation || options.prefetchedAudio)
+  ) {
+    logEvent("info", "conversation_prefetch_invalidated_after_transcript_repair", {
+      requestId: input.requestId,
+      asrMode: input.asrMode,
+      translationInvalidated: Boolean(options.prefetchedTranslation),
+      audioInvalidated: Boolean(options.prefetchedAudio),
+    });
+  }
+
+  const asr = resolvedPrefetchedTranscript
     ? {
-        value: options.prefetchedTranscript.sourceText,
-        latencyMs: options.prefetchedTranscript.latencyMs,
+        value: resolvedPrefetchedTranscript.sourceText,
+        latencyMs: resolvedPrefetchedTranscript.latencyMs,
       }
     : await measureStep(() => transcribeVietnamese(input));
-  const llm = options.prefetchedTranslation
-    ? { value: options.prefetchedTranslation, latencyMs: 0 }
+  const llm = prefetchedTranslation
+    ? { value: prefetchedTranslation, latencyMs: 0 }
     : await measureStep(() =>
         generateEnglishSentence(
           asr.value,
@@ -82,10 +145,10 @@ export async function prepareConversationPipeline(
   // it in `after()` independently from Safari playback. Reviewed rules and
   // known text-cache entries still resolve to durable audio before returning.
   const usesFastStreamingTts =
-    !options.prefetchedAudio &&
+    !prefetchedAudio &&
     (options.streamAudioOnCacheMiss || llm.value.source === "cloudflare");
-  const tts = options.prefetchedAudio
-    ? { value: options.prefetchedAudio, latencyMs: 0 }
+  const tts = prefetchedAudio
+    ? { value: prefetchedAudio, latencyMs: 0 }
     : await measureStep<AudioSynthesisResult>(() =>
         usesFastStreamingTts
           ? prepareEnglishAudio(llm.value.englishText, {

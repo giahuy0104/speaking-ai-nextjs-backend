@@ -86,6 +86,8 @@ test("rejects silence hallucinations before translation", () => {
 test("rejects stock hallucinations found in the Cloudflare child-audio audit", () => {
   const hallucinations = [
     "Hãy subscribe cho kênh La La School để không bỏ lỡ những video hấp dẫn.",
+    "Các bạn hãy subcribe cho kênh để ủng hộ kênh của mình nhé.",
+    "Các bạn hãy subcrise cho kênh để không bỏ lỡ video.",
     "Các bạn hãy đăng ký kênh để ủng hộ kênh của mình nhé.",
     "Cảm ơn các bạn đã xem video này.",
     "Cảm ơn các bạn đã theo dõi và hẹn gặp lại trong những video tiếp theo.",
@@ -115,13 +117,23 @@ test("does not block legitimate child phrases that mention video or meeting agai
 
 test("pipeline validates ASR before translation and TTS", async () => {
   const asrSource = await readFile(new URL("./asr.ts", import.meta.url), "utf8");
+  const validationSource = await readFile(
+    new URL("./vietnameseTranscriptValidation.ts", import.meta.url),
+    "utf8",
+  );
+  const prefetchPolicySource = await readFile(
+    new URL("./prefetchedTranscriptPolicy.ts", import.meta.url),
+    "utf8",
+  );
   const pipelineSource = await readFile(
     new URL("./pipeline.ts", import.meta.url),
     "utf8",
   );
 
-  assert.match(asrSource, /getVietnameseTranscriptQualityIssue/);
-  assert.match(asrSource, /"ASR_LOW_CONFIDENCE"/);
+  assert.match(validationSource, /getVietnameseTranscriptQualityIssue/);
+  assert.match(validationSource, /"ASR_LOW_CONFIDENCE"/);
+  assert.match(asrSource, /assertVietnameseTranscriptIsUsable/);
+  assert.match(prefetchPolicySource, /assertVietnameseTranscriptIsUsable/);
   assert.ok(
     pipelineSource.indexOf("transcribeVietnamese(input)") <
       pipelineSource.indexOf("generateEnglishSentence("),

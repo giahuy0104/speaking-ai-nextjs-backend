@@ -14,6 +14,35 @@ import {
   observedChildSpeechAliasRuntimeStats,
 } from "./observedChildSpeechAliases";
 import {
+  existingBook1AudioEvidenceV1,
+  rejectedBook1AudioAliasesV1,
+  reviewedBook1AudioAliasesV1,
+  reviewedBook1AudioAliasStats,
+} from "./reviewedBook1AudioAliases";
+import {
+  existingBook2AudioEvidenceV1,
+  rejectedBook2AudioAliasesV1,
+  reviewedBook2AudioAliasesV1,
+  reviewedBook2AudioAliasStats,
+} from "./reviewedBook2AudioAliases";
+import {
+  existingTestedAudioEvidenceV1,
+  rejectedTestedAudioAliasesV1,
+  reviewedTestedAudioAliasesV1,
+  reviewedTestedAudioAliasStats,
+} from "./reviewedTestedAudioAliases";
+import {
+  quarantinedWebRetestTranscriptsV1,
+  reviewedWebRetestAudioAliasesV1,
+  reviewedWebRetestAudioAliasStats,
+} from "./reviewedWebRetestAudioAliases";
+import {
+  rejectedReviewedLegacyAudioAliasesV1,
+  reviewedLegacyAudioAliasesV1,
+  reviewedLegacyAudioAliasStats,
+  supersededReviewedLegacyAudioAliasesV1,
+} from "./reviewedLegacyAudioAliases";
+import {
   regionalChildSpeechRulesV1,
   regionalCorpusMatchRulesV1,
   regionalCorpusRulesV1,
@@ -71,6 +100,301 @@ test("loads only unambiguous reviewed child-speech sentence aliases", () => {
     new Set(observedChildSpeechAliases.map((alias) => alias.id)).size,
     observedChildSpeechAliases.length,
   );
+  assert.ok(observedChildSpeechAliasRuntimeStats.foldedAliasCount > 1_000);
+  assert.ok(
+    observedChildSpeechAliasRuntimeStats.ambiguousFoldedAliasCount > 0,
+  );
+});
+
+test("repairs every reviewed legacy-audio transcript with exact-only aliases", () => {
+  assert.equal(reviewedLegacyAudioAliasStats.sourceRowCount, 37);
+  assert.equal(reviewedLegacyAudioAliasStats.generatedFromRows, 35);
+  assert.equal(reviewedLegacyAudioAliasStats.aliasCount, 30);
+  assert.equal(reviewedLegacyAudioAliasesV1.length, 30);
+  assert.equal(reviewedLegacyAudioAliasStats.rejectedAliasCount, 0);
+  assert.equal(reviewedLegacyAudioAliasStats.rejectedRowCount, 0);
+  assert.equal(rejectedReviewedLegacyAudioAliasesV1.length, 0);
+  assert.equal(reviewedLegacyAudioAliasStats.supersededAliasCount, 1);
+  assert.equal(reviewedLegacyAudioAliasStats.supersededRowCount, 2);
+  assert.equal(supersededReviewedLegacyAudioAliasesV1.length, 1);
+
+  for (const alias of reviewedLegacyAudioAliasesV1) {
+    const repaired = repairVietnameseTranscriptWithCorpus(alias.source);
+    assert.equal(
+      normalizeVietnameseForExactMatch(repaired.text),
+      normalizeVietnameseForExactMatch(alias.canonical),
+      alias.id,
+    );
+    assert.equal(repaired.strategy, "reviewed_legacy_audio_alias", alias.id);
+    assert.equal(repaired.correctionId, alias.id, alias.id);
+  }
+});
+
+test("records the legacy decision superseded by the Book1 review", () => {
+  assert.equal(supersededReviewedLegacyAudioAliasesV1[0]?.id, "LEGACY-AUDIO-010");
+  assert.equal(
+    supersededReviewedLegacyAudioAliasesV1[0]?.supersededBy,
+    "BOOK1-AUDIO-001",
+  );
+});
+
+test("Book1 promotes only the reviewed content-safe exact alias", () => {
+  assert.equal(reviewedBook1AudioAliasStats.sourceRowCount, 9);
+  assert.equal(reviewedBook1AudioAliasStats.uniqueSourceCount, 5);
+  assert.equal(reviewedBook1AudioAliasStats.activeAliasCount, 1);
+  assert.equal(reviewedBook1AudioAliasStats.activeRowCount, 2);
+  assert.equal(reviewedBook1AudioAliasStats.existingEvidenceCount, 1);
+  assert.equal(reviewedBook1AudioAliasStats.existingEvidenceRowCount, 2);
+  assert.equal(reviewedBook1AudioAliasStats.rejectedAliasCount, 3);
+  assert.equal(reviewedBook1AudioAliasStats.rejectedRowCount, 5);
+  assert.equal(reviewedBook1AudioAliasesV1.length, 1);
+  assert.equal(existingBook1AudioEvidenceV1.length, 1);
+  assert.equal(rejectedBook1AudioAliasesV1.length, 3);
+
+  const repaired = repairVietnameseTranscriptWithCorpus(
+    "Còn có một quà báo?",
+  );
+  assert.equal(
+    normalizeVietnameseForExactMatch(repaired.text),
+    normalizeVietnameseForExactMatch("Con có một quả bóng"),
+  );
+  assert.equal(repaired.strategy, "reviewed_book1_audio_alias");
+  assert.equal(repaired.correctionId, "BOOK1-AUDIO-001");
+});
+
+test("Book1 retains duplicate evidence without replacing the existing alias", () => {
+  const repaired = repairVietnameseTranscriptWithCorpus("Con ơn đi chơi");
+  assert.equal(repaired.text, "Con muốn đi chơi.");
+  assert.equal(repaired.strategy, "reviewed_legacy_audio_alias");
+  assert.equal(repaired.correctionId, "LEGACY-AUDIO-011");
+});
+
+test("Book1 does not rewrite valid speaker roles or relationships", () => {
+  for (const alias of rejectedBook1AudioAliasesV1) {
+    const repaired = repairVietnameseTranscriptWithCorpus(alias.source);
+    assert.equal(repaired.text, alias.source, alias.id);
+    assert.equal(repaired.repaired, false, alias.id);
+    assert.notEqual(repaired.strategy, "reviewed_book1_audio_alias", alias.id);
+    assert.equal(repaired.correctionId, undefined, alias.id);
+  }
+});
+
+test("Book2 loads every reviewed exact alias and preserves its audit totals", () => {
+  assert.equal(reviewedBook2AudioAliasStats.sourceRowCount, 64);
+  assert.equal(reviewedBook2AudioAliasStats.uniqueSourceCount, 56);
+  assert.equal(reviewedBook2AudioAliasStats.activeAliasCount, 38);
+  assert.equal(reviewedBook2AudioAliasStats.activeRowCount, 43);
+  assert.equal(reviewedBook2AudioAliasStats.existingEvidenceCount, 2);
+  assert.equal(reviewedBook2AudioAliasStats.existingEvidenceRowCount, 5);
+  assert.equal(reviewedBook2AudioAliasStats.rejectedAliasCount, 16);
+  assert.equal(reviewedBook2AudioAliasStats.rejectedRowCount, 16);
+  assert.equal(reviewedBook2AudioAliasesV1.length, 38);
+  assert.equal(existingBook2AudioEvidenceV1.length, 2);
+  assert.equal(rejectedBook2AudioAliasesV1.length, 16);
+
+  for (const alias of reviewedBook2AudioAliasesV1) {
+    const repaired = repairVietnameseTranscriptWithCorpus(alias.source);
+    assert.equal(
+      normalizeVietnameseForExactMatch(repaired.text),
+      normalizeVietnameseForExactMatch(alias.canonical),
+      alias.id,
+    );
+    assert.equal(repaired.strategy, "reviewed_book2_audio_alias", alias.id);
+    assert.equal(repaired.correctionId, alias.id, alias.id);
+  }
+});
+
+test("Book2 keeps existing active and rejected decisions unchanged", () => {
+  const existingActive = repairVietnameseTranscriptWithCorpus(
+    existingBook2AudioEvidenceV1[0]!.source,
+  );
+  assert.equal(existingActive.correctionId, "LEGACY-AUDIO-011");
+  assert.equal(existingActive.strategy, "reviewed_legacy_audio_alias");
+
+  const existingRejected = repairVietnameseTranscriptWithCorpus(
+    existingBook2AudioEvidenceV1[1]!.source,
+  );
+  assert.equal(existingRejected.repaired, false);
+  assert.equal(existingRejected.correctionId, undefined);
+});
+
+test("Book2 never loads rejected meaning, negation or role changes", () => {
+  for (const alias of rejectedBook2AudioAliasesV1) {
+    const repaired = repairVietnameseTranscriptWithCorpus(alias.source);
+    assert.equal(repaired.text, alias.source, alias.id);
+    assert.equal(repaired.repaired, false, alias.id);
+    assert.notEqual(repaired.strategy, "reviewed_book2_audio_alias", alias.id);
+    assert.equal(repaired.correctionId, undefined, alias.id);
+  }
+});
+
+test("Book2 exact aliases do not expand to longer or accent-folded sentences", () => {
+  for (const source of [
+    "Con thái con mẹ hôm nay",
+    "Con muon trao voi bon",
+    "Câu mũi ngớp lạnh",
+  ]) {
+    const repaired = repairVietnameseTranscriptWithCorpus(source);
+    assert.notEqual(repaired.strategy, "reviewed_book2_audio_alias", source);
+  }
+});
+
+test("tested-audio workbook loads every safe exact alias and preserves audit totals", () => {
+  assert.equal(reviewedTestedAudioAliasStats.sourceRowCount, 72);
+  assert.equal(reviewedTestedAudioAliasStats.uniqueSourceCount, 62);
+  assert.equal(reviewedTestedAudioAliasStats.activeAliasCount, 13);
+  assert.equal(reviewedTestedAudioAliasStats.activeRowCount, 13);
+  assert.equal(reviewedTestedAudioAliasStats.existingEvidenceCount, 35);
+  assert.equal(reviewedTestedAudioAliasStats.existingEvidenceRowCount, 43);
+  assert.equal(reviewedTestedAudioAliasStats.rejectedAliasCount, 14);
+  assert.equal(reviewedTestedAudioAliasStats.rejectedRowCount, 16);
+  assert.equal(reviewedTestedAudioAliasesV1.length, 13);
+  assert.equal(existingTestedAudioEvidenceV1.length, 35);
+  assert.equal(rejectedTestedAudioAliasesV1.length, 14);
+
+  for (const alias of reviewedTestedAudioAliasesV1) {
+    const repaired = repairVietnameseTranscriptWithCorpus(alias.source);
+    assert.equal(
+      normalizeVietnameseForExactMatch(repaired.text),
+      normalizeVietnameseForExactMatch(alias.canonical),
+      alias.id,
+    );
+    assert.equal(repaired.strategy, "reviewed_tested_audio_alias", alias.id);
+    assert.equal(repaired.correctionId, alias.id, alias.id);
+  }
+});
+
+test("tested-audio workbook reuses all previously active evidence", () => {
+  for (const evidence of existingTestedAudioEvidenceV1) {
+    const repaired = repairVietnameseTranscriptWithCorpus(evidence.source);
+    assert.equal(
+      normalizeVietnameseForExactMatch(repaired.text),
+      normalizeVietnameseForExactMatch(evidence.canonical),
+      evidence.id,
+    );
+    assert.notEqual(
+      repaired.strategy,
+      "reviewed_tested_audio_alias",
+      evidence.id,
+    );
+  }
+});
+
+test("tested-audio workbook never loads rejected meaning, negation or role changes", () => {
+  for (const alias of rejectedTestedAudioAliasesV1) {
+    const repaired = repairVietnameseTranscriptWithCorpus(alias.source);
+    assert.equal(repaired.text, alias.source, alias.id);
+    assert.equal(repaired.repaired, false, alias.id);
+    assert.notEqual(
+      repaired.strategy,
+      "reviewed_tested_audio_alias",
+      alias.id,
+    );
+    assert.equal(repaired.correctionId, undefined, alias.id);
+  }
+});
+
+test("tested-audio exact aliases do not expand to longer or accent-folded sentences", () => {
+  for (const source of [
+    "Mũ trời chia bát hôm nay.",
+    "Hom nay trong rat troi.",
+    "Con muon be",
+  ]) {
+    const repaired = repairVietnameseTranscriptWithCorpus(source);
+    assert.notEqual(
+      repaired.strategy,
+      "reviewed_tested_audio_alias",
+      source,
+    );
+  }
+});
+
+test("Web retest activates only the three unambiguous Raw ASR variants", () => {
+  assert.equal(reviewedWebRetestAudioAliasStats.activeAliasCount, 3);
+  assert.equal(reviewedWebRetestAudioAliasStats.quarantinedTranscriptCount, 8);
+  assert.equal(reviewedWebRetestAudioAliasesV1.length, 3);
+  assert.equal(quarantinedWebRetestTranscriptsV1.length, 8);
+
+  for (const alias of reviewedWebRetestAudioAliasesV1) {
+    const repaired = repairVietnameseTranscriptWithCorpus(alias.source);
+    assert.equal(
+      normalizeVietnameseForExactMatch(repaired.text),
+      normalizeVietnameseForExactMatch(alias.canonical),
+      alias.id,
+    );
+    assert.equal(
+      repaired.strategy,
+      "reviewed_web_retest_audio_alias",
+      alias.id,
+    );
+    assert.equal(repaired.correctionId, alias.id, alias.id);
+  }
+});
+
+test("Web retest keeps uncertain, truncated and protected-role transcripts unchanged", () => {
+  for (const decision of quarantinedWebRetestTranscriptsV1) {
+    const repaired = repairVietnameseTranscriptWithCorpus(decision.source);
+    assert.equal(repaired.text, decision.source, decision.source);
+    assert.equal(repaired.repaired, false, decision.source);
+    assert.notEqual(
+      repaired.strategy,
+      "reviewed_web_retest_audio_alias",
+      decision.source,
+    );
+  }
+});
+
+test("Web retest aliases remain exact-only", () => {
+  for (const source of [
+    "Canh hit mau do",
+    "Canh hít màu đỏ hôm nay",
+    "Chú nói tạm ngài nhé hôm nay",
+  ]) {
+    const repaired = repairVietnameseTranscriptWithCorpus(source);
+    assert.notEqual(
+      repaired.strategy,
+      "reviewed_web_retest_audio_alias",
+      source,
+    );
+  }
+});
+
+test("legacy-audio aliases never expand through fuzzy or accent-folded matching", () => {
+  for (const source of [
+    "Con thịt ăn cơm hôm nay",
+    "Tao muốn uống nước lạnh",
+    "Con không thể không đi",
+    "Anh ta là bé Mây thật",
+    "Con ten la Be May",
+  ]) {
+    const repaired = repairVietnameseTranscriptWithCorpus(source);
+    assert.notEqual(
+      repaired.strategy,
+      "reviewed_legacy_audio_alias",
+      source,
+    );
+  }
+});
+
+test("legacy-audio aliases allow only an equivalent final politeness particle", () => {
+  for (const source of [
+    "Cô chú nó chậm lại nha",
+    "Cô chú nó chậm lại nhá.",
+  ]) {
+    const repaired = repairVietnameseTranscriptWithCorpus(source);
+    assert.equal(repaired.text, "Cô chú nói chậm lại nhé", source);
+    assert.equal(repaired.correctionId, "LEGACY-AUDIO-030", source);
+    assert.equal(repaired.strategy, "reviewed_legacy_audio_alias", source);
+  }
+
+  for (const source of [
+    "Cô chú không chậm lại nha",
+    "Cô chú nó nói chậm lại nha",
+    "Cảm ơn tôi với bạn nha",
+  ]) {
+    const repaired = repairVietnameseTranscriptWithCorpus(source);
+    assert.notEqual(repaired.strategy, "reviewed_legacy_audio_alias", source);
+  }
 });
 
 test("keeps negation and protected speaker roles unchanged in every V2 alias", () => {
@@ -154,12 +478,50 @@ test("does not auto-correct ambiguous or meaning-reversing workbook rows", () =>
   }
 });
 
-test("observed child aliases require an exact whole-sentence match", () => {
+test("does not fuzzy-match unrelated whole-sentence extensions", () => {
   const repaired = repairVietnameseTranscriptWithCorpus(
     "Con muốn ăn áo hôm nay.",
   );
   assert.notEqual(repaired.strategy, "observed_child_alias");
   assert.equal(repaired.correctionId, undefined);
+});
+
+test("repairs an unambiguous observed child alias when ASR drops accents", () => {
+  const repaired = repairVietnameseTranscriptWithCorpus("Con hat nuoc.");
+  assert.equal(repaired.text, "Con khát nước.");
+  assert.equal(repaired.strategy, "observed_child_folded");
+  assert.match(repaired.correctionId ?? "", /^CHILD-ASR-V2-[A-F0-9]{12}$/);
+});
+
+test("fuzzy-matches reviewed child aliases with one optional particle", () => {
+  const cases = new Map([
+    ["Con hát nước ạ.", "Con khát nước."],
+    ["Con muốn dửa tay ạ.", "Con muốn rửa tay."],
+    ["Món này non quá ạ.", "Món này ngon quá."],
+  ]);
+
+  for (const [source, expected] of cases) {
+    const repaired = repairVietnameseTranscriptWithCorpus(source);
+    assert.equal(repaired.text, expected, source);
+    assert.equal(repaired.strategy, "observed_child_fuzzy", source);
+    assert.ok((repaired.score ?? 0) >= 0.875, source);
+    assert.ok((repaired.margin ?? 0) >= 0.1, source);
+  }
+});
+
+test("controlled child fuzzy matching preserves meaning-bearing words", () => {
+  for (const source of [
+    "Con không hát nước.",
+    "Bố hát nước ạ.",
+    "Con hát một bài.",
+    "Con có một quả báo?",
+  ]) {
+    const repaired = repairVietnameseTranscriptWithCorpus(source);
+    assert.equal(repaired.text, source);
+    assert.equal(repaired.repaired, false);
+    assert.notEqual(repaired.strategy, "observed_child_fuzzy");
+    assert.notEqual(repaired.strategy, "observed_child_folded");
+  }
 });
 
 test("repairs only the safe new exact aliases from the second child dataset", () => {
@@ -181,7 +543,6 @@ test("does not load duplicate, negation, role or conflicting rows from the secon
   for (const source of [
     "Công công hiểu.",
     "Con chào pố.",
-    "Còn có một quà báo?",
     "Con muốn chơi với bác.",
   ]) {
     const repaired = repairVietnameseTranscriptWithCorpus(source);

@@ -846,6 +846,23 @@ export function AdminDashboard() {
                           Worker lead {conversation.benchmark.workerStartedBeforeStopMs} ms
                         </span>
                       ) : null}
+                      {conversation.benchmark?.workerAsrPilotTrimmedAudioMs !== undefined ? (
+                        <span>
+                          Worker PCM trimmed {conversation.benchmark.workerAsrPilotTrimmedAudioMs} ms
+                          {conversation.benchmark.workerAsrPilotOriginalAudioBytes !== undefined &&
+                          conversation.benchmark.workerAsrPilotAudioBytes !== undefined
+                            ? ` (${conversation.benchmark.workerAsrPilotOriginalAudioBytes} → ${conversation.benchmark.workerAsrPilotAudioBytes} bytes)`
+                            : ""}
+                        </span>
+                      ) : null}
+                      {conversation.benchmark?.workerAsrPilotServerTotalMs !== undefined ? (
+                        <span>
+                          Worker server {conversation.benchmark.workerAsrPilotServerTotalMs} ms
+                          {conversation.benchmark.workerAsrPilotRequestReadMs !== undefined
+                            ? ` / read ${conversation.benchmark.workerAsrPilotRequestReadMs} ms`
+                            : ""}
+                        </span>
+                      ) : null}
                       {conversation.benchmark?.workerTailVadEligible !== undefined ? (
                         <span>
                           Worker tail {conversation.benchmark.workerTailVadEligible

@@ -5,56 +5,40 @@ import { logEvent } from "@/lib/observability";
 import { transcribeAudioToVietnamese } from "./cloudflareWorkersAi";
 import { resolveCloudflareAsrVadPolicy } from "./cloudflareWorkersAiRequest";
 import { sampleVietnameseByContext } from "./prompts";
-import { containsUnexpectedEastAsianScript } from "./languageValidation";
-import { repairVietnameseChildTranscript } from "./transcriptRepair";
-import { repairVietnameseTranscriptWithCorpus } from "./transcriptCorpusRepair";
-import { normalizeRegionalVietnameseOutsideCorpus } from "./regionalVocabularyNormalizer";
-import { getVietnameseTranscriptQualityIssue } from "./transcriptQuality";
+import { repairVietnameseChildSpeechLayers } from "./childSpeechTranscriptRepair";
+import { assertVietnameseTranscriptIsUsable } from "./vietnameseTranscriptValidation";
 
-function repairTranscriptFromChildSpeech(
+function repairVietnameseTranscriptFromChildSpeech(
   text: string,
   input: ConversationRequest,
   provider: "cloudflare" | "device",
 ) {
-  const subjectRepaired = repairVietnameseChildTranscript(text);
-  const corpusRepair = repairVietnameseTranscriptWithCorpus(subjectRepaired);
-  const regionalNormalization = corpusRepair.ruleId || corpusRepair.repaired
-    ? null
-    : normalizeRegionalVietnameseOutsideCorpus(corpusRepair.text);
+  const repairStartedAt = performance.now();
+  const repair = repairVietnameseChildSpeechLayers(text);
 
-  if (
-    subjectRepaired !== text ||
-    corpusRepair.repaired ||
-    regionalNormalization?.normalized
-  ) {
+  if (repair.applied) {
     logEvent("info", "asr_transcript_repaired", {
       requestId: input.requestId,
       provider,
-      subjectRepairApplied: subjectRepaired !== text,
-      corpusRepairApplied: corpusRepair.repaired,
-      corpusRuleId: corpusRepair.ruleId,
-      correctionId: corpusRepair.correctionId,
-      strategy: corpusRepair.strategy,
-      score: corpusRepair.score,
-      margin: corpusRepair.margin,
-      regionalVocabularyApplied: regionalNormalization?.normalized === true,
+      subjectRepairApplied: repair.subjectRepairApplied,
+      corpusRepairApplied: repair.corpusRepairApplied,
+      corpusRuleId: repair.corpusRuleId,
+      correctionId: repair.correctionId,
+      strategy: repair.strategy,
+      score: repair.score,
+      margin: repair.margin,
+      transcriptRepairMs: Number(
+        (performance.now() - repairStartedAt).toFixed(3),
+      ),
+      regionalVocabularyApplied: repair.regionalVocabularyApplied,
       regionalVocabularyReplacementCount:
-        regionalNormalization?.replacements.length ?? 0,
-      regionalVocabularySourceRows: regionalNormalization
-        ? [
-            ...new Set(
-              regionalNormalization.replacements.flatMap(
-                (replacement) => replacement.sourceRows,
-              ),
-            ),
-          ]
-        : [],
-      unresolvedRegionalVariantCount:
-        regionalNormalization?.unresolvedVariants.length ?? 0,
+        repair.regionalVocabularyReplacementCount,
+      regionalVocabularySourceRows: repair.regionalVocabularySourceRows,
+      unresolvedRegionalVariantCount: repair.unresolvedRegionalVariantCount,
     });
   }
 
-  return regionalNormalization?.text ?? corpusRepair.text;
+  return repair.text;
 }
 
 function assertVietnameseTranscript(
@@ -66,25 +50,18 @@ function assertVietnameseTranscript(
     utteranceDurationMs?: number;
   } = {},
 ) {
-  const unexpectedScript = containsUnexpectedEastAsianScript(text);
-  const qualityIssue = getVietnameseTranscriptQualityIssue(text, segments, {
+  assertVietnameseTranscriptIsUsable(text, segments, {
     utteranceDurationMs: options.utteranceDurationMs,
+    onRejected: ({ reason }) => {
+      logEvent("warn", "asr_transcript_rejected", {
+        requestId: options.requestId,
+        provider: options.provider,
+        reason,
+        utteranceDurationMs: options.utteranceDurationMs,
+        transcriptLength: text.trim().length,
+      });
+    },
   });
-  if (!unexpectedScript && !qualityIssue) return;
-
-  logEvent("warn", "asr_transcript_rejected", {
-    requestId: options.requestId,
-    provider: options.provider,
-    reason: unexpectedScript ? "unexpected_script" : qualityIssue,
-    utteranceDurationMs: options.utteranceDurationMs,
-    transcriptLength: text.trim().length,
-  });
-
-  throw new AppError(
-    "ASR_LOW_CONFIDENCE",
-    "Mình chưa nghe rõ. Con đưa micro lại gần và nói rõ hơn nhé.",
-    422,
-  );
 }
 
 async function transcribeAudio(input: ConversationRequest) {
@@ -150,7 +127,7 @@ export async function transcribeVietnamese(input: ConversationRequest) {
       utteranceDurationMs: input.benchmark?.utteranceDurationMs,
     });
     return input.asrMode && input.asrMode !== "text"
-      ? repairTranscriptFromChildSpeech(sourceText, input, "device")
+      ? repairVietnameseTranscriptFromChildSpeech(sourceText, input, "device")
       : sourceText;
   }
 
@@ -170,7 +147,7 @@ export async function transcribeVietnamese(input: ConversationRequest) {
       utteranceDurationMs: input.benchmark?.utteranceDurationMs,
     });
 
-    return repairTranscriptFromChildSpeech(
+    return repairVietnameseTranscriptFromChildSpeech(
       vietnameseText,
       input,
       "cloudflare",
