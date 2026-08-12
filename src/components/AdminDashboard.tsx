@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { LanguageToggle } from "@/components/LanguageToggle";
 import {
   useUiLocale,
@@ -175,13 +175,20 @@ export function AdminDashboard() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
+  const overviewRequestRef = useRef<AbortController | null>(null);
 
   const adminHeaders = useCallback((withJson = false): Record<string, string> => {
     return withJson ? { "Content-Type": "application/json" } : {};
   }, []);
 
-  const loadOverview = useCallback(async () => {
-    setIsLoading(true);
+  const loadOverview = useCallback(async (options: { silent?: boolean } = {}) => {
+    overviewRequestRef.current?.abort();
+    const requestController = new AbortController();
+    overviewRequestRef.current = requestController;
+
+    if (!options.silent) {
+      setIsLoading(true);
+    }
     setError(null);
 
     try {
@@ -192,6 +199,7 @@ export function AdminDashboard() {
       const response = await fetchAdmin(`/api/admin/overview?${params}`, {
         cache: "no-store",
         headers: adminHeaders(),
+        signal: requestController.signal,
       });
       const data = (await response.json().catch(() => null)) as {
         overview?: AdminOverview;
@@ -205,6 +213,8 @@ export function AdminDashboard() {
           ),
         );
       }
+
+      if (requestController.signal.aborted) return;
 
       setOverview(data.overview);
       setDrafts((current) => {
@@ -237,13 +247,17 @@ export function AdminDashboard() {
         setSelectedClientId(nextSelectedClientId);
       }
     } catch (loadError) {
+      if (requestController.signal.aborted) return;
       setError(
         loadError instanceof Error
           ? loadError.message
           : pick("Không tải được dữ liệu quản trị.", "无法加载管理数据。"),
       );
     } finally {
-      setIsLoading(false);
+      if (overviewRequestRef.current === requestController) {
+        overviewRequestRef.current = null;
+        setIsLoading(false);
+      }
     }
   }, [adminHeaders, pick, selectedClientId, status]);
 
@@ -252,8 +266,21 @@ export function AdminDashboard() {
       void loadOverview();
     }, 0);
 
-    return () => window.clearTimeout(timeoutId);
+    return () => {
+      window.clearTimeout(timeoutId);
+      overviewRequestRef.current?.abort();
+    };
   }, [loadOverview]);
+
+  useEffect(() => {
+    const intervalId = window.setInterval(() => {
+      if (document.visibilityState === "visible" && !pendingAction) {
+        void loadOverview({ silent: true });
+      }
+    }, 10_000);
+
+    return () => window.clearInterval(intervalId);
+  }, [loadOverview, pendingAction]);
 
   const selectedDevice = overview?.devices.find(
     (device) => device.clientId === selectedClientId,
