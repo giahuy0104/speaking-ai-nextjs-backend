@@ -1,7 +1,4 @@
-import {
-  getConversationHistoryEntry,
-  updateConversationHistory,
-} from "@/lib/history";
+import { updateConversationHistory } from "@/lib/history";
 import {
   isCloudinaryUserAudioConfigured,
   uploadUserAudioToCloudinary,
@@ -25,32 +22,24 @@ async function archiveUserSpokenAudioInternal(
     throw new Error("Tệp gửi lên không phải định dạng audio.");
   }
 
-  let existingConversation = await getConversationHistoryEntry(
-    options.conversationId,
-    options.clientId,
-  );
-  if (!existingConversation) {
-    for (const delayMs of [75, 150, 300, 600]) {
-      await new Promise((resolve) => setTimeout(resolve, delayMs));
-      existingConversation = await getConversationHistoryEntry(
-        options.conversationId,
-        options.clientId,
-      );
-      if (existingConversation) break;
-    }
-  }
-  if (!existingConversation) {
-    throw new Error("Không tìm thấy lượt nói để lưu audio Cloudinary.");
-  }
-
+  // Browser Streaming receives the conversation response before Next.js runs
+  // the `after()` callback that inserts history. Uploading first uses that
+  // wait productively, then the retries below bridge any remaining DB race.
   const uploaded = await uploadUserAudioToCloudinary(options);
-  const updatedConversation = await updateConversationHistory({
-    conversationId: options.conversationId,
-    clientId: options.clientId,
-    userAudioUrl: uploaded.url,
-    userAudioStatus: "ready",
-    userAudioError: null,
-  });
+  let updatedConversation = null;
+  for (const delayMs of [0, 100, 250, 500, 1_000, 2_000]) {
+    if (delayMs > 0) {
+      await new Promise((resolve) => setTimeout(resolve, delayMs));
+    }
+    updatedConversation = await updateConversationHistory({
+      conversationId: options.conversationId,
+      clientId: options.clientId,
+      userAudioUrl: uploaded.url,
+      userAudioStatus: "ready",
+      userAudioError: null,
+    });
+    if (updatedConversation) break;
+  }
 
   if (!updatedConversation) {
     throw new Error("Không tìm thấy lượt nói để lưu URL audio Cloudinary.");

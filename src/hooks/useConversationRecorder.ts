@@ -160,6 +160,41 @@ async function responseError(response: Response) {
   return `Request failed with status ${response.status}`;
 }
 
+async function uploadUserAudioWithRetry(options: {
+  conversationId: string;
+  clientId?: string;
+  audio: Blob;
+  mimeType: string;
+}) {
+  for (const delayMs of [0, 500, 1_500, 3_000]) {
+    if (delayMs > 0) {
+      await new Promise((resolve) => setTimeout(resolve, delayMs));
+    }
+
+    const formData = new FormData();
+    formData.append(
+      "audio",
+      options.audio,
+      getAudioFileName(options.audio.type || options.mimeType),
+    );
+    if (options.clientId) {
+      formData.append("clientId", options.clientId);
+    }
+
+    try {
+      const response = await fetch(
+        `/api/conversations/${encodeURIComponent(options.conversationId)}/user-audio`,
+        { method: "POST", body: formData },
+      );
+      if (response.ok || response.status === 400 || response.status === 413) {
+        return;
+      }
+    } catch {
+      // A short network interruption is retried without delaying playback.
+    }
+  }
+}
+
 function getBrowserLabel() {
   const userAgent = navigator.userAgent;
 
@@ -568,25 +603,12 @@ export function useConversationRecorder({
       result.latency = { ...result.latency, ...latency };
       onResult(result, stoppedAtRef.current);
       if (canTrustStreamingTranscript && completeAudio.size > 0) {
-        const userAudioFormData = new FormData();
-        userAudioFormData.append(
-          "audio",
-          completeAudio,
-          getAudioFileName(completeAudio.type || mimeType),
-        );
-        if (result.clientId) {
-          userAudioFormData.append("clientId", result.clientId);
-        }
-        void fetch(
-          `/api/conversations/${encodeURIComponent(result.conversationId)}/user-audio`,
-          {
-            method: "POST",
-            body: userAudioFormData,
-          },
-        ).then(
-          () => undefined,
-          () => undefined,
-        );
+        void uploadUserAudioWithRetry({
+          conversationId: result.conversationId,
+          clientId: result.clientId,
+          audio: completeAudio,
+          mimeType,
+        });
       }
       // Latency reporting is useful for tuning, but it must never delay the
       // result callback that starts audio playback.

@@ -130,6 +130,15 @@ function shortClientId(clientId?: string) {
   return clientId.length > 22 ? `${clientId.slice(0, 22)}…` : clientId;
 }
 
+function hasStaleUserAudioUpload(conversation: ConversationHistoryEntry) {
+  const createdAt = Date.parse(conversation.createdAt);
+  return (
+    conversation.userAudioStatus === "pending" &&
+    Number.isFinite(createdAt) &&
+    Date.now() - createdAt > 2 * 60 * 1_000
+  );
+}
+
 function deviceTitle(device: DeviceSummary | undefined, locale: UiLocale) {
   if (!device) {
     return localeText(locale, "Thiết bị chưa đặt tên", "未命名设备");
@@ -625,6 +634,8 @@ export function AdminDashboard() {
             const savePending =
               pendingAction === `${conversation.conversationId}:save`;
             const anyPending = savePending;
+            const staleUserAudioUpload =
+              hasStaleUserAudioUpload(conversation);
 
             return (
               <article
@@ -690,24 +701,32 @@ export function AdminDashboard() {
                       <div
                         className={`mt-4 rounded-lg border p-3 text-xs ${
                           conversation.userAudioStatus === "failed" ||
-                          conversation.userAudioStatus === "not_configured"
+                          conversation.userAudioStatus === "not_configured" ||
+                          staleUserAudioUpload
                             ? "border-rose-400/20 bg-rose-400/5 text-rose-200"
                             : conversation.userAudioStatus === "pending"
                               ? "border-amber-400/20 bg-amber-400/5 text-amber-200"
                               : "border-slate-700 bg-slate-900/70 text-slate-400"
                         }`}
                       >
-                        {conversation.userAudioStatus === "pending"
+                        {conversation.userAudioStatus === "pending" &&
+                        !staleUserAudioUpload
                           ? pick(
                               "Audio người dùng đang được lưu lên Cloudinary…",
                               "用户音频正在保存到 Cloudinary…",
                             )
                           : conversation.userAudioStatus === "failed" ||
-                              conversation.userAudioStatus === "not_configured"
+                              conversation.userAudioStatus ===
+                                "not_configured" ||
+                              staleUserAudioUpload
                             ? conversation.userAudioError ??
                               pick(
-                                "Không lưu được audio người dùng.",
-                                "无法保存用户音频。",
+                                staleUserAudioUpload
+                                  ? "Audio không được gửi thành công. Hãy tạo một lượt nói mới."
+                                  : "Không lưu được audio người dùng.",
+                                staleUserAudioUpload
+                                  ? "音频未成功发送，请重新录制。"
+                                  : "无法保存用户音频。",
                               )
                             : pick(
                                 "Lượt nói cũ này không có file audio đã lưu.",
