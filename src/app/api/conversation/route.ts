@@ -167,7 +167,6 @@ export async function POST(request: Request) {
         input.asrMode === "ble_offline_intent"
         ? "audio"
         : "text",
-      input.audioFile,
     );
 
     return withRequestId(Response.json({ ...result, learning: null }), requestId);
