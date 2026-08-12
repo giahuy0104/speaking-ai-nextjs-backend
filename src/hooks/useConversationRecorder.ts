@@ -567,6 +567,27 @@ export function useConversationRecorder({
 
       result.latency = { ...result.latency, ...latency };
       onResult(result, stoppedAtRef.current);
+      if (canTrustStreamingTranscript && completeAudio.size > 0) {
+        const userAudioFormData = new FormData();
+        userAudioFormData.append(
+          "audio",
+          completeAudio,
+          getAudioFileName(completeAudio.type || mimeType),
+        );
+        if (result.clientId) {
+          userAudioFormData.append("clientId", result.clientId);
+        }
+        void fetch(
+          `/api/conversations/${encodeURIComponent(result.conversationId)}/user-audio`,
+          {
+            method: "POST",
+            body: userAudioFormData,
+          },
+        ).then(
+          () => undefined,
+          () => undefined,
+        );
+      }
       // Latency reporting is useful for tuning, but it must never delay the
       // result callback that starts audio playback.
       void fetch("/api/history", {

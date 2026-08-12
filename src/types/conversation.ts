@@ -233,6 +233,7 @@ export type ConversationResponse = {
 export type ConversationHistoryEntry = ConversationResponse & {
   createdAt: string;
   inputMode: "text" | "audio";
+  userAudioUrl?: string | null;
   qualityApproved?: boolean;
   reviewStatus?: ConversationReviewStatus;
   reviewedAt?: string;
@@ -264,6 +265,7 @@ export type ConversationHistoryPatch = {
   originalEnglishText?: string;
   audioUrl?: string | null;
   audioSource?: AudioSource;
+  userAudioUrl?: string | null;
   latency?: Partial<ConversationLatency>;
   qualityApproved?: boolean;
   reviewStatus?: ConversationReviewStatus;

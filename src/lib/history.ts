@@ -18,6 +18,7 @@ import {
   clearRecords,
   deleteRecord,
   deleteRecordsOlderThan,
+  getRecord,
   insertRecordIfAbsent,
   listRecords,
   putRecord,
@@ -151,6 +152,10 @@ function applyConversationHistoryPatch(
       patch.originalEnglishText ?? entry.originalEnglishText,
     audioUrl: patch.audioUrl ?? entry.audioUrl,
     audioSource: patch.audioSource ?? entry.audioSource,
+    userAudioUrl:
+      patch.userAudioUrl !== undefined
+        ? patch.userAudioUrl
+        : entry.userAudioUrl,
     latency: {
       ...entry.latency,
       ...patch.latency,
@@ -199,6 +204,32 @@ export async function appendConversationHistory(
     entries.push(entry);
     await writeHistoryFile(entries.slice(-maxStoredHistoryItems));
   });
+}
+
+export async function getConversationHistoryEntry(
+  conversationId: string,
+  clientId?: string,
+) {
+  if (isPostgresStorageEnabled()) {
+    const record = await getRecord<ConversationHistoryEntry>(
+      historyNamespace,
+      conversationId,
+    );
+    const entry = record?.value ?? null;
+    return entry &&
+      (clientId === undefined || entry.clientId === clientId)
+      ? entry
+      : null;
+  }
+
+  const { entries } = await readHistoryFile();
+  return (
+    entries.find(
+      (entry) =>
+        entry.conversationId === conversationId &&
+        (clientId === undefined || entry.clientId === clientId),
+    ) ?? null
+  );
 }
 
 export async function readConversationHistory(limit = maxHistoryResponseItems) {

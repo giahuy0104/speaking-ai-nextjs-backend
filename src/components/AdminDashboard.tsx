@@ -647,6 +647,27 @@ export function AdminDashboard() {
                     <p className="mt-2 text-base leading-7 text-white">
                       {conversation.vietnameseText}
                     </p>
+                    {conversation.userAudioUrl ? (
+                      <div className="mt-4 rounded-lg border border-cyan-400/20 bg-cyan-400/5 p-3">
+                        <p className="text-xs font-semibold text-cyan-200">
+                          {pick(
+                            "Audio người dùng nói",
+                            "用户说话音频",
+                          )}
+                        </p>
+                        <audio
+                          controls
+                          preload="metadata"
+                          src={conversation.userAudioUrl}
+                          className="mt-2 h-10 w-full"
+                        >
+                          {pick(
+                            "Trình duyệt không phát được audio này.",
+                            "浏览器无法播放此音频。",
+                          )}
+                        </audio>
+                      </div>
+                    ) : null}
                     <div className="mt-4 flex flex-wrap gap-x-4 gap-y-1 text-xs text-slate-500">
                       <span>ASR {conversation.latency.asrMs} ms</span>
                       <span>Text {conversation.latency.llmMs} ms</span>

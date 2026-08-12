@@ -939,7 +939,7 @@ export async function POST(request: Request, context: RouteContext) {
         totalMs: responseReadyMs,
       },
     });
-    scheduleConversationPostResponseTasks(result, "audio");
+    scheduleConversationPostResponseTasks(result, "audio", audioFile);
     return withRequestId(Response.json(responsePayload), requestId);
   } catch (error) {
     candidateMonitorCancelled = true;
