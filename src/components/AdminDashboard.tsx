@@ -647,6 +647,31 @@ export function AdminDashboard() {
                     <p className="mt-2 text-base leading-7 text-white">
                       {conversation.vietnameseText}
                     </p>
+                    {conversation.userAudioUrl ? (
+                      <div className="mt-4 rounded-lg border border-cyan-400/20 bg-cyan-400/5 p-3">
+                        <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-cyan-200">
+                          {pick("Audio người dùng", "用户音频")}
+                        </p>
+                        <audio
+                          className="h-10 w-full"
+                          controls
+                          preload="none"
+                          src={conversation.userAudioUrl}
+                        >
+                          {pick(
+                            "Trình duyệt không hỗ trợ phát audio.",
+                            "浏览器不支持播放音频。",
+                          )}
+                        </audio>
+                      </div>
+                    ) : conversation.inputMode === "audio" ? (
+                      <p className="mt-4 text-xs text-slate-500">
+                        {pick(
+                          "Audio người dùng chưa được lưu trên Cloudinary.",
+                          "用户音频尚未保存到 Cloudinary。",
+                        )}
+                      </p>
+                    ) : null}
                     <div className="mt-4 flex flex-wrap gap-x-4 gap-y-1 text-xs text-slate-500">
                       <span>ASR {conversation.latency.asrMs} ms</span>
                       <span>Text {conversation.latency.llmMs} ms</span>

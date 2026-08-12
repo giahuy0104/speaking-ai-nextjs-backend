@@ -236,9 +236,21 @@ export type ConversationResponse = {
   latency: ConversationLatency;
 };
 
+export type ConversationUserAudio = {
+  publicId: string;
+  format: string;
+  version: number;
+  bytes: number;
+  mimeType: string;
+  resourceType: "video";
+  deliveryType: "authenticated";
+};
+
 export type ConversationHistoryEntry = ConversationResponse & {
   createdAt: string;
   inputMode: "text" | "audio";
+  userAudioUrl?: string;
+  userAudio?: ConversationUserAudio;
   qualityApproved?: boolean;
   reviewStatus?: ConversationReviewStatus;
   reviewedAt?: string;
@@ -270,6 +282,8 @@ export type ConversationHistoryPatch = {
   originalEnglishText?: string;
   audioUrl?: string | null;
   audioSource?: AudioSource;
+  userAudioUrl?: string;
+  userAudio?: ConversationUserAudio;
   latency?: Partial<ConversationLatency>;
   qualityApproved?: boolean;
   reviewStatus?: ConversationReviewStatus;

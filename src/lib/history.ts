@@ -151,6 +151,8 @@ function applyConversationHistoryPatch(
       patch.originalEnglishText ?? entry.originalEnglishText,
     audioUrl: patch.audioUrl ?? entry.audioUrl,
     audioSource: patch.audioSource ?? entry.audioSource,
+    userAudioUrl: patch.userAudioUrl ?? entry.userAudioUrl,
+    userAudio: patch.userAudio ?? entry.userAudio,
     latency: {
       ...entry.latency,
       ...patch.latency,

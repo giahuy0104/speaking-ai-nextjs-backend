@@ -71,6 +71,7 @@ Open [http://localhost:3000/admin](http://localhost:3000/admin) to:
 - filter conversation history by device and review status;
 - label the current Android device and child profile;
 - approve, reject, or correct an English sentence;
+- play the authenticated Cloudinary recording captured from each audio turn;
 - save approved corrections as a client-scoped rule and warm its audio cache;
 - request an AI review only when needed, reusing the saved result afterward.
 
@@ -79,6 +80,12 @@ Admin access requires a username and password in every environment. Copy
 unique `ADMIN_PASSWORD`, then restart the server and sign in at `/admin/login`.
 The signed, HTTP-only session lasts 12 hours. Changing either environment value
 invalidates every existing admin session.
+
+User recordings are uploaded only after the conversation response has been sent,
+so this archival step does not delay playback. Configure `CLOUDINARY_CLOUD_NAME`,
+`CLOUDINARY_API_KEY`, and `CLOUDINARY_API_SECRET`. The assets use Cloudinary's
+authenticated delivery type and the dashboard streams them through an
+admin-protected backend route.
 
 ## Storage modes
 

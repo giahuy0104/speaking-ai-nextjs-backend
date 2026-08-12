@@ -1,18 +1,81 @@
 import { after } from "next/server";
 import type { ConversationResponse } from "@/types/conversation";
-import { appendConversationHistory } from "@/lib/history";
+import {
+  appendConversationHistory,
+  updateConversationHistory,
+} from "@/lib/history";
 import { logEvent } from "@/lib/observability";
+import {
+  getConversationUserAudioUrl,
+  isCloudinaryUserAudioConfigured,
+  uploadConversationUserAudio,
+} from "@/lib/storage/cloudinaryUserAudio";
 import { maybeLearnFromRepeatedUse } from "./adaptiveLearning";
+
+type PostResponseOptions = {
+  userAudio?: Blob;
+};
+
+async function persistUserAudio(result: ConversationResponse, audio: Blob) {
+  if (!isCloudinaryUserAudioConfigured()) {
+    logEvent("warn", "conversation_user_audio_skipped", {
+      requestId: result.requestId,
+      conversationId: result.conversationId,
+      reason: "cloudinary_not_configured",
+    });
+    return;
+  }
+
+  const startedAt = Date.now();
+  const userAudio = await uploadConversationUserAudio(
+    result.conversationId,
+    audio,
+  );
+  const updated = await updateConversationHistory({
+    conversationId: result.conversationId,
+    clientId: result.clientId,
+    userAudioUrl: getConversationUserAudioUrl(result.conversationId),
+    userAudio,
+  });
+
+  if (!updated) {
+    throw new Error("Không tìm thấy lịch sử lượt nói sau khi upload audio.");
+  }
+
+  logEvent("info", "conversation_user_audio_uploaded", {
+    requestId: result.requestId,
+    conversationId: result.conversationId,
+    bytes: userAudio.bytes,
+    format: userAudio.format,
+    latencyMs: Date.now() - startedAt,
+  });
+}
 
 export function scheduleConversationPostResponseTasks(
   result: ConversationResponse,
   inputMode: "audio" | "text",
+  options: PostResponseOptions = {},
 ) {
   after(async () => {
     const startedAt = Date.now();
     try {
       await appendConversationHistory(result, inputMode);
-      await maybeLearnFromRepeatedUse(result);
+      const tasks: Promise<unknown>[] = [maybeLearnFromRepeatedUse(result)];
+      if (inputMode === "audio" && options.userAudio?.size) {
+        tasks.push(persistUserAudio(result, options.userAudio));
+      }
+
+      const taskResults = await Promise.allSettled(tasks);
+      taskResults.forEach((taskResult, index) => {
+        if (taskResult.status === "rejected") {
+          logEvent("error", "conversation_post_response_subtask_failed", {
+            requestId: result.requestId,
+            conversationId: result.conversationId,
+            subtask: index === 0 ? "adaptive_learning" : "user_audio_upload",
+            error: taskResult.reason,
+          });
+        }
+      });
       logEvent("info", "conversation_post_response_completed", {
         requestId: result.requestId,
         conversationId: result.conversationId,
