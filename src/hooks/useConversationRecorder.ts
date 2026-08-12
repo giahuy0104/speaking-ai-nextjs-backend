@@ -17,6 +17,7 @@ import {
   supportsProgressiveEncodedAudioUpload,
   type AudioSessionUploadStats,
 } from "@/lib/client/audioSessionUploader";
+import { uploadConversationUserAudioAfterResponse } from "@/lib/client/userAudioUploader";
 
 type SpeechRecognitionConstructor = new () => SpeechRecognitionLike;
 
@@ -567,6 +568,28 @@ export function useConversationRecorder({
 
       result.latency = { ...result.latency, ...latency };
       onResult(result, stoppedAtRef.current);
+      if (canTrustStreamingTranscript && completeAudio.size > 0) {
+        if (!result.clientId) {
+          console.error("conversation_user_audio_background_upload_failed", {
+            conversationId: result.conversationId,
+            error: new Error("Backend không trả về clientId của lượt nói."),
+          });
+        } else {
+          void uploadConversationUserAudioAfterResponse({
+            conversationId: result.conversationId,
+            clientId: result.clientId,
+            sessionId: result.sessionId,
+            audio: completeAudio,
+            fileName: getAudioFileName(completeAudio.type || mimeType),
+            mimeType: completeAudio.type || mimeType,
+          }).catch((error) => {
+            console.error("conversation_user_audio_background_upload_failed", {
+              conversationId: result.conversationId,
+              error,
+            });
+          });
+        }
+      }
       // Latency reporting is useful for tuning, but it must never delay the
       // result callback that starts audio playback.
       void fetch("/api/history", {
