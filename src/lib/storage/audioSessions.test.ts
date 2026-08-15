@@ -288,7 +288,7 @@ test("finalize accepts AAC audio for batch uploads", async () => {
   assert.equal(Buffer.from(await file.arrayBuffer()).toString(), "aac-audio");
 });
 
-test("finalize accepts other declared audio MIME types", async () => {
+test("finalize rejects unreviewed declared audio MIME types", async () => {
   const sessionId = await sessions.createAudioUploadSession();
   await sessions.saveAudioSessionChunk(
     sessionId,
@@ -296,13 +296,16 @@ test("finalize accepts other declared audio MIME types", async () => {
     new File([Buffer.from("custom-audio")], "speech.custom"),
   );
 
-  const file = await sessions.finalizeAudioUploadSession(
-    sessionId,
-    "audio/x-custom-codec",
+  await assert.rejects(
+    () =>
+      sessions.finalizeAudioUploadSession(
+        sessionId,
+        "audio/x-custom-codec",
+      ),
+    (error: unknown) =>
+      error instanceof sessions.AudioUploadError &&
+      error.code === "UNSUPPORTED_AUDIO_TYPE",
   );
-
-  assert.equal(file.name, "speech.custom-codec");
-  assert.equal(file.type, "audio/x-custom-codec");
 });
 
 test("finalize rejects PCM metadata with a mismatched byte length", async () => {

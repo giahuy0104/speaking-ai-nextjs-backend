@@ -8,6 +8,7 @@ import {
   findObservedChildSpeechAlias,
   findObservedChildSpeechAliasFolded,
   getObservedChildSpeechAliasCandidates,
+  observedChildSpeechAliases,
   type ObservedChildSpeechAlias,
 } from "./observedChildSpeechAliases";
 import { buildReviewedRegionalAliases } from "./regionalVocabulary";
@@ -389,6 +390,14 @@ const reviewedObservedAsrCorrectionsV1 = [
     aliases: ["Con học lớp xấu rồi"],
     canonical: "Con học lớp sáu rồi.",
   },
+  {
+    aliases: ["còn hết nước", "Con hát nút"],
+    canonical: "Con khát nước.",
+  },
+  {
+    aliases: ["Cậu muốn dỡ tay à?"],
+    canonical: "Con muốn rửa tay.",
+  },
 ] as const;
 
 const reviewedRuleByCanonicalVietnamese = new Map(
@@ -396,6 +405,11 @@ const reviewedRuleByCanonicalVietnamese = new Map(
     normalizeVietnameseForExactMatch(rule.vietnamese),
     rule,
   ]),
+);
+const observedCanonicalVietnamese = new Set(
+  observedChildSpeechAliases.map((alias) =>
+    normalizeVietnameseForExactMatch(alias.canonical),
+  ),
 );
 const observedAsrCorrectionByFoldedText = new Map(
   reviewedObservedAsrCorrectionsV1.flatMap((correction) =>
@@ -652,6 +666,13 @@ export function repairVietnameseTranscriptWithCorpus(
       score: 1,
       margin: 1,
     };
+  }
+
+  // A fully valid sentence must never be rewritten merely because it sounds
+  // similar to the noisy source of another generated child-speech alias.
+  // Explicitly reviewed production aliases above remain authoritative.
+  if (observedCanonicalVietnamese.has(normalizedExact)) {
+    return { text: trimmed, repaired: false };
   }
 
   const observedChildAlias = findObservedChildSpeechAlias(trimmed);

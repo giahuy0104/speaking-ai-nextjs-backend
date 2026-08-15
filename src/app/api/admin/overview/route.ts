@@ -6,6 +6,7 @@ import {
   logEvent,
   withRequestId,
 } from "@/lib/observability";
+import { isDatabaseTransferQuotaError } from "@/lib/db/errors";
 
 export const runtime = "nodejs";
 
@@ -30,11 +31,42 @@ export async function GET(request: Request) {
   const status = validStatuses.has(rawStatus as AdminReviewFilter)
     ? (rawStatus as AdminReviewFilter)
     : "all";
-  const rawLimit = Number(url.searchParams.get("limit") ?? 200);
-  const limit = Number.isFinite(rawLimit) ? rawLimit : 200;
+  const rawLimit = Number(url.searchParams.get("limit") ?? 50);
+  const limit = Number.isFinite(rawLimit) ? rawLimit : 50;
   const clientId = url.searchParams.get("clientId")?.trim() || undefined;
 
-  const overview = await getAdminOverview({ clientId, status, limit });
+  let overview;
+  try {
+    overview = await getAdminOverview({ clientId, status, limit });
+  } catch (error) {
+    if (!isDatabaseTransferQuotaError(error)) {
+      throw error;
+    }
+
+    logEvent("error", "database_transfer_quota_exceeded", {
+      requestId,
+      route: "/api/admin/overview",
+    });
+    return withRequestId(
+      Response.json(
+        {
+          error: {
+            code: "DATABASE_TRANSFER_QUOTA_EXCEEDED",
+            message:
+              "Neon đã hết hạn mức truyền dữ liệu. Hãy nâng gói hoặc chờ Neon cấp lại quota rồi làm mới trang.",
+          },
+        },
+        {
+          status: 503,
+          headers: {
+            "Cache-Control": "no-store",
+            "Retry-After": "3600",
+          },
+        },
+      ),
+      requestId,
+    );
+  }
   if (overview.latencyHealth.status === "warning") {
     logEvent("warn", "latency_p95_alert", {
       requestId,

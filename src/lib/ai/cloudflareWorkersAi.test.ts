@@ -42,6 +42,21 @@ test("builds a Cloudflare request for faithful Vietnamese transcription", () => 
   assert.equal("initial_prompt" in body, false);
 });
 
+test("builds a Cloudflare request for English lesson transcription", () => {
+  const bytes = Buffer.from("lesson audio bytes");
+  const audio = bytes.buffer.slice(
+    bytes.byteOffset,
+    bytes.byteOffset + bytes.byteLength,
+  ) as ArrayBuffer;
+  const body = buildCloudflareAudioTranscriptionBody(audio, "en");
+
+  assert.equal(body.audio, bytes.toString("base64"));
+  assert.equal(body.task, "transcribe");
+  assert.equal(body.language, "en");
+  assert.equal(body.vad_filter, true);
+  assert.equal(body.condition_on_previous_text, false);
+});
+
 test("does not run Cloudflare VAD after Flutter already confirmed speech", () => {
   const bytes = Buffer.from("audio bytes");
   const audio = bytes.buffer.slice(

@@ -17,6 +17,9 @@ import type {
 } from "@/types/conversation";
 import { buildLatencyReport } from "@/lib/reports";
 import { getChildDataPolicy } from "@/lib/dataPolicy";
+import { isPostgresStorageEnabled } from "@/lib/db";
+import { readPostgresAdminOverviewSnapshot } from "@/lib/adminOverviewPostgres";
+import { logEvent } from "@/lib/observability";
 
 export function getConversationReviewStatus(
   conversation: ConversationHistoryEntry,
@@ -55,6 +58,99 @@ function matchesStatus(
   return getConversationReviewStatus(entry) === status;
 }
 
+function buildLatencyHealth(
+  sampleCount: number,
+  p95FirstAudioMs: number,
+): AdminOverview["latencyHealth"] {
+  const configuredThreshold = Number(process.env.LATENCY_P95_ALERT_MS ?? 2500);
+  const thresholdMs = Number.isFinite(configuredThreshold) &&
+    configuredThreshold >= 500
+    ? Math.round(configuredThreshold)
+    : 2500;
+  const warning = sampleCount >= 10 && p95FirstAudioMs > thresholdMs;
+
+  return {
+    sampleCount,
+    p95FirstAudioMs,
+    thresholdMs,
+    status: warning
+      ? "warning"
+      : sampleCount >= 10
+        ? "healthy"
+        : "insufficient_data",
+    message: warning
+      ? `P95 từ lúc dừng nói đến khi audio bắt đầu phát là ${p95FirstAudioMs} ms, vượt ngưỡng ${thresholdMs} ms.`
+      : sampleCount >= 10
+        ? "P95 đang nằm trong ngưỡng theo dõi."
+        : "Cần ít nhất 10 lượt có telemetry phát audio để đánh giá P95.",
+  };
+}
+
+async function getPostgresAdminOverview(options: {
+  clientId?: string;
+  status: AdminReviewFilter;
+  limit: number;
+}): Promise<AdminOverview> {
+  const dataPolicy = getChildDataPolicy();
+  const retentionCutoff = dataPolicy.historyRetentionDays
+    ? new Date(
+        Date.now() - dataPolicy.historyRetentionDays * 24 * 60 * 60 * 1000,
+      ).toISOString()
+    : undefined;
+  const snapshot = await readPostgresAdminOverviewSnapshot({
+    ...options,
+    retentionCutoff,
+  });
+  if (snapshot.deletedByRetention > 0) {
+    logEvent("info", "child_history_retention_applied", {
+      retentionDays: dataPolicy.historyRetentionDays,
+      deletedCount: snapshot.deletedByRetention,
+      storage: "postgres",
+    });
+  }
+
+  const profiles = Object.fromEntries(
+    snapshot.profiles.map((profile) => [profile.clientId, profile]),
+  );
+  const countsByClientId = new Map(
+    snapshot.deviceCounts.map((counts) => [counts.clientId, counts]),
+  );
+  const allClientIds = new Set([
+    ...Object.keys(profiles),
+    ...snapshot.deviceCounts.map((counts) => counts.clientId),
+  ]);
+  const devices: DeviceSummary[] = [...allClientIds].map((clientId) => {
+    const profile = profiles[clientId] ?? createDefaultDeviceProfile(clientId);
+    const counts = countsByClientId.get(clientId);
+
+    return {
+      ...profile,
+      conversationCount: counts?.conversationCount ?? 0,
+      unreviewedCount: counts?.unreviewedCount ?? 0,
+      approvedCount: counts?.approvedCount ?? 0,
+      rejectedCount: counts?.rejectedCount ?? 0,
+      lastSeenAt: counts?.lastSeenAt,
+    };
+  });
+  devices.sort((left, right) =>
+    (right.lastSeenAt ?? "").localeCompare(left.lastSeenAt ?? ""),
+  );
+
+  return {
+    devices,
+    conversations: snapshot.conversations,
+    stats: snapshot.stats,
+    latencyHealth: buildLatencyHealth(
+      snapshot.latencySampleCount,
+      snapshot.p95FirstAudioMs,
+    ),
+    dataPolicy,
+    filters: options,
+    securityMode: getAdminSecurityMode(),
+    generatedAt: new Date().toISOString(),
+  };
+}
+
 export async function getAdminOverview(options: {
   clientId?: string;
   status?: AdminReviewFilter;
@@ -62,6 +158,14 @@ export async function getAdminOverview(options: {
 } = {}): Promise<AdminOverview> {
   const status = options.status ?? "all";
   const limit = Math.max(1, Math.min(Math.floor(options.limit ?? 200), 500));
+  if (isPostgresStorageEnabled()) {
+    return getPostgresAdminOverview({
+      clientId: options.clientId,
+      status,
+      limit,
+    });
+  }
+
   const [history, profiles] = await Promise.all([
     readConversationHistory(500),
     readDeviceProfiles(),
@@ -104,26 +208,10 @@ export async function getAdminOverview(options: {
     .filter((entry) => matchesStatus(entry, status))
     .slice(0, limit);
   const latencyReport = buildLatencyReport(scopedHistory);
-  const latencyAlert = latencyReport.alerts[0];
-  const latencyHealth: AdminOverview["latencyHealth"] = latencyAlert
-    ? {
-        sampleCount: latencyAlert.sampleCount,
-        p95FirstAudioMs: latencyAlert.actualMs,
-        thresholdMs: latencyAlert.thresholdMs,
-        status: "warning",
-        message: latencyAlert.message,
-      }
-    : {
-        sampleCount: latencyReport.measuredTurns,
-        p95FirstAudioMs: latencyReport.p95FirstAudioMs,
-        thresholdMs: Number(process.env.LATENCY_P95_ALERT_MS ?? 2500),
-        status:
-          latencyReport.measuredTurns >= 10 ? "healthy" : "insufficient_data",
-        message:
-          latencyReport.measuredTurns >= 10
-            ? "P95 đang nằm trong ngưỡng theo dõi."
-            : "Cần ít nhất 10 lượt có telemetry phát audio để đánh giá P95.",
-      };
+  const latencyHealth = buildLatencyHealth(
+    latencyReport.measuredTurns,
+    latencyReport.p95FirstAudioMs,
+  );
 
   return {
     devices,

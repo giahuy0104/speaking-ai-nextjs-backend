@@ -88,6 +88,7 @@ export const postgresAudioChunkUpsertQuery = `WITH target AS (
               target.chunk_storage_backend
          FROM target`;
 const allowedMimeTypes = new Map([
+  ["audio/aac", "speech.aac"],
   ["audio/mp4", "speech.m4a"],
   ["audio/m4a", "speech.m4a"],
   ["audio/wav", "speech.wav"],

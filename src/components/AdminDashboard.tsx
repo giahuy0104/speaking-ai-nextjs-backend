@@ -43,6 +43,22 @@ function getResponseError(data: unknown, fallback: string) {
   return fallback;
 }
 
+function getResponseErrorCode(data: unknown) {
+  if (
+    data &&
+    typeof data === "object" &&
+    "error" in data &&
+    data.error &&
+    typeof data.error === "object" &&
+    "code" in data.error &&
+    typeof data.error.code === "string"
+  ) {
+    return data.error.code;
+  }
+
+  return null;
+}
+
 async function fetchAdmin(
   input: RequestInfo | URL,
   init?: RequestInit,
@@ -176,12 +192,16 @@ export function AdminDashboard() {
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const overviewRequestRef = useRef<AbortController | null>(null);
+  const overviewRetryAfterRef = useRef(0);
 
   const adminHeaders = useCallback((withJson = false): Record<string, string> => {
     return withJson ? { "Content-Type": "application/json" } : {};
   }, []);
 
   const loadOverview = useCallback(async (options: { silent?: boolean } = {}) => {
+    if (options.silent && Date.now() < overviewRetryAfterRef.current) {
+      return;
+    }
     overviewRequestRef.current?.abort();
     const requestController = new AbortController();
     overviewRequestRef.current = requestController;
@@ -192,7 +212,7 @@ export function AdminDashboard() {
     setError(null);
 
     try {
-      const params = new URLSearchParams({ status, limit: "200" });
+      const params = new URLSearchParams({ status, limit: "50" });
       if (selectedClientId) {
         params.set("clientId", selectedClientId);
       }
@@ -203,9 +223,18 @@ export function AdminDashboard() {
       });
       const data = (await response.json().catch(() => null)) as {
         overview?: AdminOverview;
+        error?: { code?: string; message?: string };
       } | null;
 
       if (!response.ok || !data?.overview) {
+        if (getResponseErrorCode(data) === "DATABASE_TRANSFER_QUOTA_EXCEEDED") {
+          const retryAfterSeconds = Number(response.headers.get("retry-after"));
+          overviewRetryAfterRef.current =
+            Date.now() +
+            (Number.isFinite(retryAfterSeconds) && retryAfterSeconds > 0
+              ? retryAfterSeconds * 1000
+              : 60 * 60 * 1000);
+        }
         throw new Error(
           getResponseError(
             data,
@@ -216,6 +245,7 @@ export function AdminDashboard() {
 
       if (requestController.signal.aborted) return;
 
+      overviewRetryAfterRef.current = 0;
       setOverview(data.overview);
       setDrafts((current) => {
         const next = { ...current };
@@ -237,15 +267,6 @@ export function AdminDashboard() {
         return next;
       });
 
-      const nextSelectedClientId =
-        selectedClientId ||
-        (data.overview.devices.length === 1
-          ? data.overview.devices[0].clientId
-          : "");
-
-      if (!selectedClientId && nextSelectedClientId) {
-        setSelectedClientId(nextSelectedClientId);
-      }
     } catch (loadError) {
       if (requestController.signal.aborted) return;
       setError(
@@ -277,7 +298,7 @@ export function AdminDashboard() {
       if (document.visibilityState === "visible" && !pendingAction) {
         void loadOverview({ silent: true });
       }
-    }, 10_000);
+    }, 60_000);
 
     return () => window.clearInterval(intervalId);
   }, [loadOverview, pendingAction]);

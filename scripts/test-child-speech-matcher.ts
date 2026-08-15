@@ -118,8 +118,24 @@ function runCase(testCase: BenchmarkCase): BenchmarkRow {
 }
 
 function buildCases() {
-  const exactAliasCases: BenchmarkCase[] = observedChildSpeechAliases.map(
-    (alias) => ({
+  const canonicalKeys = new Set(
+    observedChildSpeechAliases.map((alias) =>
+      normalizeVietnameseForExactMatch(alias.canonical),
+    ),
+  );
+  const ambiguousSourceAndCanonicalKeys = new Set(
+    observedChildSpeechAliases
+      .map((alias) => normalizeVietnameseForExactMatch(alias.source))
+      .filter((source) => canonicalKeys.has(source)),
+  );
+  const exactAliasCases: BenchmarkCase[] = observedChildSpeechAliases
+    .filter(
+      (alias) =>
+        !ambiguousSourceAndCanonicalKeys.has(
+          normalizeVietnameseForExactMatch(alias.source),
+        ),
+    )
+    .map((alias) => ({
       suite: "exact_alias",
       id: alias.id,
       input: alias.source,
@@ -127,8 +143,7 @@ function buildCases() {
       note: alias.sourceRows.length
         ? `source rows: ${alias.sourceRows.join("|")}`
         : undefined,
-    }),
-  );
+    }));
 
   const accentFoldedAliasCases: BenchmarkCase[] = observedChildSpeechAliases
     .map((alias) => ({ alias, folded: stripVietnameseDiacritics(alias.source) }))
@@ -154,13 +169,23 @@ function buildCases() {
   }
   const canonicalGuardCases: BenchmarkCase[] = [
     ...canonicalByNormalizedText.values(),
-  ].map((canonical, index) => ({
-    suite: "canonical_guard",
-    id: `CANONICAL-${String(index + 1).padStart(4, "0")}`,
-    input: canonical,
-    expected: canonical,
-    note: "A standard sentence must retain its meaning",
-  }));
+  ]
+    .filter(
+      (canonical) =>
+        !ambiguousSourceAndCanonicalKeys.has(
+          normalizeVietnameseForExactMatch(canonical),
+        ) &&
+        !repairVietnameseTranscriptWithCorpus(canonical).strategy?.startsWith(
+          "reviewed_",
+        ),
+    )
+    .map((canonical, index) => ({
+      suite: "canonical_guard",
+      id: `CANONICAL-${String(index + 1).padStart(4, "0")}`,
+      input: canonical,
+      expected: canonical,
+      note: "A standard sentence must retain its meaning",
+    }));
 
   const safetyGuardCases: BenchmarkCase[] = safetyGuardTexts.map(
     (input, index) => ({

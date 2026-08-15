@@ -25,6 +25,22 @@ export type AudioTranscriptionResult = {
   model: string;
 };
 
+export type EnglishAudioTranscriptionResult = {
+  englishText: string;
+  wordCount?: number;
+  segments?: unknown[];
+  vtt?: string;
+  model: string;
+};
+
+type RawAudioTranscriptionResult = {
+  text: string;
+  wordCount?: number;
+  segments?: unknown[];
+  vtt?: string;
+  model: string;
+};
+
 function positiveInteger(name: string, fallback: number) {
   const parsed = Number(process.env[name]);
   return Number.isFinite(parsed) && parsed > 0 ? Math.floor(parsed) : fallback;
@@ -128,10 +144,11 @@ export async function translateAudioToEnglish(
   };
 }
 
-export async function transcribeAudioToVietnamese(
+async function transcribeAudio(
   audio: File,
+  language: "en" | "vi",
   options: { vadFilter?: boolean } = {},
-): Promise<AudioTranscriptionResult> {
+): Promise<RawAudioTranscriptionResult> {
   const config = getCloudflareAudioTranslationConfig();
   const timeoutMs = positiveInteger(
     "CLOUDFLARE_ASR_TIMEOUT_MS",
@@ -139,7 +156,7 @@ export async function transcribeAudioToVietnamese(
   );
   const body = buildCloudflareAudioTranscriptionBody(
     await audio.arrayBuffer(),
-    "vi",
+    language,
     {
       ...options,
       beamSize: Math.min(
@@ -177,12 +194,11 @@ export async function transcribeAudioToVietnamese(
     .json()
     .catch(() => null)) as CloudflareWorkersAiEnvelope | null;
   const result = payload?.result;
-  const vietnameseText =
-    typeof result?.text === "string" ? result.text.trim() : "";
+  const text = typeof result?.text === "string" ? result.text.trim() : "";
   const transcriptionFailure = classifyCloudflareTranscriptionResponse({
     responseOk: response.ok,
     success: payload?.success,
-    transcript: vietnameseText,
+    transcript: text,
   });
 
   if (transcriptionFailure === "provider_error") {
@@ -207,11 +223,29 @@ export async function transcribeAudioToVietnamese(
   }
 
   return {
-    vietnameseText,
+    text,
     wordCount:
       typeof result?.word_count === "number" ? result.word_count : undefined,
     segments: Array.isArray(result?.segments) ? result.segments : undefined,
     vtt: typeof result?.vtt === "string" ? result.vtt : undefined,
     model: config.model,
   };
+}
+
+export async function transcribeAudioToVietnamese(
+  audio: File,
+  options: { vadFilter?: boolean } = {},
+): Promise<AudioTranscriptionResult> {
+  const result = await transcribeAudio(audio, "vi", options);
+  const { text, ...metadata } = result;
+  return { ...metadata, vietnameseText: text };
+}
+
+export async function transcribeAudioToEnglish(
+  audio: File,
+  options: { vadFilter?: boolean } = {},
+): Promise<EnglishAudioTranscriptionResult> {
+  const result = await transcribeAudio(audio, "en", options);
+  const { text, ...metadata } = result;
+  return { ...metadata, englishText: text };
 }
