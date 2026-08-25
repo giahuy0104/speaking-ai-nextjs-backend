@@ -1,0 +1,3 @@
+{"kind":"formula","sheet":"Sheet1","address":"J2","formula":"=LOWER(TRIM(I2))"}
+{"kind":"formula","sheet":"Sheet1","address":"J66","formula":"=LOWER(TRIM(I66))"}
+{"kind":"formula","sheet":"Sheet1","address":"J130","formula":"=LOWER(TRIM(I130))"}

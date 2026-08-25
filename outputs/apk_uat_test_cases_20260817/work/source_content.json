@@ -1,0 +1,1395 @@
+{
+  "source": "C:\\Users\\DELL\\Downloads\\AIV1_Danh_sach_nghiem_thu_thiet_bi_APK_Viet_Nam_truoc_lam_khuon_dat_hang (1).docx",
+  "paragraph_count": 32,
+  "table_count": 17,
+  "inline_shape_count": 0,
+  "sections": [
+    {
+      "number": 1,
+      "page_width": 10058400,
+      "page_height": 7772400,
+      "top_margin": 411480,
+      "bottom_margin": 594360,
+      "left_margin": 384175,
+      "right_margin": 384175,
+      "header": [],
+      "footer": [
+        "AIV1 - Danh sách nghiệm thu thiết bị và APK tại Việt Nam  |  Dùng nội bộ  |  Quyết định làm khuôn và đặt hàng phải dựa trên bằng chứng kiểm thử thực tế"
+      ]
+    }
+  ],
+  "blocks": [
+    {
+      "type": "paragraph",
+      "number": 1,
+      "style": "Normal",
+      "text": "AIV1 - Danh sách kiểm tra nghiệm thu tổng thể thiết bị và APK tại Việt Nam"
+    },
+    {
+      "type": "paragraph",
+      "number": 2,
+      "style": "Normal",
+      "text": "Dùng để kiểm thử phối hợp sau khi thiết bị mẫu đến Việt Nam, làm căn cứ quyết định làm khuôn và đặt lô hàng đầu tiên  |  V1.0  |  2026-08-16"
+    },
+    {
+      "type": "table",
+      "number": 1,
+      "rows": [
+        [
+          "Hướng dẫn sử dụng: Mục đích: Danh sách này dùng để kiểm thử thực tế thiết bị mẫu AIV1 kết hợp với APK tại Việt Nam, đồng thời làm căn cứ quyết định có làm khuôn và đặt lô hàng đầu tiên hay không.\nPhạm vi áp dụng: Cốt lõi của AIV1 là “trẻ nói tiếng Việt → hệ thống tạo câu tiếng Anh ngắn gọn, có kiểm soát, phù hợp độ tuổi → phát giọng nói → trẻ luyện bắt chước”. Sản phẩm không phải chatbot trò chuyện tự do, cũng không phải máy dịch vạn năng.\nQuy tắc điền: Mỗi mục chọn “Chưa test / Đạt / Đạt có điều kiện / Không đạt / Không áp dụng (Tương lai)”. Mọi mục “Không đạt” phải ghi rõ mã thiết bị mẫu, mẫu điện thoại, bước tái hiện lỗi, mã video/ghi âm và người phụ trách."
+        ]
+      ],
+      "row_count": 1,
+      "column_count": 1
+    },
+    {
+      "type": "table",
+      "number": 2,
+      "rows": [
+        [
+          "Mức độ bằng chứng và quy tắc ra quyết định: P0 (màu đỏ): Nếu không đạt, không được dùng thiết bị mẫu đó làm căn cứ để làm khuôn hoặc đặt hàng.\nP1 (màu xanh): Có thể ảnh hưởng đến trải nghiệm hoặc rủi ro khi sản xuất hàng loạt; bắt buộc phải có người phụ trách, ngày hoàn thành và bằng chứng test lại.\n“Tương lai” (màu cam): Là hạng mục chuẩn bị cho sản xuất/nâng cấp sau này, không được ghi thành năng lực V1 đã hoàn thành."
+        ]
+      ],
+      "row_count": 1,
+      "column_count": 1
+    },
+    {
+      "type": "paragraph",
+      "number": 5,
+      "style": "Normal",
+      "text": "0. Thông tin kiểm thử và phạm vi bằng chứng hiện có"
+    },
+    {
+      "type": "table",
+      "number": 3,
+      "rows": [
+        [
+          "Mã thiết bị mẫu / phiên bản ngoại hình",
+          "__________________",
+          "Ngày kiểm thử",
+          "__________________"
+        ],
+        [
+          "Phiên bản phần cứng / firmware",
+          "__________________",
+          "Phiên bản APK",
+          "__________________"
+        ],
+        [
+          "Địa điểm kiểm thử / mạng",
+          "__________________",
+          "Người kiểm thử",
+          "__________________"
+        ],
+        [
+          "Điện thoại 1 (mẫu Android / hệ điều hành)",
+          "__________________",
+          "Điện thoại 2 (mẫu iPhone / iOS)",
+          "__________________"
+        ],
+        [
+          "Mẫu trẻ / độ tuổi / khu vực",
+          "__________________",
+          "Môi trường (yên tĩnh / có tiếng ồn)",
+          "__________________"
+        ]
+      ],
+      "row_count": 5,
+      "column_count": 4
+    },
+    {
+      "type": "table",
+      "number": 4,
+      "rows": [
+        [
+          "Mã",
+          "Hạng mục kiểm tra",
+          "Cách kiểm tra và tiêu chuẩn đạt",
+          "Mức",
+          "Kết quả",
+          "Dữ liệu thực tế / vấn đề",
+          "Mã bằng chứng"
+        ],
+        [
+          "E01",
+          "Bằng chứng cuộc gọi hiện có từ nhà máy",
+          "Trong cuộc gọi thông thường, micro và loa của H20 hoạt động được; điều này chỉ chứng minh khả năng thoại cơ bản của phần cứng. Không được dựa vào đó để kết luận APK AIV1 đã thực sự dùng micro của thiết bị.",
+          "P0",
+          "____",
+          "Video/ảnh chụp: ____",
+          "E-01"
+        ],
+        [
+          "E01",
+          "Bằng chứng BLE hiện có",
+          "Đã thấy dịch vụ BLE Control và thông tin chẩn đoán MAIN Raw Hex; khi thiết bị mẫu thực tế đến Việt Nam vẫn phải xác nhận lại UUID, firmware và sự kiện nút bấm.",
+          "P0",
+          "____",
+          "GATT/log: ____",
+          "E-02"
+        ],
+        [
+          "E01",
+          "Các bằng chứng thực tế chưa hoàn tất",
+          "Trên Android/iPhone cần xác nhận APP có thực sự chọn micro và loa HFP của thiết bị hay không; giọng trẻ em Việt Nam, tiếng ồn, kết nối lại và thời lượng pin dài hạn vẫn phải test thực tế.",
+          "P0",
+          "____",
+          "Bằng chứng cần bổ sung: ____",
+          "E-03"
+        ],
+        [
+          "E01",
+          "Kế hoạch tương lai, không dùng làm điều kiện đạt V1",
+          "Các ngôn ngữ Việt → Trung/Nhật/Hàn; nâng cấp firmware OTA cho thiết bị; thêm nhiều giọng đọc. Chỉ ghi mức độ chuẩn bị, không được đánh dấu là đã hoàn thành.",
+          "Tương lai",
+          "____",
+          "Người phụ trách/kế hoạch: ____",
+          "E-04"
+        ]
+      ],
+      "row_count": 5,
+      "column_count": 7
+    },
+    {
+      "type": "paragraph",
+      "number": 8,
+      "style": "Normal",
+      "text": "1. Cổng kiểm soát P0 trước khi làm khuôn / đặt lô hàng đầu tiên"
+    },
+    {
+      "type": "table",
+      "number": 5,
+      "rows": [
+        [
+          "Mã",
+          "Hạng mục kiểm tra",
+          "Cách kiểm tra và tiêu chuẩn đạt",
+          "Mức",
+          "Kết quả",
+          "Dữ liệu thực tế / vấn đề",
+          "Mã bằng chứng"
+        ],
+        [
+          "G01",
+          "Đường truyền âm thanh HFP hai chiều thực tế",
+          "Xác nhận trên APK thực tế tại Việt Nam: giọng nói phải lấy từ micro của thiết bị, không phải điện thoại; tiếng Anh phải phát từ loa thiết bị, không phải loa điện thoại. Cả hai đều phải có video và phép thử đối chứng để chứng minh.",
+          "P0",
+          "____",
+          "Điện thoại/thiết bị/kết quả: ____",
+          "G-01"
+        ],
+        [
+          "G02",
+          "HFP và BLE hoạt động đồng thời",
+          "Khi đang sử dụng âm thanh, BLE vẫn giữ kết nối; sự kiện MAIN vẫn chỉ được gửi đúng một lần; sau khi mất kết nối phải có thể khôi phục theo thiết kế.",
+          "P0",
+          "____",
+          "Số lần test liên tục: ____",
+          "G-02"
+        ],
+        [
+          "G03",
+          "Không xung đột giữa nhấn ngắn và nhấn giữ MAIN",
+          "APP phải phân biệt được nhấn ngắn và nhấn giữ; khi đang phát âm thanh, dịch liên tục, ghi âm hoặc chờ lệnh, nhấn giữ phải dừng/tạm dừng an toàn và không nhảy sai màn hình.",
+          "P0",
+          "____",
+          "Log/video: ____",
+          "G-03"
+        ],
+        [
+          "G04",
+          "Câu lệnh giọng nói tiếng Việt có kiểm soát",
+          "Sau khi bấm MAIN, trẻ em Việt Nam phải có thể dùng câu lệnh có kiểm soát để vào học theo chủ đề, học từ/câu mới và dịch; khi không hiểu thì chỉ hướng dẫn lại, không tự nhảy sai chức năng. Cần có ít nhất 1 trẻ thật ở mỗi vùng Bắc/Trung/Nam, hoặc ghi rõ phần chưa đủ mẫu.",
+          "P0",
+          "____",
+          "Mẫu/tỷ lệ nhận diện đúng: ____",
+          "G-04"
+        ],
+        [
+          "G05",
+          "Kiểm soát được dịch từng câu và dịch liên tục",
+          "Hai chế độ dịch từng câu và dịch liên tục đều phải khởi động và dừng được; ở chế độ liên tục, sau khoảng dừng không được nhận nhầm tiếng môi trường thành lời trẻ.",
+          "P0",
+          "____",
+          "Ghi âm/mã vấn đề: ____",
+          "G-05"
+        ],
+        [
+          "G06",
+          "Giọng trẻ và tiếng ồn phải sử dụng được ở mức cốt lõi",
+          "Trong phòng bình thường và môi trường có tiếng ồn thường gặp, các câu ngắn quan trọng không được liên tục bị mất từ, nhảy sai chức năng hoặc thu nhầm giọng người khác. Lỗi phải được phân loại thành “nghe sai / dịch sai / trễ / phát âm thanh” và test hồi quy lại.",
+          "P0",
+          "____",
+          "Đợt mẫu: ____",
+          "G-06"
+        ],
+        [
+          "G07",
+          "Xác minh trên Android và iPhone",
+          "Ít nhất 1 điện thoại Android và 1 iPhone thật phải chạy đủ chuỗi: kết nối, ghi âm, phát âm thanh, nút bấm và kết nối lại; ghi rõ mẫu máy và phiên bản hệ điều hành. Nếu chưa test iPhone thì không được ghi “tương thích iPhone”.",
+          "P0",
+          "____",
+          "Mẫu máy/hệ điều hành: ____",
+          "G-07"
+        ],
+        [
+          "G08",
+          "Sạc và an toàn cơ bản",
+          "Thiết bị mẫu phải sạc bình thường, dùng được khi đầy pin, không nóng bất thường, không có mùi lạ, phồng pin hoặc thường xuyên tắt nguồn; phải ghi lại dữ liệu sạc và thời lượng pin thực tế.",
+          "P0",
+          "____",
+          "Dữ liệu/quan sát: ____",
+          "G-08"
+        ],
+        [
+          "G09",
+          "Khóa phiên bản và truy vết được",
+          "Thiết bị mẫu dự kiến dùng để làm khuôn phải được đánh mã cho ngoại hình, nút bấm, bo mạch/chip, phiên bản Bluetooth, firmware, phiên bản APK và danh sách lỗi. Mọi P0 chưa đóng không được coi là đạt chỉ bằng xác nhận miệng.",
+          "P0",
+          "____",
+          "Chữ ký/phụ lục: ____",
+          "G-09"
+        ]
+      ],
+      "row_count": 10,
+      "column_count": 7
+    },
+    {
+      "type": "paragraph",
+      "number": 10,
+      "style": "Normal",
+      "text": "2. A. Chuẩn bị trước kiểm thử, cài đặt và quyền truy cập"
+    },
+    {
+      "type": "table",
+      "number": 6,
+      "rows": [
+        [
+          "Mã",
+          "Hạng mục kiểm tra",
+          "Cách kiểm tra và tiêu chuẩn đạt",
+          "Mức",
+          "Kết quả",
+          "Dữ liệu thực tế / vấn đề",
+          "Mã bằng chứng"
+        ],
+        [
+          "A01",
+          "Gắn phiên bản với từng thiết bị mẫu",
+          "Mỗi thiết bị mẫu phải có mã duy nhất; ghi phiên bản ngoại hình, số bo mạch, firmware, tên gói/phiên bản APK để tránh trộn kết quả giữa các bo mạch khác nhau.",
+          "P0",
+          "____",
+          "Mã: ____",
+          "A-01"
+        ],
+        [
+          "A02",
+          "Cài đặt và khởi động lần đầu",
+          "Android và iPhone đều phải thực hiện một lần cài mới sạch, cấp quyền lần đầu, đóng rồi mở lại; không được treo, màn hình trắng hoặc tải vô hạn.",
+          "P0",
+          "____",
+          "Thời gian/video: ____",
+          "A-02"
+        ],
+        [
+          "A03",
+          "Quy trình xin quyền",
+          "Giải thích rõ quyền micro, Bluetooth/thiết bị lân cận, thông báo...; nếu người dùng từ chối thì có thể bật lại, không hiển thị thông báo kỹ thuật khó hiểu.",
+          "P1",
+          "____",
+          "Mã vấn đề: ____",
+          "A-03"
+        ],
+        [
+          "A04",
+          "Thiết lập lần đầu cho phụ huynh",
+          "Phụ huynh phải hoàn thành được các thiết lập cần thiết như tuổi của trẻ, bài học ban đầu, kết nối thiết bị; sau khi thiết lập bài học lần đầu, trẻ phải có thể tiếp tục vào bài từ thiết bị.",
+          "P0",
+          "____",
+          "Video: ____",
+          "A-04"
+        ],
+        [
+          "A05",
+          "Chuyển đổi mạng",
+          "Trên Wi-Fi, dữ liệu di động và mạng yếu, ghi riêng hiệu năng thực tế và thông báo lỗi của tải trang chủ, nhận diện, dịch và phát âm thanh.",
+          "P1",
+          "____",
+          "Mạng/thời gian: ____",
+          "A-05"
+        ],
+        [
+          "A06",
+          "Vị trí lưu log và bằng chứng",
+          "Người test phải biết nơi lưu video, mã file âm thanh, ảnh chụp, thời điểm lỗi và phiếu vấn đề để kỹ sư có thể tái hiện ổn định.",
+          "P1",
+          "____",
+          "Đường dẫn: ____",
+          "A-06"
+        ]
+      ],
+      "row_count": 7,
+      "column_count": 7
+    },
+    {
+      "type": "paragraph",
+      "number": 12,
+      "style": "Normal",
+      "text": "3. B. Kiểm thử phối hợp Bluetooth, HFP, BLE và các nút bấm"
+    },
+    {
+      "type": "table",
+      "number": 7,
+      "rows": [
+        [
+          "Mã",
+          "Hạng mục kiểm tra",
+          "Cách kiểm tra và tiêu chuẩn đạt",
+          "Mức",
+          "Kết quả",
+          "Dữ liệu thực tế / vấn đề",
+          "Mã bằng chứng"
+        ],
+        [
+          "B01",
+          "Ghép đôi trong hệ thống",
+          "Bluetooth trên Android/iPhone phải tìm thấy, ghép đôi, hủy ghép đôi và ghép lại được thiết bị mẫu; tên thiết bị phải dễ nhận biết và không nhầm với thiết bị khác.",
+          "P0",
+          "____",
+          "Tên thiết bị: ____",
+          "B-01"
+        ],
+        [
+          "B02",
+          "Nguồn micro HFP của thiết bị",
+          "Dùng phép thử đối chứng “che micro điện thoại / đặt điện thoại xa trẻ / đưa thiết bị gần trẻ” để xác nhận APP thực sự nhận giọng từ micro của thiết bị.",
+          "P0",
+          "____",
+          "Kết quả đối chứng: ____",
+          "B-02"
+        ],
+        [
+          "B03",
+          "Nguồn loa HFP của thiết bị",
+          "Khi phát tiếng Anh, xác nhận âm thanh phát từ loa thiết bị; hành vi âm lượng điện thoại/thiết bị phải đúng như thiết kế.",
+          "P0",
+          "____",
+          "Kết quả đối chứng: ____",
+          "B-03"
+        ],
+        [
+          "B04",
+          "HFP và BLE kết nối đồng thời",
+          "Khi thiết bị đang ghi âm, phát âm thanh hoặc dịch liên tục, BLE Control không được rớt; MAIN và trạng thái pin vẫn đọc được.",
+          "P0",
+          "____",
+          "Số lần/kết quả: ____",
+          "B-04"
+        ],
+        [
+          "B05",
+          "Đối chiếu thực tế BLE Service/UUID",
+          "Ghi tên quảng bá của thiết bị thật, Control Service, Button Characteristic, APP State Characteristic, pin và trường firmware; không được tiếp tục dùng giả định từ bo mạch cũ.",
+          "P0",
+          "____",
+          "Phụ lục GATT: ____",
+          "B-05"
+        ],
+        [
+          "B06",
+          "Sự kiện nhấn ngắn MAIN",
+          "Mỗi lần nhấn ngắn chỉ gửi một sự kiện, không lặp và không mất; APP phải xử lý đúng theo trạng thái hiện tại.",
+          "P0",
+          "____",
+          "N lần/số lần lặp: ____",
+          "B-06"
+        ],
+        [
+          "B07",
+          "Sự kiện nhấn giữ MAIN",
+          "Sau thời gian quy định chỉ kích hoạt một lần tạm dừng/dừng; nhấn ngắn không bị hiểu nhầm thành nhấn giữ và nhấn giữ không được kích hoạt lặp.",
+          "P0",
+          "____",
+          "Ngưỡng/log: ____",
+          "B-07"
+        ],
+        [
+          "B08",
+          "Âm lượng + / -",
+          "Nhấn một lần để tăng/giảm; nhấn giữ để điều chỉnh liên tục (nếu firmware hỗ trợ); không làm thay đổi trạng thái bài học hoặc dịch.",
+          "P1",
+          "____",
+          "Bất thường: ____",
+          "B-08"
+        ],
+        [
+          "B09",
+          "Nút nguồn",
+          "Nhấn giữ để bật/tắt; logic ghép đôi/kết nối lại phải rõ ràng; không dùng nút nguồn cho chức năng học.",
+          "P1",
+          "____",
+          "Bất thường: ____",
+          "B-09"
+        ],
+        [
+          "B10",
+          "Kết nối lại",
+          "Test khôi phục sau khi tắt Bluetooth, ra ngoài phạm vi hoặc đưa APP xuống nền; ghi riêng thời gian khôi phục HFP và BLE cùng các trường hợp thất bại.",
+          "P0",
+          "____",
+          "Thời gian/số lần: ____",
+          "B-10"
+        ],
+        [
+          "B11",
+          "Đọc mức pin",
+          "Mức pin hiển thị trên APP phải hợp lý với trạng thái thực tế của thiết bị; cảnh báo pin yếu không được ảnh hưởng chức năng cốt lõi.",
+          "P1",
+          "____",
+          "Giá trị đọc: ____",
+          "B-11"
+        ]
+      ],
+      "row_count": 12,
+      "column_count": 7
+    },
+    {
+      "type": "paragraph",
+      "number": 14,
+      "style": "Normal",
+      "text": "4. C. Kiểm tra phần cứng, sạc, âm thanh và khả năng đeo/sử dụng"
+    },
+    {
+      "type": "table",
+      "number": 8,
+      "rows": [
+        [
+          "Mã",
+          "Hạng mục kiểm tra",
+          "Cách kiểm tra và tiêu chuẩn đạt",
+          "Mức",
+          "Kết quả",
+          "Dữ liệu thực tế / vấn đề",
+          "Mã bằng chứng"
+        ],
+        [
+          "C01",
+          "Ngoại hình và kết cấu",
+          "Thiết bị mẫu không nứt, lỏng, có cạnh sắc; kẹp/dây đeo/vỏ phải phù hợp để trẻ cầm, đeo và cất giữ bình thường.",
+          "P0",
+          "____",
+          "Ảnh: ____",
+          "C-01"
+        ],
+        [
+          "C02",
+          "Cảm giác và khả năng phân biệt nút",
+          "Trẻ phải dễ tìm được MAIN, âm lượng +, âm lượng - và nút nguồn; MAIN cần khác biệt rõ, tỷ lệ bấm nhầm thấp.",
+          "P0",
+          "____",
+          "Độ tuổi/phản hồi: ____",
+          "C-02"
+        ],
+        [
+          "C03",
+          "Cổng sạc và dây sạc",
+          "Cắm/rút thuận, hướng rõ; dùng dây đi kèm/dây chuẩn phải sạc bình thường, không lỏng hoặc nóng bất thường.",
+          "P0",
+          "____",
+          "Dây/quan sát: ____",
+          "C-03"
+        ],
+        [
+          "C04",
+          "Thời gian sạc thực tế",
+          "Đo trọn vẹn từ pin thấp đến đầy; ghi mức pin đầu/cuối, thông số củ sạc và tổng thời gian. Không dùng riêng thông số quảng cáo.",
+          "P0",
+          "____",
+          "Phút: ____",
+          "C-04"
+        ],
+        [
+          "C05",
+          "Thời lượng pin / mức tiêu thụ thực tế",
+          "Test liên tục theo tổ hợp sử dụng điển hình của trẻ (phát âm thanh, ghi âm, chờ) và ghi lại thay đổi phần trăm pin còn lại.",
+          "P0",
+          "____",
+          "Thời lượng/điều kiện: ____",
+          "C-05"
+        ],
+        [
+          "C06",
+          "Hành vi khi đang sạc",
+          "Xác nhận có dùng được khi sạc hay không, có ảnh hưởng Bluetooth/âm thanh hay không; nếu chưa có báo trạng thái sạc, phải ghi rõ “chưa cung cấp”, không được hiển thị sai trạng thái.",
+          "P1",
+          "____",
+          "Hành vi: ____",
+          "C-06"
+        ],
+        [
+          "C07",
+          "Nhiệt và bất thường",
+          "Kiểm tra bằng cách chạm sau khi sạc, phát liên tục và dịch liên tục; nếu quá nóng, có mùi lạ, phồng hoặc tự khởi động lại thì P0 không đạt.",
+          "P0",
+          "____",
+          "Quan sát/nhiệt độ: ____",
+          "C-07"
+        ],
+        [
+          "C08",
+          "Âm lượng loa",
+          "Nghe thử trong phòng yên tĩnh, môi trường gia đình bình thường và lớp học; âm lượng phải đủ nghe nhưng không chói tai, rè hoặc nổ tiếng.",
+          "P0",
+          "____",
+          "Môi trường/kết luận: ____",
+          "C-08"
+        ],
+        [
+          "C09",
+          "Độ rõ khi phát tiếng Anh",
+          "Trẻ và phụ huynh phải nghe rõ câu tiếng Anh ngắn, lời nhắc và phần kết; không được thường xuyên mất tiếng, giật, có tạp âm hoặc trễ nghiêm trọng.",
+          "P0",
+          "____",
+          "Mã âm thanh: ____",
+          "C-09"
+        ],
+        [
+          "C10",
+          "Độ rõ khi thu giọng từ thiết bị",
+          "Ở khoảng cách nói bình thường, khi trẻ quay đầu hoặc đang đeo thiết bị vẫn phải thu được giọng; ảnh hưởng từ người xung quanh và tiếng môi trường phải được ghi lại.",
+          "P0",
+          "____",
+          "Khoảng cách/mẫu: ____",
+          "C-10"
+        ],
+        [
+          "C11",
+          "Di chuyển và đeo",
+          "Khi đi lại, chạy nhẹ hoặc cọ xát với quần áo, kiểm tra rơi thiết bị, tiếng cọ xát, rớt kết nối và bấm nhầm.",
+          "P1",
+          "____",
+          "Tình huống/kết quả: ____",
+          "C-11"
+        ],
+        [
+          "C12",
+          "Khoảng cách kết nối",
+          "Trong không gian trong nhà thực tế, tăng dần khoảng cách và ghi phạm vi ổn định; khi mất kết nối phải test cách khôi phục.",
+          "P1",
+          "____",
+          "Số mét: ____",
+          "C-12"
+        ]
+      ],
+      "row_count": 13,
+      "column_count": 7
+    },
+    {
+      "type": "paragraph",
+      "number": 16,
+      "style": "Normal",
+      "text": "5. D. Trợ lý giọng nói MAIN, câu lệnh có kiểm soát và quy tắc thoát"
+    },
+    {
+      "type": "table",
+      "number": 9,
+      "rows": [
+        [
+          "Mã",
+          "Hạng mục kiểm tra",
+          "Cách kiểm tra và tiêu chuẩn đạt",
+          "Mức",
+          "Kết quả",
+          "Dữ liệu thực tế / vấn đề",
+          "Mã bằng chứng"
+        ],
+        [
+          "D01",
+          "Nhấn ngắn MAIN khi đang chờ",
+          "Sau khi nhấn ngắn, thiết bị phải lập tức phát lời nhắc tiếng Việt và bắt đầu nghe; lời nhắc cần cho trẻ biết các lựa chọn “học theo chủ đề / học từ mới / dịch”.",
+          "P0",
+          "____",
+          "Lời nhắc/thời gian: ____",
+          "D-01"
+        ],
+        [
+          "D02",
+          "Nghe 6 giây và hướng dẫn lại",
+          "Nếu khoảng 6 giây không có tiếng nói, nhắc lại một lần; nếu vẫn không phản hồi thì nói “khi sẵn sàng hãy bấm MAIN lại”, sau đó thoát yên lặng, không bị kẹt.",
+          "P0",
+          "____",
+          "Số giây thực tế: ____",
+          "D-02"
+        ],
+        [
+          "D03",
+          "Phản hồi an toàn khi không hiểu",
+          "Khi nghe không rõ, độ tin cậy thấp hoặc trẻ nói linh tinh, không được nhảy sang sai mô-đun; chỉ đưa ví dụ câu lệnh có kiểm soát và cho trẻ nói lại.",
+          "P0",
+          "____",
+          "Ví dụ/video: ____",
+          "D-03"
+        ],
+        [
+          "D04",
+          "Các cách nói tương đương để vào học theo chủ đề",
+          "Ít nhất phải test: Học bài / Học theo chủ đề / Học khóa học / Bắt đầu bài học... đều được quy về cổng bài học; ghi rõ trường hợp nhận diện đúng và bị bỏ sót.",
+          "P0",
+          "____",
+          "Phiên bản từ điển/kết quả: ____",
+          "D-04"
+        ],
+        [
+          "D05",
+          "Các cách nói tương đương để vào học từ mới",
+          "Ít nhất phải test: Học từ mới / Học từ / Luyện từ... đều được quy về cổng học từ mới; logic ưu tiên nội dung mới thêm nhưng chưa luyện phải đúng định nghĩa sản phẩm.",
+          "P0",
+          "____",
+          "Phiên bản từ điển/kết quả: ____",
+          "D-05"
+        ],
+        [
+          "D06",
+          "Các cách nói tương đương để vào chức năng dịch",
+          "Ít nhất phải test: Dịch tiếng Anh / Con muốn dịch / Dịch một câu / Dịch liên tục... đều vào đúng lựa chọn dịch; không được coi câu lệnh dịch như một câu bình thường cần dịch.",
+          "P0",
+          "____",
+          "Phiên bản từ điển/kết quả: ____",
+          "D-06"
+        ],
+        [
+          "D07",
+          "Điều khiển câu trong bài học",
+          "Trong bài học, test: Câu tiếp theo / Câu trước / Nghe lại / Học lại từ đầu. “Nghe lại” phải chỉ phát lại câu hiện tại, không phải cả bài.",
+          "P0",
+          "____",
+          "Bài học/kết quả: ____",
+          "D-07"
+        ],
+        [
+          "D08",
+          "Điều khiển cấp bài học",
+          "Test: Bài tiếp theo / Bài trước; phải chuyển bài, không được nhầm thành câu trước/câu sau.",
+          "P0",
+          "____",
+          "Bài học/kết quả: ____",
+          "D-08"
+        ],
+        [
+          "D09",
+          "Điều khiển mô-đun từ mới",
+          "Test: Luyện lại (chưa thuộc) và Ngôi sao của con (đã thuộc); không để trẻ trực tiếp quản lý các thiết lập do phụ huynh phụ trách.",
+          "P1",
+          "____",
+          "Nội dung/kết quả: ____",
+          "D-09"
+        ],
+        [
+          "D10",
+          "Nhấn giữ MAIN để dừng",
+          "Khi đang phát, dịch liên tục, ghi âm luyện nói hoặc chờ lệnh giọng nói, nhấn giữ phải lập tức tạm dừng/dừng và phát “Đã dừng.”; không làm mất tiến độ học.",
+          "P0",
+          "____",
+          "Trạng thái/kết quả: ____",
+          "D-10"
+        ],
+        [
+          "D11",
+          "Trẻ bấm MAIN tùy ý",
+          "Khi đang học, nhấn ngắn MAIN không được trực tiếp nhảy mô-đun; trước tiên tạm dừng câu hiện tại và hỏi “Con cần cô giúp gì không?”, sau đó mới đi theo luồng có kiểm soát.",
+          "P1",
+          "____",
+          "Video: ____",
+          "D-11"
+        ],
+        [
+          "D12",
+          "Khả năng nhận diện có kiểm soát tại chỗ",
+          "Xác nhận lệnh MAIN ưu tiên dùng bộ từ điển ý định có kiểm soát, chuẩn hóa, lọc theo trạng thái hiện tại và fallback; không được phụ thuộc vào mô hình dịch trên cloud để đoán hội thoại tự do tại thời điểm chạy.",
+          "P0",
+          "____",
+          "Triển khai/log: ____",
+          "D-12"
+        ]
+      ],
+      "row_count": 13,
+      "column_count": 7
+    },
+    {
+      "type": "paragraph",
+      "number": 18,
+      "style": "Normal",
+      "text": "6. E. Dịch thời gian thực: dịch từng câu, dịch liên tục và trải nghiệm đầu-cuối"
+    },
+    {
+      "type": "table",
+      "number": 10,
+      "rows": [
+        [
+          "Mã",
+          "Hạng mục kiểm tra",
+          "Cách kiểm tra và tiêu chuẩn đạt",
+          "Mức",
+          "Kết quả",
+          "Dữ liệu thực tế / vấn đề",
+          "Mã bằng chứng"
+        ],
+        [
+          "E01",
+          "Khởi động dịch từng câu",
+          "Ở trạng thái dịch từng câu, sau khi bấm MAIN chỉ thu đúng một câu lần này; khi trẻ dừng nói thì kết thúc và hiển thị câu gốc tiếng Việt, câu tiếng Anh có kiểm soát và kết quả phát âm thanh.",
+          "P0",
+          "____",
+          "Video/thời gian: ____",
+          "E-01"
+        ],
+        [
+          "E02",
+          "Độ đầy đủ của dịch từng câu",
+          "Trong câu ngắn của trẻ, các thông tin quan trọng như cách xưng hô, chủ ngữ, phủ định, nhu cầu... không được thường xuyên bị mất. Ví dụ câu “Mẹ ơi, con muốn mua cái này” mà mất “Mẹ ơi” thì phải phân loại và ghi lại.",
+          "P0",
+          "____",
+          "Câu gốc/kết quả: ____",
+          "E-02"
+        ],
+        [
+          "E03",
+          "Khởi động dịch liên tục",
+          "Sau khi chọn dịch liên tục, trẻ có thể nói nhiều lượt mà không cần bấm MAIN cho từng câu; giao diện/giọng nói phải thông báo rõ đang ở chế độ liên tục.",
+          "P0",
+          "____",
+          "Video: ____",
+          "E-03"
+        ],
+        [
+          "E04",
+          "Dừng dịch liên tục",
+          "Nói “Dừng lại” hoặc nhấn giữ MAIN phải dừng được; sau khi dừng, tiếng môi trường không còn được gửi lên/xử lý.",
+          "P0",
+          "____",
+          "Kết quả: ____",
+          "E-04"
+        ],
+        [
+          "E05",
+          "Xác định khoảng im lặng",
+          "Khoảng dừng tự nhiên, nói chậm hoặc dừng giữa câu của trẻ không được bị cắt quá sớm; đồng thời không được chờ quá lâu gây cảm giác chậm. Ghi lại ngưỡng im lặng thực tế.",
+          "P0",
+          "____",
+          "Ngưỡng/mẫu: ____",
+          "E-05"
+        ],
+        [
+          "E06",
+          "Độ trễ đầu-cuối",
+          "Ghi thời gian thực tế theo từng giai đoạn: “trẻ nói xong → xuất hiện nhận diện tiếng Việt → tạo câu tiếng Anh → thiết bị bắt đầu phát”. Thời gian tải trang chủ và tải dịch phải ghi riêng.",
+          "P0",
+          "____",
+          "Số giây: ____",
+          "E-06"
+        ],
+        [
+          "E07",
+          "Thông báo khi thất bại",
+          "Khi mạng yếu, API lỗi, không có tiếng hoặc nghe không rõ, phải có lời nhắc trẻ hiểu được và cho phép thử lại; không được im lặng quá lâu hoặc xoay tải vô hạn.",
+          "P1",
+          "____",
+          "Tình huống/lời nhắc: ____",
+          "E-07"
+        ],
+        [
+          "E08",
+          "Lịch sử và nghe lại",
+          "Nội dung lưu lịch sử dịch, lọc và nghe lại phải khớp với nội dung thực tế đã phát; phụ huynh xem được, trẻ không cần thao tác trên điện thoại.",
+          "P1",
+          "____",
+          "Kết quả: ____",
+          "E-08"
+        ]
+      ],
+      "row_count": 9,
+      "column_count": 7
+    },
+    {
+      "type": "paragraph",
+      "number": 20,
+      "style": "Normal",
+      "text": "7. F. Trải nghiệm nội dung học theo chủ đề và học từ/câu mới"
+    },
+    {
+      "type": "table",
+      "number": 11,
+      "rows": [
+        [
+          "Mã",
+          "Hạng mục kiểm tra",
+          "Cách kiểm tra và tiêu chuẩn đạt",
+          "Mức",
+          "Kết quả",
+          "Dữ liệu thực tế / vấn đề",
+          "Mã bằng chứng"
+        ],
+        [
+          "F01",
+          "Bài học theo chủ đề phù hợp độ tuổi",
+          "Sau khi phụ huynh đặt tuổi lần đầu, chủ đề và độ khó câu hiển thị phải phù hợp nhóm tuổi; trẻ không cần cầm điện thoại để chọn từng bài.",
+          "P0",
+          "____",
+          "Độ tuổi/bài học: ____",
+          "F-01"
+        ],
+        [
+          "F02",
+          "Cấu trúc bài học rõ ràng",
+          "Luồng Chủ đề → Bài học → Câu phải rõ; số câu mỗi bài, tiến độ và thời lượng dự kiến phải đúng thực tế, không mô tả phóng đại kết quả học tập.",
+          "P1",
+          "____",
+          "Ảnh chụp: ____",
+          "F-02"
+        ],
+        [
+          "F03",
+          "Tự động hướng dẫn trong bài học",
+          "Thiết bị phát câu hiện tại, lời nhắc luyện nói theo và phản hồi hoàn thành một cách tự nhiên; trong bài có thể chủ động nhắc trẻ nói “Nghe lại / Câu tiếp theo / Dừng lại”.",
+          "P0",
+          "____",
+          "Ghi âm/phản hồi: ____",
+          "F-03"
+        ],
+        [
+          "F04",
+          "Quy trình ghi âm luyện nói theo",
+          "Khi vào phần luyện nói theo, APP có thể tự bắt đầu ghi âm và kết thúc dựa trên khoảng im lặng; trẻ không cần nhớ thêm nút ghi âm. Nếu chưa bật chức năng này, phải ghi rõ là chưa bật.",
+          "P1",
+          "____",
+          "Kết quả: ____",
+          "F-04"
+        ],
+        [
+          "F05",
+          "Luyện lại",
+          "Chỉ hiển thị/phát những câu trẻ chưa thuộc hoặc được khuyến nghị luyện lại; nguồn và quy tắc đánh giá phải giải thích được, số lượng tự thay đổi theo bài học và độ tuổi.",
+          "P0",
+          "____",
+          "Nguồn/kết quả: ____",
+          "F-05"
+        ],
+        [
+          "F06",
+          "Ngôi sao của con",
+          "Hiển thị nội dung trẻ đã nắm được để tạo cảm giác thành tựu tích cực; không được đánh dấu nội dung chưa luyện là đã nắm.",
+          "P1",
+          "____",
+          "Kết quả: ____",
+          "F-06"
+        ],
+        [
+          "F07",
+          "Phụ huynh thêm nội dung",
+          "Chỉ phụ huynh thêm từ, cụm từ hoặc câu trên điện thoại; trẻ không cần thao tác trên điện thoại. Nội dung mới có thể được phụ huynh xác nhận trước khi đưa vào học.",
+          "P0",
+          "____",
+          "Nội dung/kết quả: ____",
+          "F-07"
+        ],
+        [
+          "F08",
+          "Tạo câu từ từ đơn",
+          "Khi phụ huynh chỉ thêm một từ, ưu tiên tìm câu phù hợp độ tuổi từ kho 5.000 câu tần suất cao đã được duyệt; nếu không có câu phù hợp thì báo chờ xác nhận, không tự tạo nội dung không phù hợp tuổi.",
+          "P0",
+          "____",
+          "Nguồn từ/câu: ____",
+          "F-08"
+        ],
+        [
+          "F09",
+          "Âm thanh tạo sẵn và phát lại",
+          "Âm thanh hiện có của mô-đun chủ đề phải phát ổn định; nếu sau này tạo sẵn âm thanh cho kho câu tần suất cao, phải ghi rõ nguồn cache, không được nói chức năng đã có khi chưa tạo.",
+          "P1",
+          "____",
+          "ID nội dung: ____",
+          "F-09"
+        ],
+        [
+          "F10",
+          "Có kiểm soát, phù hợp độ tuổi và an toàn",
+          "Nội dung không được có từ tục, xúc phạm, tình dục, bạo lực/đẫm máu...; câu tiếng Anh phải ngắn, có kiểm soát và phù hợp độ tuổi. Đầu vào bất thường phải có phản hồi an toàn.",
+          "P0",
+          "____",
+          "Mẫu kiểm tra ngẫu nhiên: ____",
+          "F-10"
+        ],
+        [
+          "F11",
+          "Hoàn thành và thoát bài học",
+          "Sau khi trẻ gián đoạn, tạm dừng rồi vào lại, hệ thống phải tiếp tục đúng hoặc cho học lại từ đầu; phụ huynh có thể điều chỉnh bài học trên điện thoại.",
+          "P1",
+          "____",
+          "Kết quả: ____",
+          "F-11"
+        ]
+      ],
+      "row_count": 12,
+      "column_count": 7
+    },
+    {
+      "type": "paragraph",
+      "number": 22,
+      "style": "Normal",
+      "text": "8. G. Giọng nói trẻ em Việt Nam, vùng giọng, tiếng ồn và quy trình xử lý lỗi"
+    },
+    {
+      "type": "table",
+      "number": 12,
+      "rows": [
+        [
+          "Mã",
+          "Hạng mục kiểm tra",
+          "Cách kiểm tra và tiêu chuẩn đạt",
+          "Mức",
+          "Kết quả",
+          "Dữ liệu thực tế / vấn đề",
+          "Mã bằng chứng"
+        ],
+        [
+          "G01",
+          "Bao phủ giọng nói trẻ em thật",
+          "Dùng mẫu trẻ thật đã được đồng ý, bao phủ độ tuổi, bé trai/bé gái và Bắc/Trung/Nam; mỗi đợt mẫu phải lưu nguồn và hồ sơ đồng ý sử dụng.",
+          "P0",
+          "____",
+          "Đợt/độ bao phủ: ____",
+          "G-01"
+        ],
+        [
+          "G02",
+          "Khác biệt Bắc/Trung/Nam",
+          "Với cùng một ý định có kiểm soát và câu học cốt lõi, test cách nói thường gặp của Bắc/Trung/Nam; nếu có lỗi phải ghi rõ khu vực, không được ghi chung chung “tiếng Việt không chuẩn”.",
+          "P0",
+          "____",
+          "Khu vực/tỷ lệ nhận diện: ____",
+          "G-02"
+        ],
+        [
+          "G03",
+          "Môi trường bình thường",
+          "Trong phòng yên tĩnh, test trẻ nói với âm lượng, khoảng cách và tốc độ bình thường; ghi lại mất từ, nhận diện sai, dịch chưa phù hợp và độ trễ.",
+          "P0",
+          "____",
+          "Số mẫu: ____",
+          "G-03"
+        ],
+        [
+          "G04",
+          "Môi trường có tiếng ồn",
+          "Test với tiếng TV gia đình, người lớn nói chuyện, tiếng lớp học...; trọng tâm là không nhận nhầm giọng người khác thành lệnh của trẻ hoặc nội dung cần dịch.",
+          "P0",
+          "____",
+          "Tiếng ồn/kết quả: ____",
+          "G-04"
+        ],
+        [
+          "G05",
+          "Phân loại lỗi",
+          "Mỗi lỗi trước tiên phải xác định thuộc: thu âm / ASR nghe sai / VAD cắt sớm / cách diễn đạt dịch / TTS phát / trễ mạng / state machine hoặc nút bấm. Không được chỉ ghi “dịch không chính xác”.",
+          "P0",
+          "____",
+          "Phiếu vấn đề: ____",
+          "G-05"
+        ],
+        [
+          "G06",
+          "Bộ hồi quy cố định",
+          "Đưa âm thanh và kết quả chuẩn của các lỗi đã xác nhận vào bộ hồi quy cố định; sau mỗi lần sửa chỉ cần test lại nhóm liên quan rồi chạy hồi quy cố định, không cần test mù lại toàn bộ mẫu.",
+          "P1",
+          "____",
+          "Phiên bản bộ hồi quy: ____",
+          "G-06"
+        ],
+        [
+          "G07",
+          "Rà soát trường hợp mất từ điển hình",
+          "Nếu câu như “Mẹ ơi, con muốn mua cái này” bị mất phần xưng hô, trước tiên phải lưu âm thanh gốc, bản chép chuẩn thủ công, kết quả ASR, kết quả dịch và timestamp rồi mới định vị sửa lỗi.",
+          "P1",
+          "____",
+          "Mã ca: ____",
+          "G-07"
+        ],
+        [
+          "G08",
+          "Quyền riêng tư dữ liệu kiểm thử",
+          "Chỉ thu âm trẻ ở mức tối thiểu cần thiết, sử dụng đúng phạm vi đã được đồng ý, mã hóa ẩn danh và lưu có kiểm soát; cấm lấy hoặc dùng giọng trẻ từ video ngắn/mạng xã hội khi chưa được cho phép làm dữ liệu sản phẩm.",
+          "P0",
+          "____",
+          "Ủy quyền/đường dẫn: ____",
+          "G-08"
+        ]
+      ],
+      "row_count": 9,
+      "column_count": 7
+    },
+    {
+      "type": "paragraph",
+      "number": 24,
+      "style": "Normal",
+      "text": "9. H. Tương thích điện thoại, mạng và độ ổn định"
+    },
+    {
+      "type": "table",
+      "number": 13,
+      "rows": [
+        [
+          "Mã",
+          "Hạng mục kiểm tra",
+          "Cách kiểm tra và tiêu chuẩn đạt",
+          "Mức",
+          "Kết quả",
+          "Dữ liệu thực tế / vấn đề",
+          "Mã bằng chứng"
+        ],
+        [
+          "H01",
+          "Các mẫu Android phổ biến",
+          "Ít nhất bao phủ một mẫu Android phổ biến tại Việt Nam và một Android khác thương hiệu/phiên bản hệ điều hành; chạy đầy đủ kết nối, âm thanh, MAIN, học, dịch và kết nối lại.",
+          "P0",
+          "____",
+          "Mẫu máy/hệ điều hành: ____",
+          "H-01"
+        ],
+        [
+          "H02",
+          "iPhone thật",
+          "Ít nhất một iPhone thật phải chạy đầy đủ kết nối, ghi âm, phát âm thanh, kết nối lại Bluetooth và quy trình cốt lõi; nếu chưa hoàn thành chỉ được ghi “Chưa test”.",
+          "P0",
+          "____",
+          "Mẫu máy/iOS: ____",
+          "H-02"
+        ],
+        [
+          "H03",
+          "Nền/trước và khóa màn hình",
+          "Khi APP chuyển nền, bật/tắt màn hình hoặc có cuộc gọi/thông báo, hành vi ghi âm, phát âm thanh và trạng thái Bluetooth phải đúng thiết kế; không xảy ra lỗi im lặng.",
+          "P1",
+          "____",
+          "Kết quả: ____",
+          "H-03"
+        ],
+        [
+          "H04",
+          "Tải khi khởi động nguội",
+          "Đo riêng lần mở đầu tiên và các lần mở sau; trong lúc tải phải có tiến độ thực tế/lời nhắc dễ hiểu, không được ở trạng thái “đang chuẩn bị” quá lâu mà không phản hồi.",
+          "P1",
+          "____",
+          "Số giây: ____",
+          "H-04"
+        ],
+        [
+          "H05",
+          "Tải xử lý dịch",
+          "Sau khi ghi âm xong, từng giai đoạn nhận diện, tạo tiếng Anh có kiểm soát và TTS phải có phản hồi; lỗi có thể thử lại; ghi sự khác biệt giữa Android và iPhone.",
+          "P0",
+          "____",
+          "Số giây/vấn đề: ____",
+          "H-05"
+        ],
+        [
+          "H06",
+          "Mạng yếu / mất mạng",
+          "Khi mất mạng không được báo nhầm là thành công; phải có thông báo rõ cho trẻ/phụ huynh; khi mạng trở lại phải tiếp tục dùng được và không mất trạng thái hiện tại.",
+          "P1",
+          "____",
+          "Kết quả: ____",
+          "H-06"
+        ],
+        [
+          "H07",
+          "Bluetooth và các nguồn âm thanh khác",
+          "Khi điện thoại đồng thời kết nối thiết bị âm thanh khác hoặc nhận cuộc gọi, ưu tiên H20 và cách khôi phục phải có hành vi dự đoán được và có mô tả rõ.",
+          "P1",
+          "____",
+          "Tình huống: ____",
+          "H-07"
+        ],
+        [
+          "H08",
+          "Crash và bộ nhớ",
+          "Sau nhiều vòng học/dịch liên tục không được crash, giật rõ rệt, nóng bất thường hoặc hao pin bất thường; mọi bất thường phải có log.",
+          "P0",
+          "____",
+          "Thời lượng/log: ____",
+          "H-08"
+        ],
+        [
+          "H09",
+          "Tương thích khi nâng cấp phiên bản",
+          "Sau khi nâng cấp APK, lịch sử, tiến độ bài học và kết nối thiết bị không được mất mà không báo; hạ phiên bản/không tương thích phải có cảnh báo an toàn.",
+          "P1",
+          "____",
+          "Phiên bản: ____",
+          "H-09"
+        ]
+      ],
+      "row_count": 10,
+      "column_count": 7
+    },
+    {
+      "type": "paragraph",
+      "number": 26,
+      "style": "Normal",
+      "text": "10. I. Trải nghiệm sử dụng thực tế của phụ huynh và trẻ (xác minh trước thương mại hóa)"
+    },
+    {
+      "type": "table",
+      "number": 14,
+      "rows": [
+        [
+          "Mã",
+          "Hạng mục kiểm tra",
+          "Cách kiểm tra và tiêu chuẩn đạt",
+          "Mức",
+          "Kết quả",
+          "Dữ liệu thực tế / vấn đề",
+          "Mã bằng chứng"
+        ],
+        [
+          "I01",
+          "Khả năng trẻ tự sử dụng",
+          "Khi trẻ chỉ cầm/đeo thiết bị và không cầm điện thoại, trẻ vẫn phải hoàn thành được bắt đầu, nghe, nói, tạm dừng/dừng và tiếp tục học cơ bản; không yêu cầu nhớ tổ hợp nút vật lý phức tạp.",
+          "P0",
+          "____",
+          "Độ tuổi/quan sát: ____",
+          "I-01"
+        ],
+        [
+          "I02",
+          "Vai trò phụ huynh rõ ràng",
+          "Phụ huynh chỉ phụ trách kết nối lần đầu, cài tuổi/bài học, thêm nội dung, xem lịch sử và quản lý quyền; hướng dẫn trên giao diện phải rõ.",
+          "P1",
+          "____",
+          "Phản hồi: ____",
+          "I-02"
+        ],
+        [
+          "I03",
+          "Lời nhắc tự nhiên",
+          "Lời nhắc tiếng Việt phải ngắn, thân thiện, phù hợp độ tuổi và không giống hướng dẫn kỹ thuật; trẻ phải hiểu các câu như “Con muốn làm gì?” và “Cô chưa nghe rõ, con nói lại nhé.”",
+          "P0",
+          "____",
+          "Phản hồi của trẻ: ____",
+          "I-03"
+        ],
+        [
+          "I04",
+          "Quan sát mức độ hụt hẫng",
+          "Khi hệ thống không hiểu, mạng lỗi hoặc trẻ bấm nhầm MAIN, trẻ không bị mắc kẹt trong im lặng hoặc bị chuyển sai trang; ghi lại xem trẻ có muốn tiếp tục dùng hay không.",
+          "P0",
+          "____",
+          "Quan sát: ____",
+          "I-04"
+        ],
+        [
+          "I05",
+          "Nhịp độ bài học",
+          "Số câu và thời lượng mỗi bài phải phù hợp với trẻ; có thể tạm dừng, tiếp tục và học lại từ đầu; không coi thời gian sử dụng liên tục dài là mục tiêu duy nhất.",
+          "P1",
+          "____",
+          "Độ tuổi/phản hồi: ____",
+          "I-05"
+        ],
+        [
+          "I06",
+          "Cảm nhận về giá trị",
+          "Phụ huynh phải hiểu ý nghĩa của “Luyện lại / Ngôi sao của con / Nội dung mới thêm”, đồng thời không hiểu nhầm rằng sản phẩm cam kết dạy toàn bộ năng lực tiếng Anh.",
+          "P1",
+          "____",
+          "Phỏng vấn: ____",
+          "I-06"
+        ],
+        [
+          "I07",
+          "Độ thoải mái và mức chấp nhận khi đeo",
+          "Trẻ sẵn sàng đeo/cầm thiết bị, không từ chối vì trọng lượng, kẹp, âm lượng, ngoại hình hoặc cảm giác nóng.",
+          "P0",
+          "____",
+          "Thời lượng/phản hồi: ____",
+          "I-07"
+        ],
+        [
+          "I08",
+          "Ngôn ngữ truyền thông tránh rủi ro hậu mãi",
+          "APP/tài liệu hướng dẫn không được cam kết các năng lực chưa được xác minh như “mọi giọng đều chính xác 100%”, “không cần mạng”, “dịch vạn năng”.",
+          "P0",
+          "____",
+          "Phiên bản nội dung: ____",
+          "I-08"
+        ]
+      ],
+      "row_count": 9,
+      "column_count": 7
+    },
+    {
+      "type": "paragraph",
+      "number": 28,
+      "style": "Normal",
+      "text": "11. J. Firmware, OTA và đa ngôn ngữ về sau: chỉ kiểm tra mức độ sẵn sàng, không tính là chức năng V1 đã hoàn thành"
+    },
+    {
+      "type": "table",
+      "number": 15,
+      "rows": [
+        [
+          "Mã",
+          "Hạng mục kiểm tra",
+          "Cách kiểm tra và tiêu chuẩn đạt",
+          "Mức",
+          "Kết quả",
+          "Dữ liệu thực tế / vấn đề",
+          "Mã bằng chứng"
+        ],
+        [
+          "J01",
+          "Lộ trình nâng cấp firmware OTA",
+          "Xác nhận ODM/nhà cung cấp chip phụ trách firmware, ký gói nâng cấp, rollback khi lỗi và đọc phiên bản thiết bị như thế nào; nếu mẫu V1 chưa có OTA thì không được ghi “đã hỗ trợ”.",
+          "Tương lai",
+          "____",
+          "Người phụ trách/kế hoạch: ____",
+          "J-01"
+        ],
+        [
+          "J02",
+          "Khả năng mở rộng giao thức phần cứng",
+          "Cấu trúc dữ liệu nút bấm, pin và trạng thái phải có trường phiên bản; khi sửa giao thức cần tương thích thiết bị cũ hoặc có chiến lược nâng cấp rõ.",
+          "Tương lai",
+          "____",
+          "Phiên bản giao thức: ____",
+          "J-02"
+        ],
+        [
+          "J03",
+          "Kiến trúc đa ngôn ngữ",
+          "V1 bên ngoài chỉ xác minh Việt → Anh; tầng dưới cần cấu hình được ngôn ngữ đầu vào/đầu ra, quy tắc và TTS, không được hard-code tiếng Anh khiến sau này phải làm lại.",
+          "Tương lai",
+          "____",
+          "Bằng chứng thiết kế: ____",
+          "J-03"
+        ],
+        [
+          "J04",
+          "Tiếng Việt → tiếng Trung",
+          "Định hướng ngôn ngữ tương lai; phải test riêng nhận diện tiếng Việt của trẻ, câu tiếng Trung có kiểm soát, TTS, an toàn nội dung và chi phí; không được quảng bá là đã có trong V1.",
+          "Tương lai",
+          "____",
+          "Kế hoạch: ____",
+          "J-04"
+        ],
+        [
+          "J05",
+          "Tiếng Việt → tiếng Nhật / tiếng Hàn",
+          "Định hướng tương lai, cũng cần xác minh độc lập về nội dung, âm thanh, độ phù hợp văn hóa/độ tuổi và chất lượng; có sẵn kiến trúc kỹ thuật không đồng nghĩa đã có thể bán.",
+          "Tương lai",
+          "____",
+          "Kế hoạch: ____",
+          "J-05"
+        ],
+        [
+          "J06",
+          "Chi phí và cache",
+          "Ghi số giây âm thanh, số lần gọi ASR/dịch/TTS, retry khi lỗi, tỷ lệ khớp kho 5.000 câu tần suất cao và âm thanh tạo sẵn để chuẩn bị dữ liệu cho mô hình chi phí trước V2.",
+          "Tương lai",
+          "____",
+          "Phương án chỉ số: ____",
+          "J-06"
+        ]
+      ],
+      "row_count": 7,
+      "column_count": 7
+    },
+    {
+      "type": "paragraph",
+      "number": 30,
+      "style": "Normal",
+      "text": "12. Khép kín vấn đề và quyết định đặt hàng cuối cùng"
+    },
+    {
+      "type": "table",
+      "number": 16,
+      "rows": [
+        [
+          "Quy tắc khép kín vấn đề: Thứ tự xử lý: trước tiên xác định lỗi nằm ở khâu nào, sau đó mới sửa. Ví dụ khi bị mất cách xưng hô, cần phân biệt là do thiết bị thu âm, VAD cắt sớm, ASR bỏ sót, quy tắc dịch hay giao diện hiển thị; không được chỉ liên tục sửa prompt.\nMỗi lần sửa: giữ lại ca gốc → ghi nguyên nhân → chỉ định người phụ trách/ngày hoàn thành → test lại bằng bộ chuyên biệt liên quan → sau đó chạy bộ hồi quy cố định.\nNguyên tắc quyết định: Chỉ được chuyển sang làm khuôn/đặt hàng khi toàn bộ P0 đạt, hoặc đã có chấp thuận rủi ro bằng văn bản rõ ràng từ Sếp. P1 phải có kế hoạch khắc phục cụ thể; các hạng mục “Tương lai” không chặn kết luận V1 lần này và cũng không được ghi là đã hoàn thành."
+        ]
+      ],
+      "row_count": 1,
+      "column_count": 1
+    },
+    {
+      "type": "table",
+      "number": 17,
+      "rows": [
+        [
+          "Mã",
+          "Hạng mục kiểm tra",
+          "Cách kiểm tra và tiêu chuẩn đạt",
+          "Mức",
+          "Kết quả",
+          "Dữ liệu thực tế / vấn đề",
+          "Mã bằng chứng"
+        ],
+        [
+          "K01",
+          "Tổng hợp P0",
+          "Thống kê P0: Đạt ____ mục; Đạt có điều kiện ____ mục; Không đạt ____ mục; Chưa test ____ mục. Mọi mục “Không đạt/Chưa test” phải được liệt kê riêng.",
+          "P0",
+          "____",
+          "Phụ lục danh sách: ____",
+          "K-01"
+        ],
+        [
+          "K02",
+          "Tổng hợp P1",
+          "Liệt kê các vấn đề P1 ảnh hưởng trải nghiệm/sản xuất hàng loạt, người phụ trách, ngày hoàn thành và ngày test lại.",
+          "P1",
+          "____",
+          "Phiếu vấn đề: ____",
+          "K-02"
+        ],
+        [
+          "K03",
+          "Trạng thái cuối của thiết bị mẫu",
+          "□ Có thể dùng làm căn cứ làm khuôn  □ Có thể dùng làm căn cứ cho lô nhỏ  □ Chỉ tiếp tục debug  □ Không khuyến nghị đặt hàng",
+          "P0",
+          "____",
+          "Lý do: ____",
+          "K-03"
+        ],
+        [
+          "K04",
+          "Hạng mục ODM cần xác nhận",
+          "Thông số cuối của thiết bị mẫu, số bo mạch, phiên bản chip/Bluetooth, phiên bản firmware, định nghĩa nút, hành vi HFP/BLE, cách triển khai sạc và lịch sử thay đổi.",
+          "P0",
+          "____",
+          "Chữ ký ODM: ____",
+          "K-04"
+        ],
+        [
+          "K05",
+          "Hạng mục đội APK cần xác nhận",
+          "Phiên bản APK, phiên bản bộ từ điển ý định có kiểm soát, bảng trạng thái, phiên bản ngôn ngữ/nội dung, giới hạn đã biết, mẫu máy iOS/Android đã test và kết quả test lại.",
+          "P0",
+          "____",
+          "Chữ ký đội ngũ: ____",
+          "K-05"
+        ],
+        [
+          "K06",
+          "Sếp xác nhận cuối cùng",
+          "Xác nhận đã xem bằng chứng kiểm thử, đã biết các rủi ro còn lại và quyết định: làm khuôn / tạm thời chưa làm khuôn / tiếp tục xác minh.",
+          "P0",
+          "____",
+          "Chữ ký/ngày: ____",
+          "K-06"
+        ]
+      ],
+      "row_count": 7,
+      "column_count": 7
+    }
+  ]
+}

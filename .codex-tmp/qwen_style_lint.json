@@ -1,0 +1,172 @@
+{
+  "input": "D:\\Code\\HuaMei\\App_noi\\be\\9_10th8\\speaking-ai-nextjs-backend\\deliverables\\Lo_trinh_hoc_va_trien_khai_AI_ngon_ngu_Qwen.docx",
+  "fonts_by_char_count": {
+    "Calibri": 11919,
+    "Consolas": 1136,
+    "Segoe UI Symbol": 78
+  },
+  "direct_run_formatting_runs": 477,
+  "direct_paragraph_formatting_paragraphs": 374,
+  "heading_like_paragraphs_not_heading_style": [
+    {
+      "para_index": 2,
+      "text": "C\u1ea8M NANG TH\u1ef0C H\u00c0NH D\u00c0NH CHO NG\u01af\u1edcI M\u1edaI",
+      "style": "Normal"
+    },
+    {
+      "para_index": 3,
+      "text": "L\u1ed8 TR\u00ccNH T\u1ef0 H\u1eccC V\u00c0 TRI\u1ec2N KHAI\nAI NG\u00d4N NG\u1eee",
+      "style": "Normal"
+    },
+    {
+      "para_index": 7,
+      "text": "Phi\u00ean b\u1ea3n 1.0 | Th\u00e1ng 8 n\u0103m 2026",
+      "style": "Normal"
+    },
+    {
+      "para_index": 19,
+      "text": "1.\tHi\u1ec3u model, tham s\u1ed1 v\u00e0 chi ph\u00ed h\u1ea1 t\u1ea7ng",
+      "style": "Normal"
+    },
+    {
+      "para_index": 20,
+      "text": "2.\tX\u00e1c \u0111\u1ecbnh ki\u1ebfn th\u1ee9c c\u1ea7n h\u1ecdc v\u00e0 nh\u1eefng g\u00ec c\u00f3 th\u1ec3 b\u1ecf qua",
+      "style": "Normal"
+    },
+    {
+      "para_index": 21,
+      "text": "3.\tX\u00e2y kho d\u1eef li\u1ec7u Vi\u1ec7t-Anh c\u00f3 ki\u1ec3m duy\u1ec7t",
+      "style": "Normal"
+    },
+    {
+      "para_index": 22,
+      "text": "4.\tCh\u1ea1y Qwen self-host v\u00e0 benchmark tr\u01b0\u1edbc khi train",
+      "style": "Normal"
+    },
+    {
+      "para_index": 23,
+      "text": "5.\tFine-tune b\u1eb1ng SFT + QLoRA",
+      "style": "Normal"
+    },
+    {
+      "para_index": 24,
+      "text": "6.\tT\u00edch h\u1ee3p v\u00e0o backend Next.js v\u00e0 tri\u1ec3n khai production",
+      "style": "Normal"
+    },
+    {
+      "para_index": 183,
+      "text": "\u2022\tHugging Face LLM Course - Transformer, tokenizer, dataset v\u00e0 fine-tuning",
+      "style": "Normal"
+    },
+    {
+      "para_index": 184,
+      "text": "\u2022\tQwen3-4B-Instruct-2507 - Model card v\u00e0 h\u01b0\u1edbng d\u1eabn s\u1eed d\u1ee5ng",
+      "style": "Normal"
+    },
+    {
+      "para_index": 185,
+      "text": "\u2022\tQwen3.5-4B - \u1ee8ng vi\u00ean m\u1edbi h\u01a1n \u0111\u1ec3 benchmark",
+      "style": "Normal"
+    },
+    {
+      "para_index": 186,
+      "text": "\u2022\tQwen + vLLM - Tri\u1ec3n khai OpenAI-compatible API",
+      "style": "Normal"
+    },
+    {
+      "para_index": 187,
+      "text": "\u2022\tQwen + Axolotl - SFT, LoRA v\u00e0 QLoRA",
+      "style": "Normal"
+    },
+    {
+      "para_index": 188,
+      "text": "\u2022\tHugging Face TRL SFTTrainer - Hu\u1ea5n luy\u1ec7n dataset h\u1ed9i tho\u1ea1i",
+      "style": "Normal"
+    },
+    {
+      "para_index": 189,
+      "text": "\u2022\tHugging Face PEFT LoRA - C\u01a1 ch\u1ebf v\u00e0 c\u1ea5u h\u00ecnh LoRA",
+      "style": "Normal"
+    },
+    {
+      "para_index": 190,
+      "text": "\u2022\tvLLM OpenAI-compatible server - API v\u00e0 v\u1eadn h\u00e0nh model server",
+      "style": "Normal"
+    },
+    {
+      "para_index": 192,
+      "text": "M\u1ee5c ti\u00eau \u0111\u1ea7u ti\u00ean",
+      "style": "Normal"
+    },
+    {
+      "para_index": 193,
+      "text": "Th\u1eddi gian tham kh\u1ea3o",
+      "style": "Normal"
+    },
+    {
+      "para_index": 194,
+      "text": "H\u1ea1 t\u1ea7ng pilot",
+      "style": "Normal"
+    }
+  ],
+  "examples": {
+    "direct_paragraph_formatting": [
+      {
+        "para_index": 1,
+        "text": "",
+        "style": "Normal"
+      },
+      {
+        "para_index": 2,
+        "text": "C\u1ea8M NANG TH\u1ef0C H\u00c0NH D\u00c0NH CHO NG\u01af\u1edcI M\u1edaI",
+        "style": "Normal"
+      },
+      {
+        "para_index": 3,
+        "text": "L\u1ed8 TR\u00ccNH T\u1ef0 H\u1eccC V\u00c0 TRI\u1ec2N KHAI\nAI NG\u00d4N NG\u1eee",
+        "style": "Normal"
+      },
+      {
+        "para_index": 4,
+        "text": "Qwen3-4B / Qwen3.5-4B cho \u1ee9ng d\u1ee5ng luy\u1ec7n n\u00f3i Vi\u1ec7t-Anh",
+        "style": "Normal"
+      },
+      {
+        "para_index": 5,
+        "text": "T\u1eeb ki\u1ebfn th\u1ee9c n\u1ec1n t\u1ea3ng \u0111\u1ebfn d\u1eef li\u1ec7u, QLoRA, t\u00edch h\u1ee3p Next.js v\u00e0 v\u1eadn h\u00e0nh production",
+        "style": "Normal"
+      }
+    ],
+    "direct_run_formatting": [
+      {
+        "para_index": 2,
+        "run_text": "C\u1ea8M NANG TH\u1ef0C H\u00c0NH D\u00c0NH CHO NG\u01af\u1edcI M\u1edaI",
+        "style": "Normal"
+      },
+      {
+        "para_index": 3,
+        "run_text": "L\u1ed8 TR\u00ccNH T\u1ef0 H\u1eccC V\u00c0 TRI\u1ec2N KHAI\nAI NG\u00d4N NG\u1eee",
+        "style": "Normal"
+      },
+      {
+        "para_index": 4,
+        "run_text": "Qwen3-4B / Qwen3.5-4B cho \u1ee9ng d\u1ee5ng luy\u1ec7n n\u00f3i Vi\u1ec7t-Anh",
+        "style": "Normal"
+      },
+      {
+        "para_index": 5,
+        "run_text": "T\u1eeb ki\u1ebfn th\u1ee9c n\u1ec1n t\u1ea3ng \u0111\u1ebfn d\u1eef li\u1ec7u, QLoRA, t\u00edch h\u1ee3p Next.js v\u00e0 v\u1eadn h\u00e0nh productio",
+        "style": "Normal"
+      },
+      {
+        "para_index": 7,
+        "run_text": "Phi\u00ean b\u1ea3n 1.0 | Th\u00e1ng 8 n\u0103m 2026",
+        "style": "Normal"
+      }
+    ]
+  },
+  "notes": [
+    "Direct formatting is not always wrong, but it often causes inconsistent output when templates change.",
+    "Heading-like paragraphs not using Heading styles can break TOC and accessibility."
+  ]
+}

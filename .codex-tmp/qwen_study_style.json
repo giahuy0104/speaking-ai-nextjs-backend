@@ -1,0 +1,171 @@
+{
+  "input": "D:\\Code\\HuaMei\\App_noi\\be\\9_10th8\\speaking-ai-nextjs-backend\\deliverables\\Noi_dung_can_tim_hieu_de_trien_khai_Qwen.docx",
+  "fonts_by_char_count": {
+    "Calibri": 10212,
+    "Consolas": 1256
+  },
+  "direct_run_formatting_runs": 292,
+  "direct_paragraph_formatting_paragraphs": 204,
+  "heading_like_paragraphs_not_heading_style": [
+    {
+      "para_index": 2,
+      "text": "C\u1ea8M NANG TRI\u1ec2N KHAI D\u00c0NH CHO NG\u01af\u1edcI M\u1edaI",
+      "style": "Normal"
+    },
+    {
+      "para_index": 3,
+      "text": "S\u00c1U NH\u00d3M KI\u1ebeN TH\u1ee8C C\u1ea6N H\u1eccC\n\u0110\u1ec2 TRI\u1ec2N KHAI QWEN",
+      "style": "Normal"
+    },
+    {
+      "para_index": 7,
+      "text": "Phi\u00ean b\u1ea3n 1.0 | Th\u00e1ng 8 n\u0103m 2026",
+      "style": "Normal"
+    },
+    {
+      "para_index": 150,
+      "text": "Ph\u1ea1m vi",
+      "style": "Normal"
+    },
+    {
+      "para_index": 151,
+      "text": "Th\u1eddi gian tham kh\u1ea3o",
+      "style": "Normal"
+    },
+    {
+      "para_index": 152,
+      "text": "M\u1ee5c ti\u00eau \u0111\u1ea7u ti\u00ean",
+      "style": "Normal"
+    },
+    {
+      "para_index": 156,
+      "text": "Giai \u0111o\u1ea1n",
+      "style": "Normal"
+    },
+    {
+      "para_index": 157,
+      "text": "S\u1ea3n ph\u1ea9m ph\u1ea3i t\u1ea1o ra",
+      "style": "Normal"
+    },
+    {
+      "para_index": 158,
+      "text": "C\u00e2u h\u1ecfi c\u1ea7n tr\u1ea3 l\u1eddi",
+      "style": "Normal"
+    },
+    {
+      "para_index": 177,
+      "text": "\u0110\u1ecbnh d\u1ea1ng",
+      "style": "Normal"
+    },
+    {
+      "para_index": 178,
+      "text": "Tr\u1ecdng s\u1ed1 th\u00f4 c\u1ee7a model 4B",
+      "style": "Normal"
+    },
+    {
+      "para_index": 179,
+      "text": "\u1ee8ng d\u1ee5ng",
+      "style": "Normal"
+    },
+    {
+      "para_index": 192,
+      "text": "M\u1ee5c \u0111\u00edch",
+      "style": "Normal"
+    },
+    {
+      "para_index": 193,
+      "text": "GPU/VRAM kh\u1edfi \u0111\u1ea7u",
+      "style": "Normal"
+    },
+    {
+      "para_index": 194,
+      "text": "L\u01b0u \u00fd",
+      "style": "Normal"
+    },
+    {
+      "para_index": 207,
+      "text": "Nh\u00f3m",
+      "style": "Normal"
+    },
+    {
+      "para_index": 208,
+      "text": "N\u1ed9i dung ph\u1ea3i bi\u1ebft",
+      "style": "Normal"
+    },
+    {
+      "para_index": 223,
+      "text": "Model",
+      "style": "Normal"
+    },
+    {
+      "para_index": 224,
+      "text": "\u0110\u1ea7u v\u00e0o",
+      "style": "Normal"
+    },
+    {
+      "para_index": 225,
+      "text": "Nh\u00e3n chu\u1ea9n",
+      "style": "Normal"
+    }
+  ],
+  "examples": {
+    "direct_paragraph_formatting": [
+      {
+        "para_index": 1,
+        "text": "",
+        "style": "Normal"
+      },
+      {
+        "para_index": 2,
+        "text": "C\u1ea8M NANG TRI\u1ec2N KHAI D\u00c0NH CHO NG\u01af\u1edcI M\u1edaI",
+        "style": "Normal"
+      },
+      {
+        "para_index": 3,
+        "text": "S\u00c1U NH\u00d3M KI\u1ebeN TH\u1ee8C C\u1ea6N H\u1eccC\n\u0110\u1ec2 TRI\u1ec2N KHAI QWEN",
+        "style": "Normal"
+      },
+      {
+        "para_index": 4,
+        "text": "T\u1eeb hi\u1ec3u model, x\u00e2y d\u1eef li\u1ec7u v\u00e0 QLoRA \u0111\u1ebfn t\u00edch h\u1ee3p Next.js production",
+        "style": "Normal"
+      },
+      {
+        "para_index": 5,
+        "text": "T\u00e0i li\u1ec7u h\u1ecdc theo \u0111\u1ea7u ra: m\u1ed7i giai \u0111o\u1ea1n \u0111\u1ec1u c\u00f3 ki\u1ebfn th\u1ee9c, b\u00e0i th\u1ef1c h\u00e0nh v\u00e0 ti\u00eau ch\u00ed ho\u00e0n th\u00e0nh",
+        "style": "Normal"
+      }
+    ],
+    "direct_run_formatting": [
+      {
+        "para_index": 2,
+        "run_text": "C\u1ea8M NANG TRI\u1ec2N KHAI D\u00c0NH CHO NG\u01af\u1edcI M\u1edaI",
+        "style": "Normal"
+      },
+      {
+        "para_index": 3,
+        "run_text": "S\u00c1U NH\u00d3M KI\u1ebeN TH\u1ee8C C\u1ea6N H\u1eccC\n\u0110\u1ec2 TRI\u1ec2N KHAI QWEN",
+        "style": "Normal"
+      },
+      {
+        "para_index": 4,
+        "run_text": "T\u1eeb hi\u1ec3u model, x\u00e2y d\u1eef li\u1ec7u v\u00e0 QLoRA \u0111\u1ebfn t\u00edch h\u1ee3p Next.js production",
+        "style": "Normal"
+      },
+      {
+        "para_index": 5,
+        "run_text": "T\u00e0i li\u1ec7u h\u1ecdc theo \u0111\u1ea7u ra: m\u1ed7i giai \u0111o\u1ea1n \u0111\u1ec1u c\u00f3 ki\u1ebfn th\u1ee9c, b\u00e0i th\u1ef1c h\u00e0nh v\u00e0 ti\u00eau ",
+        "style": "Normal"
+      },
+      {
+        "para_index": 7,
+        "run_text": "Phi\u00ean b\u1ea3n 1.0 | Th\u00e1ng 8 n\u0103m 2026",
+        "style": "Normal"
+      }
+    ]
+  },
+  "notes": [
+    "Direct formatting is not always wrong, but it often causes inconsistent output when templates change.",
+    "Heading-like paragraphs not using Heading styles can break TOC and accessibility."
+  ]
+}
