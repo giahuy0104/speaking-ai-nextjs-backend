@@ -2,11 +2,7 @@ import type { BenchmarkMetadata, PracticeContext } from "@/types/conversation";
 import { after } from "next/server";
 import { finalizeWorkerConversation } from "@/lib/ai/conversationPreparation";
 import { AppError, toErrorResponse } from "@/lib/errors";
-import {
-  getRequestId,
-  logEvent,
-  withRequestId,
-} from "@/lib/observability";
+import { getRequestId, logEvent, withRequestId } from "@/lib/observability";
 import { authorizeAudioSessionRequest } from "@/lib/storage/audioSessionSecurity";
 
 export const runtime = "nodejs";
@@ -55,14 +51,19 @@ export async function POST(request: Request) {
         "Dữ liệu finalize hội thoại đã chuẩn bị không hợp lệ.",
       );
     }
-    authorizeAudioSessionRequest(request, audioSessionId);
+    const claimedClientId =
+      typeof body?.clientId === "string" && body.clientId.trim()
+        ? body.clientId.trim()
+        : undefined;
+    const uploadClaims = authorizeAudioSessionRequest(
+      request,
+      audioSessionId,
+      claimedClientId,
+    );
 
     const finalized = await finalizeWorkerConversation({
       requestId,
-      clientId:
-        typeof body?.clientId === "string" && body.clientId.trim()
-          ? body.clientId.trim()
-          : undefined,
+      clientId: uploadClaims?.clientId ?? claimedClientId,
       audioSessionId,
       snapshotHash,
       sourceText,

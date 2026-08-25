@@ -4,11 +4,8 @@ import { AppError, toErrorResponse } from "@/lib/errors";
 import { runConversationPipeline } from "@/lib/ai/pipeline";
 import { getCloudflareAudioMaxBytes } from "@/lib/ai/cloudflareWorkersAi";
 import { scheduleConversationPostResponseTasks } from "@/lib/ai/postResponseTasks";
-import {
-  getRequestId,
-  logEvent,
-  withRequestId,
-} from "@/lib/observability";
+import { requireInstallationAccess } from "@/lib/installationAuth";
+import { getRequestId, logEvent, withRequestId } from "@/lib/observability";
 
 export const runtime = "nodejs";
 
@@ -98,10 +95,7 @@ function validateFormData(formData: FormData): ConversationRequest {
   }
 
   if (!audioFile && !sourceText) {
-    throw new AppError(
-      "AUDIO_TOO_SHORT",
-      "Vui lòng ghi âm hoặc nhập câu mẫu.",
-    );
+    throw new AppError("AUDIO_TOO_SHORT", "Vui lòng ghi âm hoặc nhập câu mẫu.");
   }
 
   return {
@@ -143,9 +137,14 @@ export async function POST(request: Request) {
   try {
     const contentType = request.headers.get("content-type") ?? "";
     const isMultipart = contentType.includes("multipart/form-data");
-    const input = isMultipart
+    const parsedInput = isMultipart
       ? validateFormData(await parseFormData(request))
       : validateRequest(await parseJson(request));
+    const access = await requireInstallationAccess(
+      request,
+      parsedInput.clientId,
+    );
+    const input = { ...parsedInput, clientId: access.clientId };
     const result = await runConversationPipeline(
       { ...input, requestId },
       {
@@ -170,7 +169,10 @@ export async function POST(request: Request) {
       { userAudio: input.audioFile },
     );
 
-    return withRequestId(Response.json({ ...result, learning: null }), requestId);
+    return withRequestId(
+      Response.json({ ...result, learning: null }),
+      requestId,
+    );
   } catch (error) {
     logEvent("warn", "conversation_request_failed", { requestId, error });
     return withRequestId(toErrorResponse(error, requestId), requestId);

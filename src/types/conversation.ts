@@ -31,9 +31,7 @@ export type BenchmarkMetadata = {
   originalRecordedAudioBytes?: number;
   cloudflareVadFilter?: boolean;
   cloudflareVadMode?: "client" | "cloudflare";
-  cloudflareVadReason?:
-    | "client_vad_confirmed"
-    | "cloudflare_vad_required";
+  cloudflareVadReason?: "client_vad_confirmed" | "cloudflare_vad_required";
   asrConfidence?: number;
   asrFirstDeltaMs?: number;
   asrFinalAfterStopMs?: number;
@@ -197,10 +195,7 @@ export type TextSource =
 export type AudioSource = "cache" | "openai_tts" | "cloudflare_tts";
 
 export type ConversationReviewStatus =
-  | "unreviewed"
-  | "approved"
-  | "rejected"
-  | "needs_review";
+  "unreviewed" | "approved" | "rejected" | "needs_review";
 
 export type ConversationAiReview = {
   verdict: "approved" | "rejected" | "needs_review";
@@ -268,10 +263,7 @@ export type ConversationHistoryEntry = ConversationResponse & {
     | "conflict"
     | "not_eligible";
   learningReason?:
-    | "positive_feedback"
-    | "negative_feedback"
-    | "repeated_use"
-    | "manual";
+    "positive_feedback" | "negative_feedback" | "repeated_use" | "manual";
   learningUseCount?: number;
 };
 
@@ -367,14 +359,16 @@ export type LatencyReport = {
     p50FirstAudioMs: number;
     p95FirstAudioMs: number;
   }>;
-  asrModeBreakdown: Array<LatencyBreakdownItem<AsrMode | "old"> & {
-    reviewed: number;
-    qualityApprovedRate: number;
-    p50AsrFirstDeltaMs: number;
-    p95AsrFirstDeltaMs: number;
-    p50AsrFinalAfterStopMs: number;
-    p95AsrFinalAfterStopMs: number;
-  }>;
+  asrModeBreakdown: Array<
+    LatencyBreakdownItem<AsrMode | "old"> & {
+      reviewed: number;
+      qualityApprovedRate: number;
+      p50AsrFirstDeltaMs: number;
+      p95AsrFirstDeltaMs: number;
+      p50AsrFinalAfterStopMs: number;
+      p95AsrFinalAfterStopMs: number;
+    }
+  >;
   streamingAsrDecision: {
     recommended: boolean;
     reason: string;
@@ -407,6 +401,11 @@ export type LatencyReport = {
 
 export type ApiErrorCode =
   | "BAD_REQUEST"
+  | "UNAUTHORIZED"
+  | "FORBIDDEN"
+  | "DEVICE_NOT_REGISTERED"
+  | "INSTALLATION_ALREADY_REGISTERED"
+  | "AUTH_CONFIGURATION_ERROR"
   | "AUDIO_SESSION_UNAUTHORIZED"
   | "AUDIO_SESSION_EXPIRED"
   | "AUDIO_CHUNK_IDEMPOTENCY_INVALID"

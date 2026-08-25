@@ -11,7 +11,8 @@ import {
 const originalSecret = process.env.AUDIO_UPLOAD_TOKEN_SECRET;
 
 before(() => {
-  process.env.AUDIO_UPLOAD_TOKEN_SECRET = "test-secret-that-is-long-enough-for-hmac";
+  process.env.AUDIO_UPLOAD_TOKEN_SECRET =
+    "test-secret-that-is-long-enough-for-hmac";
 });
 
 after(() => {
@@ -24,6 +25,7 @@ after(() => {
 
 test("scoped token is bound to one audio session and its expiry", () => {
   const config = parseAudioSessionCreateConfig({
+    clientId: "ios_12345678-test",
     protocolVersion: 2,
     audio: {
       encoding: "pcm_s16le",
@@ -42,9 +44,20 @@ test("scoped token is bound to one audio session and its expiry", () => {
 
   const claims = authorizeAudioSessionRequest(request, "audio_v2-test");
   assert.equal(claims?.sessionId, "audio_v2-test");
+  assert.equal(claims?.clientId, "ios_12345678-test");
   assert.equal(claims?.maxDurationMs, 12_000);
   assert.throws(
     () => authorizeAudioSessionRequest(request, "audio_v2-other"),
+    (error: unknown) =>
+      error instanceof AppError && error.code === "AUDIO_SESSION_UNAUTHORIZED",
+  );
+  assert.throws(
+    () =>
+      authorizeAudioSessionRequest(
+        request,
+        "audio_v2-test",
+        "ios_different-installation",
+      ),
     (error: unknown) =>
       error instanceof AppError && error.code === "AUDIO_SESSION_UNAUTHORIZED",
   );

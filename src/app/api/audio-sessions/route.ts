@@ -7,6 +7,10 @@ import {
 } from "@/lib/storage/audioSessionSecurity";
 import { createAudioUploadSession } from "@/lib/storage/audioSessions";
 import {
+  getInstallationAuthConfig,
+  requireInstallationAccess,
+} from "@/lib/installationAuth";
+import {
   getAudioSessionChunkStorageBackend,
   getAudioUploadLimits,
   getAudioUploadSecurityConfig,
@@ -22,7 +26,10 @@ async function readOptionalJson(request: Request) {
   try {
     return JSON.parse(rawBody) as unknown;
   } catch {
-    throw new AppError("BAD_REQUEST", "Yêu cầu tạo audio session không hợp lệ.");
+    throw new AppError(
+      "BAD_REQUEST",
+      "Yêu cầu tạo audio session không hợp lệ.",
+    );
   }
 }
 
@@ -46,9 +53,18 @@ export async function POST(request: Request) {
   }
 
   try {
-    const requestedConfig = parseAudioSessionCreateConfig(
+    let requestedConfig = parseAudioSessionCreateConfig(
       await readOptionalJson(request),
     );
+    if (requestedConfig) {
+      const access = await requireInstallationAccess(
+        request,
+        requestedConfig.clientId,
+      );
+      requestedConfig = { ...requestedConfig, clientId: access.clientId };
+    } else if (getInstallationAuthConfig().required) {
+      await requireInstallationAccess(request);
+    }
     const security = getAudioUploadSecurityConfig();
     if (security.invalidTokenSecret) {
       throw new AppError(

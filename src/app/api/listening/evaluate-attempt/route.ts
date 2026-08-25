@@ -4,6 +4,7 @@ import {
 } from "@/lib/ai/cloudflareWorkersAi";
 import { matchesLessonEnglish } from "@/lib/ai/lessonAttemptMatcher";
 import { AppError, toErrorResponse } from "@/lib/errors";
+import { requireInstallationAccess } from "@/lib/installationAuth";
 import { getRequestId, logEvent, withRequestId } from "@/lib/observability";
 
 export const runtime = "nodejs";
@@ -29,11 +30,19 @@ function validateAudio(value: FormDataEntryValue | null) {
     throw new AppError("AUDIO_TOO_SHORT", "Vui lòng gửi bản ghi âm hợp lệ.");
   }
   if (value.size > getCloudflareAudioMaxBytes()) {
-    throw new AppError("AUDIO_TOO_LONG", "Bản ghi âm vượt quá dung lượng cho phép.", 413);
+    throw new AppError(
+      "AUDIO_TOO_LONG",
+      "Bản ghi âm vượt quá dung lượng cho phép.",
+      413,
+    );
   }
   const isAudioMime = value.type.toLowerCase().startsWith("audio/");
   if (!isAudioMime && !supportedExtensions.has(getExtension(value.name))) {
-    throw new AppError("BAD_REQUEST", "Định dạng bản ghi âm không được hỗ trợ.", 415);
+    throw new AppError(
+      "BAD_REQUEST",
+      "Định dạng bản ghi âm không được hỗ trợ.",
+      415,
+    );
   }
   return value;
 }
@@ -51,16 +60,29 @@ export async function POST(request: Request) {
   try {
     const contentType = request.headers.get("content-type") ?? "";
     if (!contentType.includes("multipart/form-data")) {
-      throw new AppError("BAD_REQUEST", "Yêu cầu phải dùng multipart/form-data.", 415);
+      throw new AppError(
+        "BAD_REQUEST",
+        "Yêu cầu phải dùng multipart/form-data.",
+        415,
+      );
     }
 
     const contentLength = Number(request.headers.get("content-length"));
     const maxRequestBytes = getCloudflareAudioMaxBytes() + 256 * 1024;
     if (Number.isFinite(contentLength) && contentLength > maxRequestBytes) {
-      throw new AppError("AUDIO_TOO_LONG", "Bản ghi âm vượt quá dung lượng cho phép.", 413);
+      throw new AppError(
+        "AUDIO_TOO_LONG",
+        "Bản ghi âm vượt quá dung lượng cho phép.",
+        413,
+      );
     }
 
     const formData = await request.formData();
+    const claimedClientId =
+      typeof formData.get("clientId") === "string"
+        ? String(formData.get("clientId")).trim()
+        : "";
+    await requireInstallationAccess(request, claimedClientId);
     const audio = validateAudio(formData.get("audio"));
     const expectedEnglish = validateExpectedEnglish(
       formData.get("expectedEnglish"),

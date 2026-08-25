@@ -3,11 +3,8 @@ import {
   getCloudflareAudioMaxBytes,
   translateAudioToEnglish,
 } from "@/lib/ai/cloudflareWorkersAi";
-import {
-  getRequestId,
-  logEvent,
-  withRequestId,
-} from "@/lib/observability";
+import { getRequestId, logEvent, withRequestId } from "@/lib/observability";
+import { requireInstallationAccess } from "@/lib/installationAuth";
 
 export const runtime = "nodejs";
 export const maxDuration = 35;
@@ -100,6 +97,10 @@ export async function POST(request: Request) {
     }
 
     const formData = await request.formData();
+    await requireInstallationAccess(
+      request,
+      getFormString(formData, "clientId"),
+    );
     const audio = validateAudio(formData.get("audio"));
     const sourceLanguage = validateSourceLanguage(
       getFormString(formData, "sourceLanguage"),

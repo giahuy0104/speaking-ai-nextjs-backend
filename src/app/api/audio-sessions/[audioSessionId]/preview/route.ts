@@ -5,11 +5,7 @@ import {
   saveBatchPrefetchCandidate,
 } from "@/lib/ai/batchPrefetch";
 import { AppError, toErrorResponse } from "@/lib/errors";
-import {
-  getRequestId,
-  logEvent,
-  withRequestId,
-} from "@/lib/observability";
+import { getRequestId, logEvent, withRequestId } from "@/lib/observability";
 import {
   type AudioAssemblySource,
   AudioUploadError,
@@ -52,18 +48,21 @@ export async function POST(request: Request, context: RouteContext) {
   const startedAt = performance.now();
   const { audioSessionId } = await context.params;
   let prefetchOperation:
-    | ReturnType<typeof beginBatchPrefetchOperation>
-    | undefined;
+    ReturnType<typeof beginBatchPrefetchOperation> | undefined;
 
   try {
-    authorizeAudioSessionRequest(request, audioSessionId);
-    const body = (await request.json().catch(() => null)) as PreviewRequest | null;
+    const body = (await request
+      .json()
+      .catch(() => null)) as PreviewRequest | null;
     if (!body?.context || !contexts.has(body.context) || !body.pcm16Wav) {
-      throw new AppError(
-        "BAD_REQUEST",
-        "Dữ liệu Batch prefetch không hợp lệ.",
-      );
+      throw new AppError("BAD_REQUEST", "Dữ liệu Batch prefetch không hợp lệ.");
     }
+    const claimedClientId = body.clientId?.trim() || undefined;
+    const uploadClaims = authorizeAudioSessionRequest(
+      request,
+      audioSessionId,
+      claimedClientId,
+    );
     if (
       body.pcm16Wav.chunkCount === undefined ||
       body.pcm16Wav.chunkCount < 2 ||
@@ -127,7 +126,7 @@ export async function POST(request: Request, context: RouteContext) {
       terminalSnapshot: body.terminal === true,
       request: {
         requestId,
-        clientId: body.clientId?.trim() || undefined,
+        clientId: uploadClaims?.clientId ?? claimedClientId,
         context: body.context,
         childAge: body.childAge ?? 6,
         targetLanguage: "en",

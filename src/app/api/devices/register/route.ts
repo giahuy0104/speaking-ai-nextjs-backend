@@ -3,6 +3,8 @@ import {
   parseAndroidDeviceRegistration,
 } from "@/lib/deviceRegistration";
 import { registerDeviceHardware } from "@/lib/deviceProfiles";
+import { AppError, toErrorResponse } from "@/lib/errors";
+import { requireInstallationAccess } from "@/lib/installationAuth";
 import { getRequestId, logEvent, withRequestId } from "@/lib/observability";
 
 export const runtime = "nodejs";
@@ -13,8 +15,12 @@ export async function POST(request: Request) {
   try {
     const body = await request.json().catch(() => null);
     const registration = parseAndroidDeviceRegistration(body);
-    const device = await registerDeviceHardware(
+    const access = await requireInstallationAccess(
+      request,
       registration.clientId,
+    );
+    const device = await registerDeviceHardware(
+      access.clientId,
       registration.hardware,
     );
 
@@ -27,6 +33,9 @@ export async function POST(request: Request) {
 
     return withRequestId(Response.json({ device }), requestId);
   } catch (error) {
+    if (error instanceof AppError) {
+      return withRequestId(toErrorResponse(error, requestId), requestId);
+    }
     if (error instanceof DeviceRegistrationValidationError) {
       return withRequestId(
         Response.json(

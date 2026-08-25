@@ -43,11 +43,7 @@ import type {
   ConversationResponse,
   PracticeContext,
 } from "@/types/conversation";
-import {
-  getRequestId,
-  logEvent,
-  withRequestId,
-} from "@/lib/observability";
+import { getRequestId, logEvent, withRequestId } from "@/lib/observability";
 
 export const runtime = "nodejs";
 
@@ -68,11 +64,7 @@ type FinalizeRequest = {
   benchmark?: BenchmarkMetadata;
 };
 
-const validContexts = new Set<PracticeContext>([
-  "home",
-  "school",
-  "outside",
-]);
+const validContexts = new Set<PracticeContext>(["home", "school", "outside"]);
 
 function publicAudioUploadError(error: AudioUploadError) {
   const code: ApiErrorCode =
@@ -106,11 +98,9 @@ export async function POST(request: Request, context: RouteContext) {
   let cancelCandidateWait: (() => void) | undefined;
   let candidateMonitorCancelled = false;
   let activeCandidateMonitorPromise:
-    | Promise<BatchPrefetchCandidate | undefined>
-    | undefined;
+    Promise<BatchPrefetchCandidate | undefined> | undefined;
 
   try {
-    const uploadClaims = authorizeAudioSessionRequest(request, audioSessionId);
     const retryAfter = consumeAudioUploadRateLimit(
       request,
       "session",
@@ -135,6 +125,12 @@ export async function POST(request: Request, context: RouteContext) {
     const rawBody = await request.text();
     requestHash = createHash("sha256").update(rawBody).digest("hex");
     const body = JSON.parse(rawBody) as FinalizeRequest;
+    const claimedClientId = body.clientId?.trim() || undefined;
+    const uploadClaims = authorizeAudioSessionRequest(
+      request,
+      audioSessionId,
+      claimedClientId,
+    );
     if (
       uploadClaims &&
       ((uploadClaims.encoding === "pcm_s16le" && !body.pcm16Wav) ||
@@ -211,17 +207,13 @@ export async function POST(request: Request, context: RouteContext) {
     let prefetchedSourceText: string | undefined;
     let batchPrefetchUsed = false;
     let prefetchTail:
-      | Awaited<ReturnType<typeof validateAudioSessionPrefetchTail>>
-      | undefined;
+      Awaited<ReturnType<typeof validateAudioSessionPrefetchTail>> | undefined;
     let prefetchCandidate = getBatchPrefetchCandidate(
       body.prefetchId?.trim(),
       audioSessionId,
     );
-    let prefetchCandidateOrigin:
-      | "explicit"
-      | "latest"
-      | "joined"
-      | undefined = prefetchCandidate ? "explicit" : undefined;
+    let prefetchCandidateOrigin: "explicit" | "latest" | "joined" | undefined =
+      prefetchCandidate ? "explicit" : undefined;
     let prefetchJoinMs = 0;
     let prefetchJoinState: "latest" | "joined" | "none" = "none";
     let prefetchRaceWinner:
@@ -243,17 +235,12 @@ export async function POST(request: Request, context: RouteContext) {
     let terminalPipelineSharedFlightJoined: boolean | undefined;
     let terminalPreparedPipeline: PreparedAudioSessionPipeline | undefined;
     let terminalPipelinePromise:
-      | Promise<PreparedAudioSessionPipeline>
-      | undefined;
+      Promise<PreparedAudioSessionPipeline> | undefined;
     let supersededPipelinePromise: Promise<unknown> | undefined;
     let supersededPipelineWinner:
-      | "prefetch"
-      | "late_prefetch"
-      | "terminal_pipeline"
-      | undefined;
+      "prefetch" | "late_prefetch" | "terminal_pipeline" | undefined;
     let preparedPipelinePromise:
-      | ReturnType<typeof prepareAudioSessionPipelineOnce>
-      | undefined;
+      ReturnType<typeof prepareAudioSessionPipelineOnce> | undefined;
     let hedgedAsrPromise:
       | Promise<
           | {
@@ -300,7 +287,7 @@ export async function POST(request: Request, context: RouteContext) {
         transcribe: () =>
           transcribeVietnamese({
             requestId,
-            clientId: body.clientId?.trim() || undefined,
+            clientId: uploadClaims?.clientId ?? claimedClientId,
             context: practiceContext,
             childAge: body.childAge ?? 6,
             targetLanguage: "en",
@@ -330,7 +317,7 @@ export async function POST(request: Request, context: RouteContext) {
         snapshot: body.pcm16Wav,
         request: {
           requestId,
-          clientId: body.clientId?.trim() || undefined,
+          clientId: uploadClaims?.clientId ?? claimedClientId,
           context: practiceContext,
           childAge: body.childAge ?? 6,
           targetLanguage: "en",
@@ -359,8 +346,7 @@ export async function POST(request: Request, context: RouteContext) {
         terminalFlight.snapshot.chunkCount !== undefined &&
         body.pcm16Wav.chunkCount !== undefined &&
         terminalFlight.snapshot.chunkCount <= body.pcm16Wav.chunkCount &&
-        terminalFlight.snapshot.pcmByteLength <=
-          body.pcm16Wav.pcmByteLength
+        terminalFlight.snapshot.pcmByteLength <= body.pcm16Wav.pcmByteLength
       ) {
         terminalPipelineAgeMs = Math.max(
           0,
@@ -507,8 +493,7 @@ export async function POST(request: Request, context: RouteContext) {
     };
 
     let candidateMonitorPromise:
-      | ReturnType<typeof waitForValidPrefetchCandidate>
-      | undefined;
+      ReturnType<typeof waitForValidPrefetchCandidate> | undefined;
     let hedgedTranscript:
       | {
           sourceText: string;
@@ -602,7 +587,7 @@ export async function POST(request: Request, context: RouteContext) {
 
     const pipelineInput = (usingPrefetch: boolean): ConversationRequest => ({
       requestId,
-      clientId: body.clientId?.trim() || undefined,
+      clientId: uploadClaims?.clientId ?? claimedClientId,
       context: body.context!,
       childAge: body.childAge ?? 6,
       targetLanguage: "en" as const,
@@ -616,9 +601,9 @@ export async function POST(request: Request, context: RouteContext) {
         ...body.benchmark,
         batchPrefetchAttempted: Boolean(
           body.prefetchId ||
-            prefetchCandidate ||
-            terminalPipelineAgeMs !== undefined ||
-            body.benchmark?.batchPrefetchAttempted,
+          prefetchCandidate ||
+          terminalPipelineAgeMs !== undefined ||
+          body.benchmark?.batchPrefetchAttempted,
         ),
         batchPrefetchUsed: usingPrefetch,
         batchPrefetchStability: prefetchCandidate?.stabilityCount,
@@ -634,8 +619,7 @@ export async function POST(request: Request, context: RouteContext) {
         batchPrefetchCandidateOrigin: prefetchCandidateOrigin,
         batchPrefetchRaceWinner: prefetchRaceWinner,
         batchPrefetchRaceMs: prefetchRaceMs || undefined,
-        batchPipelineSharedFlightJoined:
-          preparedPipelineSharedFlightJoined,
+        batchPipelineSharedFlightJoined: preparedPipelineSharedFlightJoined,
         batchTerminalPipelineAgeMs: terminalPipelineAgeMs,
         batchTerminalPipelineTailEligible: terminalPipelineTailEligible,
         batchTerminalPipelineSharedFlightJoined:
@@ -645,8 +629,7 @@ export async function POST(request: Request, context: RouteContext) {
           body.benchmark?.batchTerminalPreviewLeadBeforeFinalizeMs,
         batchFinalizeHedgedAsrMs: hedgedAsrLatencyMs,
         batchFinalizeHedgedAsrWaitMs: hedgedAsrWaitMs,
-        batchFinalizeHedgedAsrSharedFlightJoined:
-          hedgedAsrSharedFlightJoined,
+        batchFinalizeHedgedAsrSharedFlightJoined: hedgedAsrSharedFlightJoined,
         batchFinalizeHedgedAsrUsed: hedgedAsrUsed,
       },
     });
@@ -917,22 +900,19 @@ export async function POST(request: Request, context: RouteContext) {
         terminalPreviewLeadBeforeFinalizeMs:
           terminalPipelineLeadBeforeFinalizeMs ??
           body.benchmark?.batchTerminalPreviewLeadBeforeFinalizeMs,
-        vadSilenceAtSessionMs:
-          body.benchmark?.batchVadSilenceAtSessionMs,
+        vadSilenceAtSessionMs: body.benchmark?.batchVadSilenceAtSessionMs,
         terminalRequestSentAtSessionMs:
           body.benchmark?.batchTerminalRequestSentAtSessionMs,
         terminalPipelineStartedAtSessionMs:
           body.benchmark?.batchTerminalPipelineStartedAtSessionMs,
         finalizeRequestSentAtSessionMs:
           body.benchmark?.batchFinalizeRequestSentAtSessionMs,
-        terminalUploadWaitMs:
-          body.benchmark?.batchTerminalUploadWaitMs,
+        terminalUploadWaitMs: body.benchmark?.batchTerminalUploadWaitMs,
         terminalDuplicateSuppressed:
           body.benchmark?.batchTerminalDuplicateSuppressed,
         terminalSnapshotAckedChunkCount:
           body.benchmark?.batchTerminalSnapshotAckedChunkCount,
-        finalSnapshotChunkCount:
-          body.benchmark?.batchFinalSnapshotChunkCount,
+        finalSnapshotChunkCount: body.benchmark?.batchFinalSnapshotChunkCount,
         finalizeRequestReceivedAt,
         assemblySource,
         batchPrefetchUsed,
@@ -965,9 +945,7 @@ export async function POST(request: Request, context: RouteContext) {
       error,
     });
     const responseError =
-      error instanceof AudioUploadError
-        ? publicAudioUploadError(error)
-        : error;
+      error instanceof AudioUploadError ? publicAudioUploadError(error) : error;
     return withRequestId(toErrorResponse(responseError, requestId), requestId);
   }
 }

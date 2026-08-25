@@ -18,6 +18,7 @@
     "test:cloudflare-only": "node --import tsx --test src/lib/ai/cloudflareOnly.test.ts",
     "test:tts-cache": "node --import tsx --test --test-concurrency=1 src/lib/ai/tts.test.ts src/lib/ai/audioWarmup.test.ts",
     "test:admin-auth": "node --import tsx --test src/lib/adminAuthCore.test.ts",
+    "test:installation-auth": "node --import tsx --test src/lib/installationAuthCore.test.ts src/lib/storage/audioSessionSecurity.test.ts",
     "test:app-version": "node --import tsx --test src/lib/appVersionPolicy.test.ts",
     "test:proxy": "node --import tsx --test src/proxy.test.ts",
     "storage:check": "node --env-file=.env.local --import tsx scripts/check-storage.ts",

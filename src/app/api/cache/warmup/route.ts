@@ -7,6 +7,8 @@ import {
 } from "@/lib/ai/audioWarmup";
 import { claimLegacyConversationHistory } from "@/lib/history";
 import { migrateApprovedHistoryLearning } from "@/lib/ai/adaptiveLearning";
+import { requireAdminAccess } from "@/lib/adminAuth";
+import { requireInstallationAccess } from "@/lib/installationAuth";
 
 export const runtime = "nodejs";
 export const maxDuration = 300;
@@ -26,10 +28,18 @@ export async function POST(request: Request) {
       limit?: unknown;
     };
     const context = body.context;
-    const clientId =
+    const claimedClientId =
       typeof body.clientId === "string" && body.clientId.trim()
         ? body.clientId.trim()
         : undefined;
+    let clientId = claimedClientId;
+    if (claimedClientId) {
+      clientId = (await requireInstallationAccess(request, claimedClientId))
+        .clientId;
+    } else {
+      const denied = requireAdminAccess(request);
+      if (denied) return denied;
+    }
     const limit =
       body.limit === undefined
         ? undefined
@@ -38,7 +48,10 @@ export async function POST(request: Request) {
           : NaN;
 
     if (limit !== undefined && (!Number.isFinite(limit) || limit < 1)) {
-      throw new AppError("BAD_REQUEST", "Giới hạn làm nóng audio không hợp lệ.");
+      throw new AppError(
+        "BAD_REQUEST",
+        "Giới hạn làm nóng audio không hợp lệ.",
+      );
     }
 
     const warmup = () =>

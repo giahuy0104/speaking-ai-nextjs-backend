@@ -1,5 +1,7 @@
 import { getCloudflareAudioMaxBytes } from "@/lib/ai/cloudflareWorkersAi";
 import { archiveConversationUserAudio } from "@/lib/userAudioArchive";
+import { AppError, toErrorResponse } from "@/lib/errors";
+import { requireInstallationAccess } from "@/lib/installationAuth";
 import { getRequestId, logEvent, withRequestId } from "@/lib/observability";
 
 export const runtime = "nodejs";
@@ -39,13 +41,13 @@ export async function POST(request: Request, context: RouteContext) {
 
     const formData = await request.formData();
     const audio = formData.get("audio");
-    const clientId = formText(formData, "clientId");
+    const claimedClientId = formText(formData, "clientId");
     const sessionId = formText(formData, "sessionId");
     const declaredMimeType = formText(formData, "mimeType");
     if (
       !(audio instanceof File) ||
       audio.size <= 0 ||
-      !identifierPattern.test(clientId) ||
+      !identifierPattern.test(claimedClientId) ||
       !identifierPattern.test(sessionId)
     ) {
       return withRequestId(
@@ -62,6 +64,8 @@ export async function POST(request: Request, context: RouteContext) {
         requestId,
       );
     }
+    const clientId = (await requireInstallationAccess(request, claimedClientId))
+      .clientId;
     if (audio.size > getCloudflareAudioMaxBytes()) {
       return withRequestId(
         Response.json(
@@ -103,6 +107,9 @@ export async function POST(request: Request, context: RouteContext) {
       requestId,
     );
   } catch (error) {
+    if (error instanceof AppError) {
+      return withRequestId(toErrorResponse(error, requestId), requestId);
+    }
     logEvent("error", "conversation_user_audio_client_upload_failed", {
       requestId,
       conversationId,

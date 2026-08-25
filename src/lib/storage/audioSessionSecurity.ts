@@ -9,6 +9,7 @@ const scopedSessionPrefix = "audio_v2-";
 const sha256Pattern = /^[a-f0-9]{64}$/;
 
 export type AudioSessionCreateConfig = {
+  clientId?: string;
   protocolVersion: 2;
   encoding: "pcm_s16le" | "encoded_audio";
   requestedSampleRate: number;
@@ -36,6 +37,7 @@ type AudioUploadSecurityGlobal = typeof globalThis & {
 };
 
 const securityGlobal = globalThis as AudioUploadSecurityGlobal;
+const clientIdPattern = /^(ios|android|web)_[A-Za-z0-9._:-]{8,180}$/;
 
 function parseInteger(
   value: unknown,
@@ -84,7 +86,15 @@ export function parseAudioSessionCreateConfig(
   }
   const channelCount = parseInteger(audio.channelCount, 1, 1, 1);
   const bitsPerSample = parseInteger(audio.bitsPerSample, 16, 16, 16);
+  const clientId =
+    typeof body.clientId === "string" && body.clientId.trim()
+      ? body.clientId.trim()
+      : undefined;
+  if (clientId && !clientIdPattern.test(clientId)) {
+    throw new AppError("BAD_REQUEST", "installationId không hợp lệ.", 400);
+  }
   return {
+    clientId,
     protocolVersion: 2,
     encoding,
     requestedSampleRate: parseInteger(
@@ -152,6 +162,7 @@ function unauthorized(message: string, status = 401): never {
 export function authorizeAudioSessionRequest(
   request: Request,
   sessionId: string,
+  claimedClientId?: string,
 ): AudioSessionTokenClaims | null {
   if (!isScopedAudioSessionId(sessionId)) {
     return null;
@@ -188,6 +199,13 @@ export function authorizeAudioSessionRequest(
   }
   if (claims.sessionId !== sessionId || claims.protocolVersion !== 2) {
     unauthorized("Upload token không thuộc audio session này.", 403);
+  }
+  if (
+    claimedClientId?.trim() &&
+    claims.clientId &&
+    claimedClientId.trim() !== claims.clientId
+  ) {
+    unauthorized("Audio session không thuộc installation này.", 403);
   }
   if (
     !Number.isFinite(claims.expiresAt) ||
@@ -253,8 +271,8 @@ export function consumeAudioUploadRateLimit(
       : `session:${sessionId ?? "unknown"}`;
   const now = Date.now();
   const windowMs = 60_000;
-  const buckets =
-    securityGlobal.__aiSpeakingAudioUploadRateLimits ??= new Map();
+  const buckets = (securityGlobal.__aiSpeakingAudioUploadRateLimits ??=
+    new Map());
   const current = buckets.get(key);
   if (!current || now - current.startedAt >= windowMs) {
     buckets.set(key, { startedAt: now, count: 1 });
@@ -271,8 +289,5 @@ export function consumeAudioUploadRateLimit(
       }
     }
   }
-  return Math.max(
-    1,
-    Math.ceil((windowMs - (now - current.startedAt)) / 1000),
-  );
+  return Math.max(1, Math.ceil((windowMs - (now - current.startedAt)) / 1000));
 }

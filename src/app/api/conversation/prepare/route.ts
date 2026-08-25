@@ -1,11 +1,7 @@
 import type { BenchmarkMetadata, PracticeContext } from "@/types/conversation";
 import { after } from "next/server";
 import { AppError, toErrorResponse } from "@/lib/errors";
-import {
-  getRequestId,
-  logEvent,
-  withRequestId,
-} from "@/lib/observability";
+import { getRequestId, logEvent, withRequestId } from "@/lib/observability";
 import { prepareWorkerConversation } from "@/lib/ai/conversationPreparation";
 import { authorizeAudioSessionRequest } from "@/lib/storage/audioSessionSecurity";
 
@@ -49,16 +45,24 @@ export async function POST(request: Request) {
       childAge < 3 ||
       childAge > 18
     ) {
-      throw new AppError("BAD_REQUEST", "Dữ liệu chuẩn bị hội thoại không hợp lệ.");
+      throw new AppError(
+        "BAD_REQUEST",
+        "Dữ liệu chuẩn bị hội thoại không hợp lệ.",
+      );
     }
 
-    authorizeAudioSessionRequest(request, audioSessionId);
+    const claimedClientId =
+      typeof body?.clientId === "string" && body.clientId.trim()
+        ? body.clientId.trim()
+        : undefined;
+    const uploadClaims = authorizeAudioSessionRequest(
+      request,
+      audioSessionId,
+      claimedClientId,
+    );
     const prepared = await prepareWorkerConversation({
       requestId,
-      clientId:
-        typeof body?.clientId === "string" && body.clientId.trim()
-          ? body.clientId.trim()
-          : undefined,
+      clientId: uploadClaims?.clientId ?? claimedClientId,
       audioSessionId,
       snapshotHash,
       sourceText,
