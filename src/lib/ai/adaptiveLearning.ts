@@ -25,6 +25,8 @@ const ruleTextSources = new Set([
   "semantic_cache",
 ]);
 
+type AdaptiveConversation = Omit<ConversationResponse, "latency">;
+
 export type AdaptiveLearningOutcome = {
   status:
     | "already_rule"
@@ -45,14 +47,14 @@ function normalizedEnglish(text: string) {
 
 function sameLearningScope(
   entry: ConversationHistoryEntry,
-  conversation: ConversationResponse,
+  conversation: AdaptiveConversation,
 ) {
   return (entry.clientId ?? "") === (conversation.clientId ?? "");
 }
 
 function isSameCandidate(
   entry: ConversationHistoryEntry,
-  conversation: ConversationResponse,
+  conversation: AdaptiveConversation,
 ) {
   return (
     sameLearningScope(entry, conversation) &&
@@ -67,7 +69,7 @@ function isSameCandidate(
 }
 
 async function promoteCandidate(
-  conversation: ConversationResponse,
+  conversation: AdaptiveConversation,
   reason: "positive_feedback" | "repeated_use" | "manual",
   awaitAudio: boolean,
 ): Promise<AdaptiveLearningOutcome> {

@@ -11,15 +11,25 @@ import type {
   ConversationHistoryPatch,
   ConversationResponse,
 } from "@/types/conversation";
-import { getChildDataRetentionDays } from "@/lib/dataPolicy";
+import {
+  getDiagnosticRetentionDays,
+  getHistoryRetentionDays,
+  getUserAudioRetentionDays,
+} from "@/lib/dataPolicy";
+import {
+  planConversationRetention,
+  withoutConversationDiagnostics,
+  withoutConversationUserAudio,
+} from "@/lib/dataRetention";
 import { logEvent } from "@/lib/observability";
+import { deleteConversationUserAudio } from "@/lib/storage/cloudinaryUserAudio";
 import { isPostgresStorageEnabled } from "@/lib/db";
 import {
   clearRecords,
   deleteRecord,
-  deleteRecordsOlderThan,
   getRecord,
   insertRecordIfAbsent,
+  listRecordEntries,
   listRecords,
   putRecord,
   updateRecord,
@@ -40,6 +50,17 @@ const adaptiveTextSources = new Set(["cloudflare", "openai", "text_cache"]);
 
 let mutationQueue: Promise<void> = Promise.resolve();
 let lastMalformedSignature = "";
+let lastRetentionCleanupAt = 0;
+let retentionCleanupFlight: Promise<ConversationDataRetentionResult> | null =
+  null;
+
+export type ConversationDataRetentionResult = {
+  audioDeleted: number;
+  diagnosticsDeleted: number;
+  historyDeleted: number;
+  failures: number;
+  skipped: boolean;
+};
 
 type ParsedHistory = {
   entries: ConversationHistoryEntry[];
@@ -154,10 +175,12 @@ function applyConversationHistoryPatch(
     audioSource: patch.audioSource ?? entry.audioSource,
     userAudioUrl: patch.userAudioUrl ?? entry.userAudioUrl,
     userAudio: patch.userAudio ?? entry.userAudio,
-    latency: {
-      ...entry.latency,
-      ...patch.latency,
-    },
+    latency: patch.latency && entry.latency
+      ? {
+          ...entry.latency,
+          ...patch.latency,
+        }
+      : entry.latency,
     qualityApproved: patch.qualityApproved ?? entry.qualityApproved,
     reviewStatus: patch.reviewStatus ?? entry.reviewStatus,
     reviewedAt: patch.reviewedAt ?? entry.reviewedAt,
@@ -204,33 +227,196 @@ export async function appendConversationHistory(
   });
 }
 
+function dataRetentionPolicy() {
+  return {
+    userAudioRetentionDays: getUserAudioRetentionDays(),
+    historyRetentionDays: getHistoryRetentionDays(),
+    diagnosticRetentionDays: getDiagnosticRetentionDays(),
+  };
+}
+
+function retentionCleanupIntervalMs() {
+  const configured = Number(
+    process.env.DATA_RETENTION_CLEANUP_INTERVAL_SECONDS ?? 3_600,
+  );
+  const seconds =
+    Number.isFinite(configured) && configured >= 60
+      ? Math.floor(configured)
+      : 3_600;
+  return seconds * 1_000;
+}
+
+function emptyRetentionResult(skipped = false): ConversationDataRetentionResult {
+  return {
+    audioDeleted: 0,
+    diagnosticsDeleted: 0,
+    historyDeleted: 0,
+    failures: 0,
+    skipped,
+  };
+}
+
+async function cleanupPostgresConversationData(
+  now: Date,
+): Promise<ConversationDataRetentionResult> {
+  const result = emptyRetentionResult();
+  const policy = dataRetentionPolicy();
+  const records = await listRecordEntries<ConversationHistoryEntry>(
+    historyNamespace,
+    { limit: 100_000, oldestFirst: true },
+  );
+
+  for (const record of records) {
+    const plan = planConversationRetention(record.value, policy, now);
+    if (!plan.deleteHistory && !plan.deleteUserAudio && !plan.deleteDiagnostics) {
+      continue;
+    }
+
+    try {
+      if (plan.deleteUserAudio && record.value.userAudio) {
+        await deleteConversationUserAudio(record.value.userAudio);
+        result.audioDeleted += 1;
+      }
+
+      if (plan.deleteHistory) {
+        const deleted = await deleteRecord(
+          historyNamespace,
+          record.key,
+          record.clientId,
+        );
+        result.historyDeleted += deleted ? 1 : 0;
+        continue;
+      }
+
+      const updated = await updateRecord<ConversationHistoryEntry>({
+        namespace: historyNamespace,
+        key: record.key,
+        clientId: record.clientId,
+        mutate: (current) => {
+          let retained = current;
+          if (plan.deleteUserAudio) {
+            retained = withoutConversationUserAudio(retained);
+          }
+          if (plan.deleteDiagnostics) {
+            retained = withoutConversationDiagnostics(retained, now.toISOString());
+          }
+          return retained;
+        },
+      });
+      if (updated && plan.deleteDiagnostics) result.diagnosticsDeleted += 1;
+    } catch (error) {
+      result.failures += 1;
+      logEvent("error", "conversation_data_retention_item_failed", {
+        conversationId: record.key,
+        error,
+      });
+    }
+  }
+
+  return result;
+}
+
+async function cleanupLocalConversationData(
+  now: Date,
+): Promise<ConversationDataRetentionResult> {
+  return enqueueMutation(async () => {
+    const result = emptyRetentionResult();
+    const policy = dataRetentionPolicy();
+    const { entries } = await readHistoryFile();
+    const retainedEntries: ConversationHistoryEntry[] = [];
+    let changed = false;
+
+    for (const entry of entries) {
+      const plan = planConversationRetention(entry, policy, now);
+      if (!plan.deleteHistory && !plan.deleteUserAudio && !plan.deleteDiagnostics) {
+        retainedEntries.push(entry);
+        continue;
+      }
+
+      try {
+        if (plan.deleteUserAudio && entry.userAudio) {
+          await deleteConversationUserAudio(entry.userAudio);
+          result.audioDeleted += 1;
+        }
+        if (plan.deleteHistory) {
+          result.historyDeleted += 1;
+          changed = true;
+          continue;
+        }
+
+        let retained = entry;
+        if (plan.deleteUserAudio) retained = withoutConversationUserAudio(retained);
+        if (plan.deleteDiagnostics) {
+          retained = withoutConversationDiagnostics(retained, now.toISOString());
+          result.diagnosticsDeleted += 1;
+        }
+        retainedEntries.push(retained);
+        changed = true;
+      } catch (error) {
+        result.failures += 1;
+        retainedEntries.push(entry);
+        logEvent("error", "conversation_data_retention_item_failed", {
+          conversationId: entry.conversationId,
+          error,
+        });
+      }
+    }
+
+    if (changed) await writeHistoryFile(retainedEntries);
+    return result;
+  });
+}
+
+export async function cleanupConversationDataRetention(
+  force = false,
+  now = new Date(),
+): Promise<ConversationDataRetentionResult> {
+  const policy = dataRetentionPolicy();
+  if (Object.values(policy).every((value) => value === null)) {
+    return emptyRetentionResult(true);
+  }
+  if (
+    !force &&
+    lastRetentionCleanupAt > 0 &&
+    now.getTime() - lastRetentionCleanupAt < retentionCleanupIntervalMs()
+  ) {
+    return emptyRetentionResult(true);
+  }
+  if (retentionCleanupFlight) return retentionCleanupFlight;
+
+  retentionCleanupFlight = (
+    isPostgresStorageEnabled()
+      ? cleanupPostgresConversationData(now)
+      : cleanupLocalConversationData(now)
+  )
+    .then((result) => {
+      lastRetentionCleanupAt = now.getTime();
+      if (
+        result.audioDeleted ||
+        result.diagnosticsDeleted ||
+        result.historyDeleted ||
+        result.failures
+      ) {
+        logEvent("info", "conversation_data_retention_completed", result);
+      }
+      return result;
+    })
+    .finally(() => {
+      retentionCleanupFlight = null;
+    });
+
+  return retentionCleanupFlight;
+}
+
 export async function readConversationHistory(limit = maxHistoryResponseItems) {
   const safeLimit = Math.max(
     1,
     Math.min(Math.floor(limit), maxStoredHistoryItems),
   );
 
+  await cleanupConversationDataRetention();
+
   if (isPostgresStorageEnabled()) {
-    const retentionDays = getChildDataRetentionDays();
-
-    if (retentionDays) {
-      const cutoff = new Date(
-        Date.now() - retentionDays * 24 * 60 * 60 * 1000,
-      ).toISOString();
-      const deletedCount = await deleteRecordsOlderThan(
-        historyNamespace,
-        cutoff,
-      );
-
-      if (deletedCount > 0) {
-        logEvent("info", "child_history_retention_applied", {
-          retentionDays,
-          deletedCount,
-          storage: "postgres",
-        });
-      }
-    }
-
     return listRecords<ConversationHistoryEntry>(historyNamespace, {
       limit: safeLimit,
     });
@@ -238,26 +424,7 @@ export async function readConversationHistory(limit = maxHistoryResponseItems) {
 
   return enqueueMutation(async () => {
     const { entries } = await readHistoryFile();
-    const retentionDays = getChildDataRetentionDays();
-    const cutoff = retentionDays
-      ? Date.now() - retentionDays * 24 * 60 * 60 * 1000
-      : null;
-    const retainedEntries = cutoff
-      ? entries.filter((entry) => {
-          const createdAt = Date.parse(entry.createdAt);
-          return !Number.isFinite(createdAt) || createdAt >= cutoff;
-        })
-      : entries;
-
-    if (retainedEntries.length !== entries.length) {
-      await writeHistoryFile(retainedEntries);
-      logEvent("info", "child_history_retention_applied", {
-        retentionDays,
-        deletedCount: entries.length - retainedEntries.length,
-      });
-    }
-
-    return [...retainedEntries].reverse().slice(0, safeLimit);
+    return [...entries].reverse().slice(0, safeLimit);
   });
 }
 
@@ -448,11 +615,28 @@ export async function deleteConversationHistoryEntry(
   clientId?: string,
 ) {
   if (isPostgresStorageEnabled()) {
+    const record = await getRecord<ConversationHistoryEntry>(
+      historyNamespace,
+      conversationId,
+    );
+    if (!record || (clientId !== undefined && record.value.clientId !== clientId)) {
+      return false;
+    }
+    if (record.value.userAudio) {
+      await deleteConversationUserAudio(record.value.userAudio);
+    }
     return deleteRecord(historyNamespace, conversationId, clientId);
   }
 
   return enqueueMutation(async () => {
     const { entries } = await readHistoryFile();
+    const entry = entries.find(
+      (candidate) =>
+        candidate.conversationId === conversationId &&
+        (clientId === undefined || candidate.clientId === clientId),
+    );
+    if (!entry) return false;
+    if (entry.userAudio) await deleteConversationUserAudio(entry.userAudio);
     const nextEntries = entries.filter(
       (entry) =>
         entry.conversationId !== conversationId ||
@@ -470,17 +654,31 @@ export async function deleteConversationHistoryEntry(
 
 export async function clearConversationHistory(clientId?: string) {
   if (isPostgresStorageEnabled()) {
+    const entries = await listRecords<ConversationHistoryEntry>(
+      historyNamespace,
+      { clientId, limit: 100_000, oldestFirst: true },
+    );
+    for (const entry of entries) {
+      if (entry.userAudio) await deleteConversationUserAudio(entry.userAudio);
+    }
     await clearRecords(historyNamespace, clientId);
     return;
   }
 
   await enqueueMutation(async () => {
+    const { entries } = await readHistoryFile();
+    const entriesToDelete =
+      clientId === undefined
+        ? entries
+        : entries.filter((entry) => entry.clientId === clientId);
+    for (const entry of entriesToDelete) {
+      if (entry.userAudio) await deleteConversationUserAudio(entry.userAudio);
+    }
     if (clientId === undefined) {
       await writeHistoryFile([]);
       return;
     }
 
-    const { entries } = await readHistoryFile();
     await writeHistoryFile(
       entries.filter((entry) => entry.clientId !== clientId),
     );

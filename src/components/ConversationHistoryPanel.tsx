@@ -103,11 +103,17 @@ export function ConversationHistoryPanel({
                     {item.englishText}
                   </td>
                   <td className="py-3 pr-3 font-semibold text-slate-950">
-                    {item.latency.timeToFirstAudioMs}ms
+                    {item.latency
+                      ? `${item.latency.timeToFirstAudioMs}ms`
+                      : pick("Đã xóa", "已删除")}
                   </td>
                   <td className="py-3 pr-3 text-xs text-slate-500">
-                    ASR {item.latency.asrMs}ms / LLM {item.latency.llmMs}ms /
-                    TTS {item.latency.ttsMs}ms
+                    {item.latency
+                      ? `ASR ${item.latency.asrMs}ms / LLM ${item.latency.llmMs}ms / TTS ${item.latency.ttsMs}ms`
+                      : pick(
+                          "Chẩn đoán đã hết thời hạn lưu",
+                          "诊断数据已超过保留期限",
+                        )}
                   </td>
                   <td className="py-3 pr-3">
                     <div className="flex min-w-[190px] gap-2">

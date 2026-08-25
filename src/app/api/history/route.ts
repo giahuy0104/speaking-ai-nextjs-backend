@@ -5,7 +5,10 @@ import {
   readConversationHistory,
   updateConversationHistory,
 } from "@/lib/history";
-import type { ConversationHistoryPatch } from "@/types/conversation";
+import type {
+  ConversationHistoryEntry,
+  ConversationHistoryPatch,
+} from "@/types/conversation";
 import {
   learnFromPositiveFeedback,
   unlearnFromNegativeFeedback,
@@ -16,6 +19,17 @@ import { requireInstallationAccess } from "@/lib/installationAuth";
 import { getRequestId, logEvent, withRequestId } from "@/lib/observability";
 
 export const runtime = "nodejs";
+
+function toInstallationHistoryEntry(entry: ConversationHistoryEntry) {
+  const safeEntry = { ...entry };
+  delete safeEntry.userAudio;
+  delete safeEntry.userAudioUrl;
+
+  return {
+    ...safeEntry,
+    hasUserAudio: Boolean(entry.userAudio),
+  };
+}
 
 export async function GET(request: Request) {
   const requestId = getRequestId(request);
@@ -47,10 +61,13 @@ export async function GET(request: Request) {
         ? history.filter((entry) => entry.clientId === clientId)
         : history
     ).slice(0, limit);
+    const responseConversations = clientId
+      ? conversations.map(toInstallationHistoryEntry)
+      : conversations;
 
     return withRequestId(
       Response.json({
-        conversations,
+        conversations: responseConversations,
         learning: {
           scope: clientId ? "device" : "legacy",
           clientId,

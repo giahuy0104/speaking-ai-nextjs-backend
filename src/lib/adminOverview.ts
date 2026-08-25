@@ -5,7 +5,10 @@ import {
   createDefaultDeviceProfile,
   readDeviceProfiles,
 } from "@/lib/deviceProfiles";
-import { readConversationHistory } from "@/lib/history";
+import {
+  cleanupConversationDataRetention,
+  readConversationHistory,
+} from "@/lib/history";
 import type {
   AdminOverview,
   AdminReviewFilter,
@@ -19,7 +22,6 @@ import { buildLatencyReport } from "@/lib/reports";
 import { getChildDataPolicy } from "@/lib/dataPolicy";
 import { isPostgresStorageEnabled } from "@/lib/db";
 import { readPostgresAdminOverviewSnapshot } from "@/lib/adminOverviewPostgres";
-import { logEvent } from "@/lib/observability";
 
 export function getConversationReviewStatus(
   conversation: ConversationHistoryEntry,
@@ -91,23 +93,9 @@ async function getPostgresAdminOverview(options: {
   status: AdminReviewFilter;
   limit: number;
 }): Promise<AdminOverview> {
+  await cleanupConversationDataRetention();
   const dataPolicy = getChildDataPolicy();
-  const retentionCutoff = dataPolicy.historyRetentionDays
-    ? new Date(
-        Date.now() - dataPolicy.historyRetentionDays * 24 * 60 * 60 * 1000,
-      ).toISOString()
-    : undefined;
-  const snapshot = await readPostgresAdminOverviewSnapshot({
-    ...options,
-    retentionCutoff,
-  });
-  if (snapshot.deletedByRetention > 0) {
-    logEvent("info", "child_history_retention_applied", {
-      retentionDays: dataPolicy.historyRetentionDays,
-      deletedCount: snapshot.deletedByRetention,
-      storage: "postgres",
-    });
-  }
+  const snapshot = await readPostgresAdminOverviewSnapshot(options);
 
   const profiles = Object.fromEntries(
     snapshot.profiles.map((profile) => [profile.clientId, profile]),

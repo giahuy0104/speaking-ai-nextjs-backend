@@ -2,6 +2,7 @@ import type {
   AsrMode,
   AudioSource,
   ConversationHistoryEntry,
+  ConversationLatency,
   LatencyReport,
   PracticeContext,
   ProcessingMode,
@@ -47,6 +48,16 @@ const fastPathTextSources = new Set<TextSource | "old">([
   "text_cache",
 ]);
 
+type ConversationWithDiagnostics = ConversationHistoryEntry & {
+  latency: ConversationLatency;
+};
+
+function hasLatency(
+  entry: ConversationHistoryEntry,
+): entry is ConversationWithDiagnostics {
+  return Boolean(entry.latency);
+}
+
 function average(values: number[]) {
   if (values.length === 0) {
     return 0;
@@ -72,10 +83,11 @@ function percentile(values: number[], percentileValue: number) {
 }
 
 function buildLatencyStats(items: ConversationHistoryEntry[]) {
-  const values = items.map((entry) => entry.latency.timeToFirstAudioMs);
+  const measuredItems = items.filter(hasLatency);
+  const values = measuredItems.map((entry) => entry.latency.timeToFirstAudioMs);
 
   return {
-    count: items.length,
+    count: measuredItems.length,
     averageFirstAudioMs: average(values),
     p50FirstAudioMs: percentile(values, 50),
     p95FirstAudioMs: percentile(values, 95),
@@ -145,14 +157,14 @@ function buildAsrModeStats(
   const firstDeltas = items
     .map(
       (entry) =>
-        entry.latency.asrFirstDeltaMs ??
+        entry.latency?.asrFirstDeltaMs ??
         entry.benchmark?.asrFirstDeltaMs,
     )
     .filter((value): value is number => typeof value === "number");
   const finalAfterStop = items
     .map(
       (entry) =>
-        entry.latency.asrFinalAfterStopMs ??
+        entry.latency?.asrFinalAfterStopMs ??
         entry.benchmark?.asrFinalAfterStopMs,
     )
     .filter((value): value is number => typeof value === "number");
@@ -173,6 +185,7 @@ function buildAsrModeStats(
 }
 
 function getMeasuredFirstAudio(entry: ConversationHistoryEntry) {
+  if (!entry.latency) return null;
   const measured =
     entry.latency.audioStartedAfterStopMs ??
     entry.latency.browserAudioStartedMs ??
@@ -323,7 +336,8 @@ function getUtteranceLength(entry: ConversationHistoryEntry) {
 export function buildLatencyReport(
   conversations: ConversationHistoryEntry[],
 ): LatencyReport {
-  const firstAudioValues = conversations.map(
+  const measuredConversations = conversations.filter(hasLatency);
+  const firstAudioValues = measuredConversations.map(
     getMeasuredFirstAudio,
   ).filter((value): value is number => value !== null);
   const p95FirstAudioMs = percentile(firstAudioValues, 95);
@@ -343,12 +357,12 @@ export function buildLatencyReport(
           },
         ]
       : [];
-  const easyItems = conversations.filter((entry) =>
+  const easyItems = measuredConversations.filter((entry) =>
     ["phrase_rule", "keyword_rule", "promoted_rule", "semantic_cache"].includes(
       getTextSource(entry),
     ),
   );
-  const aiItems = conversations.filter(
+  const aiItems = measuredConversations.filter(
     (entry) =>
       ["cloudflare", "openai", "text_cache"].includes(
         getTextSource(entry),
@@ -357,7 +371,7 @@ export function buildLatencyReport(
   const openAiTextItems = conversations.filter(
     (entry) => getTextSource(entry) === "openai",
   );
-  const cachedAudioItems = conversations.filter(
+  const cachedAudioItems = measuredConversations.filter(
     (entry) => getAudioSource(entry) === "cache",
   );
   const openAiTextCalls = openAiTextItems.length;
@@ -365,7 +379,7 @@ export function buildLatencyReport(
     (entry) => getAudioSource(entry) === "openai_tts",
   ).length;
   const asrModeBreakdown = asrModes
-    .map((mode) => buildAsrModeStats(mode, conversations))
+    .map((mode) => buildAsrModeStats(mode, measuredConversations))
     .filter((item) => item.count > 0);
 
   return {
@@ -379,14 +393,18 @@ export function buildLatencyReport(
     slowestFirstAudioMs:
       firstAudioValues.length > 0 ? Math.max(...firstAudioValues) : 0,
     underTwoSecondsRate: rate(
-      conversations.filter((entry) => entry.latency.timeToFirstAudioMs <= 2000)
+      measuredConversations.filter(
+        (entry) => entry.latency.timeToFirstAudioMs <= 2000,
+      )
         .length,
-      conversations.length,
+      measuredConversations.length,
     ),
     underThreeSecondsRate: rate(
-      conversations.filter((entry) => entry.latency.timeToFirstAudioMs <= 3000)
+      measuredConversations.filter(
+        (entry) => entry.latency.timeToFirstAudioMs <= 3000,
+      )
         .length,
-      conversations.length,
+      measuredConversations.length,
     ),
     alerts,
     kpi: {
@@ -418,14 +436,14 @@ export function buildLatencyReport(
         (entry) => entry.latency.timeToFirstAudioMs <= 1000,
       ).length,
       cachedAudioTotal: cachedAudioItems.length,
-      openAiTextCallRate: rate(openAiTextCalls, conversations.length),
+      openAiTextCallRate: rate(openAiTextCalls, measuredConversations.length),
       openAiTextCalls,
-      openAiTtsCallRate: rate(openAiTtsCalls, conversations.length),
+      openAiTtsCallRate: rate(openAiTtsCalls, measuredConversations.length),
       openAiTtsCalls,
     },
     modeBreakdown: modes
       .map((mode) => {
-        const items = conversations.filter(
+        const items = measuredConversations.filter(
           (entry) => getProcessingMode(entry) === mode,
         );
 
@@ -437,17 +455,19 @@ export function buildLatencyReport(
       .filter((item) => item.count > 0),
     textSourceBreakdown: buildBreakdown(
       textSources,
-      conversations,
+      measuredConversations,
       getTextSource,
     ),
     audioSourceBreakdown: buildBreakdown(
       audioSources,
-      conversations,
+      measuredConversations,
       getAudioSource,
     ),
     contextBreakdown: contexts
       .map((context) => {
-        const items = conversations.filter((entry) => entry.context === context);
+        const items = measuredConversations.filter(
+          (entry) => entry.context === context,
+        );
 
         return {
           context,
@@ -456,26 +476,26 @@ export function buildLatencyReport(
       })
       .filter((item) => item.count > 0),
     asrModeBreakdown,
-    streamingAsrDecision: buildStreamingAsrDecision(conversations),
+    streamingAsrDecision: buildStreamingAsrDecision(measuredConversations),
     benchmarkBreakdown: {
       device: buildDynamicBreakdown(
-        conversations,
+        measuredConversations,
         (entry) => entry.benchmark?.device ?? "unknown",
       ),
       browser: buildDynamicBreakdown(
-        conversations,
+        measuredConversations,
         (entry) => entry.benchmark?.browser ?? "unknown",
       ),
       network: buildDynamicBreakdown(
-        conversations,
+        measuredConversations,
         (entry) => entry.benchmark?.network ?? "unknown",
       ),
       utteranceLength: buildDynamicBreakdown(
-        conversations,
+        measuredConversations,
         getUtteranceLength,
       ),
     },
-    slowestTurns: [...conversations]
+    slowestTurns: [...measuredConversations]
       .sort(
         (a, b) =>
           b.latency.timeToFirstAudioMs - a.latency.timeToFirstAudioMs,

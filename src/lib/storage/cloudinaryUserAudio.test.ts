@@ -1,6 +1,8 @@
 import assert from "node:assert/strict";
-import { after, beforeEach, test } from "node:test";
+import { after, afterEach, beforeEach, mock, test } from "node:test";
+import { v2 as cloudinary } from "cloudinary";
 import {
+  deleteConversationUserAudio,
   detectUserAudioMimeType,
   getConversationUserAudioDownloadUrl,
   getConversationUserAudioUrl,
@@ -15,6 +17,10 @@ beforeEach(() => {
   delete process.env.CLOUDINARY_CLOUD_NAME;
   delete process.env.CLOUDINARY_API_KEY;
   delete process.env.CLOUDINARY_API_SECRET;
+});
+
+afterEach(() => {
+  mock.restoreAll();
 });
 
 after(() => {
@@ -85,4 +91,33 @@ test("creates a short-lived authenticated Cloudinary download URL", () => {
   assert.match(url, /type=authenticated/);
   assert.match(url, /public_id=speaking-ai%2Fuser-audio%2Fconv_123/);
   assert.doesNotMatch(url, /secret/);
+});
+
+test("deletes authenticated user audio and accepts an already absent asset", async () => {
+  process.env.CLOUDINARY_CLOUD_NAME = "demo";
+  process.env.CLOUDINARY_API_KEY = "key";
+  process.env.CLOUDINARY_API_SECRET = "secret";
+  const calls: unknown[][] = [];
+  mock.method(cloudinary.uploader, "destroy", async (...args: unknown[]) => {
+    calls.push(args);
+    return { result: "not found" };
+  });
+
+  const deleted = await deleteConversationUserAudio({
+    publicId: "speaking-ai/user-audio/conv_123",
+    format: "webm",
+    version: 1,
+    bytes: 123,
+    mimeType: "audio/webm",
+    resourceType: "video",
+    deliveryType: "authenticated",
+  });
+
+  assert.equal(deleted, false);
+  assert.deepEqual(calls, [
+    [
+      "speaking-ai/user-audio/conv_123",
+      { resource_type: "video", type: "authenticated", invalidate: true },
+    ],
+  ]);
 });

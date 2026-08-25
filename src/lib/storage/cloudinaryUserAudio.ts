@@ -176,3 +176,21 @@ export function getConversationUserAudioDownloadUrl(
     attachment: false,
   });
 }
+
+export async function deleteConversationUserAudio(
+  asset: ConversationUserAudio,
+) {
+  configureCloudinary();
+  const result = await cloudinary.uploader.destroy(asset.publicId, {
+    resource_type: asset.resourceType,
+    type: asset.deliveryType,
+    invalidate: true,
+  });
+  const outcome = String(result?.result ?? "");
+
+  if (outcome !== "ok" && outcome !== "not found") {
+    throw new Error(`Cloudinary không thể xóa audio người dùng (${outcome || "unknown"}).`);
+  }
+
+  return outcome === "ok";
+}

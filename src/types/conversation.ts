@@ -241,9 +241,15 @@ export type ConversationUserAudio = {
   deliveryType: "authenticated";
 };
 
-export type ConversationHistoryEntry = ConversationResponse & {
+export type ConversationHistoryEntry = Omit<
+  ConversationResponse,
+  "latency"
+> & {
   createdAt: string;
   inputMode: "text" | "audio";
+  latency?: ConversationLatency;
+  diagnosticsDeletedAt?: string;
+  hasUserAudio?: boolean;
   userAudioUrl?: string;
   userAudio?: ConversationUserAudio;
   qualityApproved?: boolean;

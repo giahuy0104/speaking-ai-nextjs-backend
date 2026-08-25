@@ -78,17 +78,9 @@ export async function readPostgresAdminOverviewSnapshot(options: {
   clientId?: string;
   status: AdminReviewFilter;
   limit: number;
-  retentionCutoff?: string;
 }): Promise<PostgresAdminOverviewSnapshot> {
   const rows = await queryDatabase<SnapshotRow>(
-    `WITH pruned AS (
-       DELETE FROM app_records
-        WHERE namespace = 'conversation_history'
-          AND $4::timestamptz IS NOT NULL
-          AND created_at < $4::timestamptz
-       RETURNING 1
-     ),
-     history AS (
+    `WITH history AS (
        SELECT COALESCE(
                 NULLIF(BTRIM(value->>'clientId'), ''),
                 'legacy'
@@ -125,7 +117,6 @@ export async function readPostgresAdminOverviewSnapshot(options: {
          FROM app_records
         WHERE namespace = 'conversation_history'
           AND (expires_at IS NULL OR expires_at > NOW())
-          AND ($4::timestamptz IS NULL OR created_at >= $4::timestamptz)
      ),
      scoped AS (
        SELECT *
@@ -201,12 +192,11 @@ export async function readPostgresAdminOverviewSnapshot(options: {
                     )
                FROM scoped
               WHERE measured_first_audio_ms >= 20) AS p95_first_audio_ms,
-            (SELECT COUNT(*) FROM pruned) AS deleted_by_retention`,
+            0 AS deleted_by_retention`,
     [
       options.clientId ?? null,
       options.status,
       options.limit,
-      options.retentionCutoff ?? null,
     ],
   );
   const row = rows[0];

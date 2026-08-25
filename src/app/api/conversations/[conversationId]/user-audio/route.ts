@@ -1,8 +1,10 @@
 import { getCloudflareAudioMaxBytes } from "@/lib/ai/cloudflareWorkersAi";
 import { archiveConversationUserAudio } from "@/lib/userAudioArchive";
 import { AppError, toErrorResponse } from "@/lib/errors";
+import { getConversationHistoryEntry } from "@/lib/history";
 import { requireInstallationAccess } from "@/lib/installationAuth";
 import { getRequestId, logEvent, withRequestId } from "@/lib/observability";
+import { getConversationUserAudioDownloadUrl } from "@/lib/storage/cloudinaryUserAudio";
 
 export const runtime = "nodejs";
 
@@ -16,6 +18,85 @@ const conversationIdPattern = /^[A-Za-z0-9_-]{5,100}$/;
 function formText(formData: FormData, name: string) {
   const value = formData.get(name);
   return typeof value === "string" ? value.trim() : "";
+}
+
+export async function GET(request: Request, context: RouteContext) {
+  const requestId = getRequestId(request);
+  const { conversationId } = await context.params;
+
+  try {
+    if (!conversationIdPattern.test(conversationId)) {
+      return withRequestId(
+        Response.json(
+          {
+            error: {
+              code: "BAD_REQUEST",
+              message: "conversationId không hợp lệ.",
+              requestId,
+            },
+          },
+          { status: 400 },
+        ),
+        requestId,
+      );
+    }
+
+    const claimedClientId =
+      new URL(request.url).searchParams.get("clientId")?.trim() ?? "";
+    if (!identifierPattern.test(claimedClientId)) {
+      return withRequestId(
+        Response.json(
+          {
+            error: {
+              code: "BAD_REQUEST",
+              message: "clientId không hợp lệ.",
+              requestId,
+            },
+          },
+          { status: 400 },
+        ),
+        requestId,
+      );
+    }
+
+    const clientId = (await requireInstallationAccess(request, claimedClientId))
+      .clientId;
+    const conversation = await getConversationHistoryEntry(conversationId);
+    if (
+      !conversation ||
+      conversation.clientId !== clientId ||
+      !conversation.userAudio
+    ) {
+      return withRequestId(
+        Response.json(
+          {
+            error: {
+              code: "USER_AUDIO_NOT_FOUND",
+              message: "Bản ghi âm không còn tồn tại.",
+              requestId,
+            },
+          },
+          { status: 404 },
+        ),
+        requestId,
+      );
+    }
+
+    const audioUrl = getConversationUserAudioDownloadUrl(
+      conversation.userAudio,
+    );
+    return withRequestId(
+      Response.json({
+        conversationId,
+        audioUrl,
+        expiresInSeconds: 60,
+        requestId,
+      }),
+      requestId,
+    );
+  } catch (error) {
+    return withRequestId(toErrorResponse(error, requestId), requestId);
+  }
 }
 
 export async function POST(request: Request, context: RouteContext) {
@@ -101,7 +182,7 @@ export async function POST(request: Request, context: RouteContext) {
     return withRequestId(
       Response.json({
         conversationId,
-        userAudioUrl: archived.conversation.userAudioUrl,
+        hasUserAudio: true,
         requestId,
       }),
       requestId,

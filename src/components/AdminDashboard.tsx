@@ -721,20 +721,31 @@ export function AdminDashboard() {
                       </p>
                     ) : null}
                     <div className="mt-4 flex flex-wrap gap-x-4 gap-y-1 text-xs text-slate-500">
-                      <span>ASR {conversation.latency.asrMs} ms</span>
-                      <span>Text {conversation.latency.llmMs} ms</span>
-                      <span>Audio {conversation.latency.ttsMs} ms</span>
-                      {conversation.latency.responseToPlaybackMs !== undefined ? (
+                      {conversation.latency ? (
+                        <>
+                          <span>ASR {conversation.latency.asrMs} ms</span>
+                          <span>Text {conversation.latency.llmMs} ms</span>
+                          <span>Audio {conversation.latency.ttsMs} ms</span>
+                        </>
+                      ) : (
+                        <span>
+                          {pick(
+                            "Chẩn đoán đã hết thời hạn lưu",
+                            "诊断数据已超过保留期限",
+                          )}
+                        </span>
+                      )}
+                      {conversation.latency?.responseToPlaybackMs !== undefined ? (
                         <span>
                           Safari sau response {conversation.latency.responseToPlaybackMs} ms
                         </span>
                       ) : null}
-                      {conversation.latency.audioFromDeviceCache !== undefined ? (
+                      {conversation.latency?.audioFromDeviceCache !== undefined ? (
                         <span>
                           Reuse preload {conversation.latency.audioFromDeviceCache ? "yes" : "no"}
                         </span>
                       ) : null}
-                      {conversation.latency.audioPreloadLoadedData !== undefined ? (
+                      {conversation.latency?.audioPreloadLoadedData !== undefined ? (
                         <span>
                           loadeddata {conversation.latency.audioPreloadLoadedData ? "yes" : "no"}
                           {conversation.latency.audioPreloadLoadedDataMs !== undefined
@@ -742,7 +753,7 @@ export function AdminDashboard() {
                             : ""}
                         </span>
                       ) : null}
-                      {conversation.latency.audioPreloadCanPlay !== undefined ? (
+                      {conversation.latency?.audioPreloadCanPlay !== undefined ? (
                         <span>
                           canplay {conversation.latency.audioPreloadCanPlay ? "yes" : "no"}
                           {conversation.latency.audioPreloadCanPlayMs !== undefined
