@@ -18,7 +18,7 @@ import type {
   PracticeContext,
 } from "@/types/conversation";
 
-type AudioCheckMode = "standard" | "cloudflare_batch_chunks";
+type AudioCheckMode = "standard" | "huamei_batch_chunks";
 type AudioCheckStatus = "unreviewed" | "approved" | "rejected";
 type AudioProcessingStatus = "queued" | "processing" | "completed" | "failed";
 type ReviewVerdict = Extract<AudioCheckStatus, "approved" | "rejected">;
@@ -203,7 +203,7 @@ export function AdminAudioCheck() {
 
   const modeLabels: Record<AudioCheckMode, string> = {
     standard: pick("Chế độ tiêu chuẩn", "标准模式"),
-    cloudflare_batch_chunks: "Cloudflare Batch Chunks",
+    huamei_batch_chunks: "HuaMei Child Speech",
   };
   const statusLabels: Record<AudioCheckStatus, string> = {
     unreviewed: pick("Chưa đánh giá", "未评估"),
@@ -465,7 +465,7 @@ export function AdminAudioCheck() {
             mimeType: audioFile.type,
             benchmark: {
               requestedAsrMode: "batch_chunks",
-              batchTransport: "admin_cloudflare_batch_chunks",
+              batchTransport: "admin_huamei_batch_chunks",
               audioChunkCount: chunkCount,
               uploadedAudioBytes: audioFile.size,
               chunkIntervalMs: 0,
@@ -810,7 +810,7 @@ export function AdminAudioCheck() {
         recognitionMode: item.result
           ? item.result.mode === "standard"
             ? "Chế độ tiêu chuẩn"
-            : "Cloudflare Batch Chunks"
+            : "HuaMei Child Speech"
           : "",
         context: contextVietnameseLabels[item.result?.context ?? context],
         asrMs: item.result?.conversation.latency.asrMs ?? null,
@@ -955,7 +955,7 @@ export function AdminAudioCheck() {
             </p>
             <div className="mt-3 grid gap-3 sm:grid-cols-2">
               {(
-                ["standard", "cloudflare_batch_chunks"] as AudioCheckMode[]
+                ["standard", "huamei_batch_chunks"] as AudioCheckMode[]
               ).map((value) => {
                 const selected = mode === value;
                 return (

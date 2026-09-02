@@ -63,13 +63,13 @@ export async function prepareConversationPipeline(
   const resolvedPrefetchedTranscript = options.prefetchedTranscript
     ? resolvePrefetchedTranscriptForPipeline(options.prefetchedTranscript, {
         requestId: input.requestId,
-        provider: input.asrMode === "batch_chunks" ? "cloudflare" : "device",
+        provider: input.asrMode === "batch_chunks" ? "huamei" : "device",
         utteranceDurationMs: input.benchmark?.utteranceDurationMs,
         onRejected: (reason) => {
           logEvent("warn", "asr_transcript_rejected", {
             requestId: input.requestId,
             provider:
-              input.asrMode === "batch_chunks" ? "cloudflare" : "device",
+              input.asrMode === "batch_chunks" ? "huamei" : "device",
             reason,
             utteranceDurationMs: input.benchmark?.utteranceDurationMs,
             transcriptLength:
@@ -92,7 +92,7 @@ export async function prepareConversationPipeline(
     const repair = resolvedPrefetchedTranscript.repair;
     logEvent("info", "asr_transcript_repaired", {
       requestId: input.requestId,
-      provider: input.asrMode === "batch_chunks" ? "cloudflare" : "device",
+      provider: input.asrMode === "batch_chunks" ? "huamei" : "device",
       subjectRepairApplied: repair.subjectRepairApplied,
       corpusRepairApplied: repair.corpusRepairApplied,
       corpusRuleId: repair.corpusRuleId,

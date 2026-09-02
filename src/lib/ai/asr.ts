@@ -2,8 +2,7 @@ import type { ConversationRequest } from "@/types/conversation";
 import { AppError } from "@/lib/errors";
 import { delay } from "@/lib/latency";
 import { logEvent } from "@/lib/observability";
-import { transcribeAudioToVietnamese } from "./cloudflareWorkersAi";
-import { resolveCloudflareAsrVadPolicy } from "./cloudflareWorkersAiRequest";
+import { transcribeVietnameseWithHuamei } from "./huameiChildSpeech";
 import { sampleVietnameseByContext } from "./prompts";
 import { repairVietnameseChildSpeechLayers } from "./childSpeechTranscriptRepair";
 import { assertVietnameseTranscriptIsUsable } from "./vietnameseTranscriptValidation";
@@ -11,7 +10,7 @@ import { assertVietnameseTranscriptIsUsable } from "./vietnameseTranscriptValida
 function repairVietnameseTranscriptFromChildSpeech(
   text: string,
   input: ConversationRequest,
-  provider: "cloudflare" | "device",
+  provider: "huamei" | "device",
 ) {
   const repairStartedAt = performance.now();
   const repair = repairVietnameseChildSpeechLayers(text);
@@ -46,7 +45,7 @@ function assertVietnameseTranscript(
   segments: unknown[] = [],
   options: {
     requestId?: string;
-    provider?: "cloudflare" | "device";
+    provider?: "huamei" | "device";
     utteranceDurationMs?: number;
   } = {},
 ) {
@@ -67,42 +66,25 @@ function assertVietnameseTranscript(
 async function transcribeAudio(input: ConversationRequest) {
   const audioFile = input.audioFile!;
   const startedAt = performance.now();
-  const vadPolicy = resolveCloudflareAsrVadPolicy({
-    clientVadApplied: input.benchmark?.clientVadApplied,
-    configuredMode: process.env.CLOUDFLARE_ASR_VAD_MODE,
-  });
-  input.benchmark = {
-    ...input.benchmark,
-    cloudflareVadFilter: vadPolicy.vadFilter,
-    cloudflareVadMode: vadPolicy.mode,
-    cloudflareVadReason: vadPolicy.reason,
-  };
-  logEvent("info", "cloudflare_asr_vad_policy", {
+  const result = await transcribeVietnameseWithHuamei(audioFile);
+  assertVietnameseTranscript(result.text, [], {
     requestId: input.requestId,
-    clientVadApplied: input.benchmark.clientVadApplied === true,
-    vadFilter: vadPolicy.vadFilter,
-    mode: vadPolicy.mode,
-    reason: vadPolicy.reason,
-    audioInputLabel: input.benchmark.audioInputLabel,
-    bluetoothAudioInput: input.benchmark.bluetoothAudioInput,
-  });
-
-  const result = await transcribeAudioToVietnamese(audioFile, {
-    vadFilter: vadPolicy.vadFilter,
-  });
-  assertVietnameseTranscript(result.vietnameseText, result.segments, {
-    requestId: input.requestId,
-    provider: "cloudflare",
+    provider: "huamei",
     utteranceDurationMs: input.benchmark?.utteranceDurationMs,
   });
   logEvent("info", "asr_provider_latency", {
     requestId: input.requestId,
-    provider: "cloudflare",
+    provider: result.provider,
     model: result.model,
     latencyMs: Math.round(performance.now() - startedAt),
     fallbackUsed: false,
+    providerDurationMs:
+      result.durationSeconds === undefined
+        ? undefined
+        : Math.round(result.durationSeconds * 1_000),
+    providerDevice: result.device,
   });
-  return result.vietnameseText;
+  return result.text;
 }
 
 export async function transcribeVietnamese(input: ConversationRequest) {
@@ -150,7 +132,7 @@ export async function transcribeVietnamese(input: ConversationRequest) {
     return repairVietnameseTranscriptFromChildSpeech(
       vietnameseText,
       input,
-      "cloudflare",
+      "huamei",
     );
   }
 

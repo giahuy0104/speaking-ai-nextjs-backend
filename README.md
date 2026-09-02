@@ -16,12 +16,18 @@ bun dev
 
 Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
-## Cloudflare-only voice pipeline
+## HuaMei ASR with Cloudflare text and TTS
 
-Configure a Cloudflare API token with the `Workers AI Read` and `Workers AI
-Write` permissions in `.env.local`:
+Configure the HuaMei Child Speech API for Vietnamese child-speech recognition.
+The API key stays server-side:
 
 ```env
+HUAMEI_CHILD_SPEECH_API_URL=https://huamei-child-speech-api-415112188289.us-central1.run.app/transcribe
+HUAMEI_CHILD_SPEECH_API_KEY=your-huamei-api-key
+HUAMEI_CHILD_SPEECH_MODEL=whisper-tiny-children-v2
+HUAMEI_CHILD_SPEECH_TIMEOUT_MS=30000
+HUAMEI_CHILD_SPEECH_MAX_BYTES=26214400
+
 CLOUDFLARE_ACCOUNT_ID=your-cloudflare-account-id
 CLOUDFLARE_WORKERS_AI_API_TOKEN=your-workers-ai-token
 CLOUDFLARE_TEXT_MODEL=@cf/meta/llama-4-scout-17b-16e-instruct
@@ -34,14 +40,16 @@ CLOUDFLARE_TTS_TIMEOUT_MS=20000
 The Flutter API contract does not change. `/api/conversation` applies this
 order:
 
-1. reviewed exact rule or V1 text cache;
-2. Cloudflare multilingual text model with the faithful V1 prompt;
-3. the audio cache, then Cloudflare Aura TTS.
+1. HuaMei Child Speech ASR for uploaded Vietnamese audio;
+2. reviewed exact rule or V1 text cache;
+3. Cloudflare multilingual text model with the faithful V1 prompt;
+4. the audio cache, then Cloudflare Aura TTS.
 
-ASR, generated text, and TTS never call another AI provider. When Cloudflare
-fails, the request returns the existing safe local fallback or a retryable API
-error. The legacy realtime-session endpoint returns HTTP 410 and cannot create
-an external realtime session.
+Vietnamese batch ASR does not fall back to Cloudflare. A HuaMei API failure
+returns the existing retryable ASR error. Text translation and English TTS
+continue to use Cloudflare until equivalent replacement endpoints are
+available. The legacy realtime-session endpoint returns HTTP 410 and cannot
+create an external realtime session.
 
 `POST /api/audio/translate` remains an independent compatibility endpoint for
 direct audio translation. It is not used by the Flutter conversation pipeline

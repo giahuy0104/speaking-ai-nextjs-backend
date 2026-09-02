@@ -17,6 +17,9 @@ const environmentKeys = [
   "CLOUDFLARE_TEXT_MODEL",
   "CLOUDFLARE_TTS_MODEL",
   "CLOUDFLARE_TTS_SPEAKER",
+  "HUAMEI_CHILD_SPEECH_API_URL",
+  "HUAMEI_CHILD_SPEECH_API_KEY",
+  "HUAMEI_CHILD_SPEECH_MODEL",
 ] as const;
 const originalEnvironment = Object.fromEntries(
   environmentKeys.map((key) => [key, process.env[key]]),
@@ -38,12 +41,18 @@ function configureCloudflare() {
   process.env.CLOUDFLARE_WORKERS_AI_API_TOKEN = "test-token";
 }
 
+function configureHuamei() {
+  process.env.HUAMEI_CHILD_SPEECH_API_URL =
+    "https://speech.example.com/transcribe";
+  process.env.HUAMEI_CHILD_SPEECH_API_KEY = "huamei-test-key";
+}
+
 afterEach(() => {
   restoreEnvironment();
   globalThis.fetch = originalFetch;
 });
 
-test("selects Cloudflare-only profiles", () => {
+test("selects Cloudflare text and TTS profiles", () => {
   configureCloudflare();
 
   assert.deepEqual(getTextAiProfile(), {
@@ -95,23 +104,24 @@ test("generates text through the Cloudflare chat-completions endpoint", async ()
   });
 });
 
-test("transcribes Vietnamese audio through Cloudflare Whisper", async () => {
-  configureCloudflare();
+test("transcribes Vietnamese audio through HuaMei Child Speech", async () => {
+  configureHuamei();
   globalThis.fetch = async (input, init) => {
     assert.equal(
       String(input),
-      "https://api.cloudflare.com/client/v4/accounts/test-account/ai/run/@cf/openai/whisper-large-v3-turbo",
+      "https://speech.example.com/transcribe",
     );
-    const body = JSON.parse(String(init?.body)) as {
-      task: string;
-      language: string;
-      audio: string;
-    };
-    assert.equal(body.task, "transcribe");
-    assert.equal(body.language, "vi");
-    assert.equal(body.audio, Buffer.from("audio-bytes").toString("base64"));
+    assert.equal(new Headers(init?.headers).get("x-api-key"), "huamei-test-key");
+    assert.ok(init?.body instanceof FormData);
+    const uploadedFile = init.body.get("file");
+    assert.ok(uploadedFile instanceof File);
+    assert.equal(await uploadedFile.text(), "audio-bytes");
 
-    return Response.json({ result: { text: "Con khát nước." } });
+    return Response.json({
+      text: "Con khát nước.",
+      duration_seconds: 1.2,
+      device: "cpu",
+    });
   };
 
   const result = await transcribeVietnameseAudio(
@@ -120,8 +130,10 @@ test("transcribes Vietnamese audio through Cloudflare Whisper", async () => {
 
   assert.deepEqual(result, {
     text: "Con khát nước.",
-    provider: "cloudflare",
-    model: "@cf/openai/whisper-large-v3-turbo",
+    provider: "huamei",
+    model: "whisper-tiny-children-v2",
+    durationSeconds: 1.2,
+    device: "cpu",
   });
 });
 

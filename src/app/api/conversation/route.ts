@@ -2,7 +2,7 @@ import type { ConversationRequest } from "@/types/conversation";
 import type { PracticeContext } from "@/types/conversation";
 import { AppError, toErrorResponse } from "@/lib/errors";
 import { runConversationPipeline } from "@/lib/ai/pipeline";
-import { getCloudflareAudioMaxBytes } from "@/lib/ai/cloudflareWorkersAi";
+import { getHuameiChildSpeechMaxBytes } from "@/lib/ai/huameiChildSpeech";
 import { scheduleConversationPostResponseTasks } from "@/lib/ai/postResponseTasks";
 import { requireInstallationAccess } from "@/lib/installationAuth";
 import { getRequestId, logEvent, withRequestId } from "@/lib/observability";
@@ -85,7 +85,7 @@ function validateFormData(formData: FormData): ConversationRequest {
 
   if (
     audioFile instanceof File &&
-    audioFile.size > getCloudflareAudioMaxBytes()
+    audioFile.size > getHuameiChildSpeechMaxBytes()
   ) {
     throw new AppError(
       "AUDIO_TOO_LONG",

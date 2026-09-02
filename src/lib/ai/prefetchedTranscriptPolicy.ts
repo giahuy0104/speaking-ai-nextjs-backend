@@ -15,7 +15,7 @@ export type ResolvedPrefetchedTranscript = PrefetchedTranscript & {
 
 export type PrefetchedTranscriptValidationContext = {
   requestId?: string;
-  provider?: "cloudflare" | "device";
+  provider?: "huamei" | "device";
   utteranceDurationMs?: number;
   onRejected?: (reason: string) => void;
 };

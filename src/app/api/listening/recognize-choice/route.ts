@@ -4,7 +4,7 @@ import { requireInstallationAccess } from "@/lib/installationAuth";
 import { getRequestId, logEvent, withRequestId } from "@/lib/observability";
 
 export const runtime = "nodejs";
-export const maxDuration = 15;
+export const maxDuration = 35;
 
 const maxChoiceAudioBytes = 2 * 1024 * 1024;
 

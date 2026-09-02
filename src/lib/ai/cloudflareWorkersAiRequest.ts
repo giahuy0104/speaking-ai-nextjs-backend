@@ -9,37 +9,6 @@ export type CloudflareWorkersAiEnvelope = {
   errors?: Array<{ code?: number; message?: string }>;
 };
 
-export type CloudflareAsrVadMode = "client" | "cloudflare";
-
-export type CloudflareAsrVadPolicy = {
-  vadFilter: boolean;
-  mode: CloudflareAsrVadMode;
-  reason: "client_vad_confirmed" | "cloudflare_vad_required";
-};
-
-export function resolveCloudflareAsrVadPolicy(input: {
-  clientVadApplied?: boolean;
-  configuredMode?: string;
-}): CloudflareAsrVadPolicy {
-  const configuredMode = input.configuredMode?.trim().toLowerCase();
-  const mode: CloudflareAsrVadMode =
-    configuredMode === "cloudflare" ? "cloudflare" : "client";
-
-  if (mode === "client" && input.clientVadApplied === true) {
-    return {
-      vadFilter: false,
-      mode,
-      reason: "client_vad_confirmed",
-    };
-  }
-
-  return {
-    vadFilter: true,
-    mode,
-    reason: "cloudflare_vad_required",
-  };
-}
-
 export function classifyCloudflareTranscriptionResponse(input: {
   responseOk: boolean;
   success: boolean | undefined;
@@ -72,24 +41,16 @@ export function buildCloudflareAudioTranslationBody(
 export function buildCloudflareAudioTranscriptionBody(
   audio: ArrayBuffer,
   sourceLanguage: string,
-  options: { vadFilter?: boolean; beamSize?: number } = {},
+  options: { beamSize?: number } = {},
 ) {
   return {
     audio: Buffer.from(audio).toString("base64"),
     task: "transcribe",
     language: sourceLanguage,
-    // Flutter already confirms speech and controls the end of an utterance.
-    // Disabling the provider VAD for that audio prevents a second trimming
-    // pass from removing quiet first/last syllables. Legacy/raw clients keep
-    // the provider VAD through the default value below.
-    vad_filter: options.vadFilter ?? true,
-    // Cloudflare defaults to 5 beams. Short child utterances use a smaller
-    // configurable beam to reduce decode latency while retaining a rollback.
+    vad_filter: true,
+    // This helper remains only for the English lesson compatibility route.
     beam_size: options.beamSize ?? 2,
     condition_on_previous_text: false,
-    // Client VAD has already confirmed speech. These values stay conservative
-    // against noise while avoiding false rejection of short or quiet child
-    // speech. They also align with the server-side transcript validator.
     no_speech_threshold: 0.55,
     compression_ratio_threshold: 2.2,
     log_prob_threshold: -0.8,

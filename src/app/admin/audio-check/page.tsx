@@ -6,7 +6,7 @@ import { hasValidAdminSession } from "@/lib/adminAuth";
 export const metadata: Metadata = {
   title: "Kiểm tra audio | AI Speaking",
   description:
-    "Kiểm tra audio bằng chế độ tiêu chuẩn hoặc Cloudflare Batch Chunks.",
+    "Kiểm tra audio bằng chế độ tiêu chuẩn hoặc HuaMei Child Speech.",
 };
 
 export default async function AdminAudioCheckPage() {

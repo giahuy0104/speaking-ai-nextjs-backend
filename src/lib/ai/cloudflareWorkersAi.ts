@@ -17,14 +17,6 @@ export type AudioTranslationResult = {
   model: string;
 };
 
-export type AudioTranscriptionResult = {
-  vietnameseText: string;
-  wordCount?: number;
-  segments?: unknown[];
-  vtt?: string;
-  model: string;
-};
-
 export type EnglishAudioTranscriptionResult = {
   englishText: string;
   wordCount?: number;
@@ -144,10 +136,8 @@ export async function translateAudioToEnglish(
   };
 }
 
-async function transcribeAudio(
+async function transcribeEnglishAudio(
   audio: File,
-  language: "en" | "vi",
-  options: { vadFilter?: boolean } = {},
 ): Promise<RawAudioTranscriptionResult> {
   const config = getCloudflareAudioTranslationConfig();
   const timeoutMs = positiveInteger(
@@ -156,9 +146,8 @@ async function transcribeAudio(
   );
   const body = buildCloudflareAudioTranscriptionBody(
     await audio.arrayBuffer(),
-    language,
+    "en",
     {
-      ...options,
       beamSize: Math.min(
         5,
         positiveInteger("CLOUDFLARE_ASR_BEAM_SIZE", 2),
@@ -232,20 +221,10 @@ async function transcribeAudio(
   };
 }
 
-export async function transcribeAudioToVietnamese(
-  audio: File,
-  options: { vadFilter?: boolean } = {},
-): Promise<AudioTranscriptionResult> {
-  const result = await transcribeAudio(audio, "vi", options);
-  const { text, ...metadata } = result;
-  return { ...metadata, vietnameseText: text };
-}
-
 export async function transcribeAudioToEnglish(
   audio: File,
-  options: { vadFilter?: boolean } = {},
 ): Promise<EnglishAudioTranscriptionResult> {
-  const result = await transcribeAudio(audio, "en", options);
+  const result = await transcribeEnglishAudio(audio);
   const { text, ...metadata } = result;
   return { ...metadata, englishText: text };
 }
