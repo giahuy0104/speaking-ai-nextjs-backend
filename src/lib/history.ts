@@ -39,7 +39,7 @@ const historyDir = path.join(process.cwd(), "data");
 const historyPath = path.join(historyDir, "conversation-history.jsonl");
 const historyNamespace = "conversation_history";
 const maxHistoryResponseItems = 50;
-const maxStoredHistoryItems = 500;
+const maxBoundedHistoryResponseItems = 500;
 const ruleTextSources = new Set([
   "phrase_rule",
   "keyword_rule",
@@ -223,7 +223,7 @@ export async function appendConversationHistory(
   await enqueueMutation(async () => {
     const { entries } = await readHistoryFile();
     entries.push(entry);
-    await writeHistoryFile(entries.slice(-maxStoredHistoryItems));
+    await writeHistoryFile(entries);
   });
 }
 
@@ -408,11 +408,15 @@ export async function cleanupConversationDataRetention(
   return retentionCleanupFlight;
 }
 
-export async function readConversationHistory(limit = maxHistoryResponseItems) {
-  const safeLimit = Math.max(
-    1,
-    Math.min(Math.floor(limit), maxStoredHistoryItems),
-  );
+export async function readConversationHistory(
+  limit: number | null = maxHistoryResponseItems,
+) {
+  const safeLimit = limit === null
+    ? null
+    : Math.max(
+        1,
+        Math.min(Math.floor(limit), maxBoundedHistoryResponseItems),
+      );
 
   await cleanupConversationDataRetention();
 
@@ -424,7 +428,8 @@ export async function readConversationHistory(limit = maxHistoryResponseItems) {
 
   return enqueueMutation(async () => {
     const { entries } = await readHistoryFile();
-    return [...entries].reverse().slice(0, safeLimit);
+    const newestFirst = [...entries].reverse();
+    return safeLimit === null ? newestFirst : newestFirst.slice(0, safeLimit);
   });
 }
 

@@ -31,8 +31,13 @@ export async function GET(request: Request) {
   const status = validStatuses.has(rawStatus as AdminReviewFilter)
     ? (rawStatus as AdminReviewFilter)
     : "all";
-  const rawLimit = Number(url.searchParams.get("limit") ?? 50);
-  const limit = Number.isFinite(rawLimit) ? rawLimit : 50;
+  const requestedLimit = url.searchParams.get("limit");
+  const rawLimit = Number(requestedLimit ?? 50);
+  const limit = requestedLimit === "all"
+    ? null
+    : Number.isFinite(rawLimit)
+      ? rawLimit
+      : 50;
   const clientId = url.searchParams.get("clientId")?.trim() || undefined;
 
   let overview;

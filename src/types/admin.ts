@@ -73,7 +73,7 @@ export type AdminOverview = {
   filters: {
     clientId?: string;
     status: AdminReviewFilter;
-    limit: number;
+    limit: number | null;
   };
   securityMode: "account-password" | "not-configured";
   generatedAt: string;

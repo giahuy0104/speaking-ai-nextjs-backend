@@ -212,7 +212,7 @@ export function AdminDashboard() {
     setError(null);
 
     try {
-      const params = new URLSearchParams({ status, limit: "50" });
+      const params = new URLSearchParams({ status, limit: "all" });
       if (selectedClientId) {
         params.set("clientId", selectedClientId);
       }
@@ -615,8 +615,8 @@ export function AdminDashboard() {
             </h2>
             <p className="mt-1 text-sm text-slate-400">
               {pick(
-                `${visibleConversations.length} lượt đang hiển thị.`,
-                `当前显示 ${visibleConversations.length} 条记录。`,
+                `Toàn bộ ${visibleConversations.length} lượt đang hiển thị.`,
+                `当前显示全部 ${visibleConversations.length} 条记录。`,
               )}
             </p>
           </div>

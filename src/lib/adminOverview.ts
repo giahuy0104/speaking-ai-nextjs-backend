@@ -91,7 +91,7 @@ function buildLatencyHealth(
 async function getPostgresAdminOverview(options: {
   clientId?: string;
   status: AdminReviewFilter;
-  limit: number;
+  limit: number | null;
 }): Promise<AdminOverview> {
   await cleanupConversationDataRetention();
   const dataPolicy = getChildDataPolicy();
@@ -142,10 +142,12 @@ async function getPostgresAdminOverview(options: {
 export async function getAdminOverview(options: {
   clientId?: string;
   status?: AdminReviewFilter;
-  limit?: number;
+  limit?: number | null;
 } = {}): Promise<AdminOverview> {
   const status = options.status ?? "all";
-  const limit = Math.max(1, Math.min(Math.floor(options.limit ?? 200), 500));
+  const limit = options.limit === null
+    ? null
+    : Math.max(1, Math.min(Math.floor(options.limit ?? 200), 500));
   if (isPostgresStorageEnabled()) {
     return getPostgresAdminOverview({
       clientId: options.clientId,
@@ -155,7 +157,7 @@ export async function getAdminOverview(options: {
   }
 
   const [history, profiles] = await Promise.all([
-    readConversationHistory(500),
+    readConversationHistory(limit === null ? null : 500),
     readDeviceProfiles(),
   ]);
   const allClientIds = new Set([
@@ -192,9 +194,12 @@ export async function getAdminOverview(options: {
   const scopedHistory = options.clientId
     ? history.filter((entry) => entryClientId(entry) === options.clientId)
     : history;
-  const conversations = scopedHistory
-    .filter((entry) => matchesStatus(entry, status))
-    .slice(0, limit);
+  const matchingConversations = scopedHistory.filter((entry) =>
+    matchesStatus(entry, status),
+  );
+  const conversations = limit === null
+    ? matchingConversations
+    : matchingConversations.slice(0, limit);
   const latencyReport = buildLatencyReport(scopedHistory);
   const latencyHealth = buildLatencyHealth(
     latencyReport.measuredTurns,
