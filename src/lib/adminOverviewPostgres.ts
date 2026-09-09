@@ -77,8 +77,12 @@ function parseStats(value: unknown): PostgresAdminOverviewSnapshot["stats"] {
 export async function readPostgresAdminOverviewSnapshot(options: {
   clientId?: string;
   status: AdminReviewFilter;
-  limit: number;
+  limit: number | null;
 }): Promise<PostgresAdminOverviewSnapshot> {
+  const params: unknown[] = [options.clientId ?? null, options.status];
+  const limitClause = options.limit === null
+    ? ""
+    : `LIMIT $${params.push(options.limit)}::integer`;
   const rows = await queryDatabase<SnapshotRow>(
     `WITH history AS (
        SELECT COALESCE(
@@ -126,11 +130,11 @@ export async function readPostgresAdminOverviewSnapshot(options: {
      visible AS (
        SELECT value, created_at
          FROM scoped
-        WHERE $2::text = 'all'
-           OR ($2::text = 'ai_suggested' AND has_ai_review)
-           OR ($2::text NOT IN ('all', 'ai_suggested') AND review_status = $2::text)
-        ORDER BY created_at DESC
-        LIMIT $3::integer
+         WHERE $2::text = 'all'
+            OR ($2::text = 'ai_suggested' AND has_ai_review)
+            OR ($2::text NOT IN ('all', 'ai_suggested') AND review_status = $2::text)
+         ORDER BY created_at DESC
+         ${limitClause}
      ),
      device_rollup AS (
        SELECT resolved_client_id,
@@ -193,11 +197,7 @@ export async function readPostgresAdminOverviewSnapshot(options: {
                FROM scoped
               WHERE measured_first_audio_ms >= 20) AS p95_first_audio_ms,
             0 AS deleted_by_retention`,
-    [
-      options.clientId ?? null,
-      options.status,
-      options.limit,
-    ],
+    params,
   );
   const row = rows[0];
 

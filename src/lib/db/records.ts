@@ -7,7 +7,8 @@ type StoredRecordRow = {
 
 export type RecordListOptions = {
   clientId?: string;
-  limit?: number;
+  /** Pass null to return every matching record. */
+  limit?: number | null;
   oldestFirst?: boolean;
 };
 
@@ -100,15 +101,17 @@ export async function listRecords<T>(
     clauses.push(`client_id = $${params.length}`);
   }
 
-  const limit = Math.max(1, Math.min(options.limit ?? 10_000, 100_000));
-  params.push(limit);
+  const limit = options.limit === null
+    ? null
+    : Math.max(1, Math.min(options.limit ?? 10_000, 100_000));
+  const limitClause = limit === null ? "" : `LIMIT $${params.push(limit)}`;
   const order = options.oldestFirst ? "ASC" : "DESC";
   const rows = await queryDatabase<{ value: unknown }>(
     `SELECT value
        FROM app_records
       WHERE ${clauses.join(" AND ")}
       ORDER BY created_at ${order}
-      LIMIT $${params.length}`,
+      ${limitClause}`,
     params,
   );
 
@@ -127,8 +130,10 @@ export async function listRecordEntries<T>(
     clauses.push(`client_id = $${params.length}`);
   }
 
-  const limit = Math.max(1, Math.min(options.limit ?? 10_000, 100_000));
-  params.push(limit);
+  const limit = options.limit === null
+    ? null
+    : Math.max(1, Math.min(options.limit ?? 10_000, 100_000));
+  const limitClause = limit === null ? "" : `LIMIT $${params.push(limit)}`;
   const order = options.oldestFirst ? "ASC" : "DESC";
   const rows = await queryDatabase<{
     record_key: string;
@@ -141,7 +146,7 @@ export async function listRecordEntries<T>(
        FROM app_records
       WHERE ${clauses.join(" AND ")}
       ORDER BY created_at ${order}
-      LIMIT $${params.length}`,
+      ${limitClause}`,
     params,
   );
 
