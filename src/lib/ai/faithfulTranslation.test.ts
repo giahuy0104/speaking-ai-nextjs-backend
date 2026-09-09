@@ -9,7 +9,7 @@ import {
   findReviewedExactRule,
   findReviewedExactRuleMatch,
   normalizeVietnameseForExactMatch,
-  reviewedExactRulesV1,
+  reviewedSpecialExactRulesV1,
 } from "./exactRules";
 import { buildEnglishInstruction } from "./prompts";
 import {
@@ -83,7 +83,7 @@ test("exact normalization preserves Vietnamese diacritics and word order", () =>
     normalizeVietnameseForExactMatch("Con không muốn mua cái này."),
     normalizeVietnameseForExactMatch("Con muốn mua cái này."),
   );
-  assert.ok(reviewedExactRulesV1.length >= 30);
+  assert.ok(reviewedSpecialExactRulesV1.length >= 30);
 });
 
 test("reviewed aliases resolve to the canonical exact rule", () => {
@@ -180,7 +180,8 @@ test("online LLM fast path cannot use legacy keyword or semantic outputs", async
   assert.doesNotMatch(llmSource, /keywordIntentRules/);
   assert.doesNotMatch(llmSource, /findSemanticIntent/);
   assert.doesNotMatch(llmSource, /semantic_cache/);
-  assert.match(llmSource, /findReviewedAsrRuleMatch/);
+  assert.match(llmSource, /findReviewedExactAsrRuleMatch/);
+  assert.match(llmSource, /findReviewedCorpusRuleMatch/);
 });
 
 test("Cloudflare is the only online text provider", async () => {

@@ -183,6 +183,7 @@ export type TextProvider = "cloudflare" | "openai";
 
 export type TextSource =
   | "phrase_rule"
+  | "corpus_rule"
   | "keyword_rule"
   | "promoted_rule"
   | "semantic_cache"

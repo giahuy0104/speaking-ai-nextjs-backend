@@ -2,7 +2,7 @@ import { createHash } from "node:crypto";
 import type { PracticeContext } from "@/types/conversation";
 import { semanticIntentRules } from "./semanticIntents";
 import { getEnglishAudioStreamUrl } from "./tts";
-import { reviewedExactRulesV1 } from "./exactRules";
+import { reviewedAllTranslationRulesV1 } from "./exactRules";
 
 const contexts: PracticeContext[] = ["home", "school", "outside"];
 
@@ -31,7 +31,7 @@ type MutableIntent = {
 function collectOfflineIntents() {
   const intents = new Map<string, MutableIntent>();
 
-  for (const rule of reviewedExactRulesV1) {
+  for (const rule of reviewedAllTranslationRulesV1) {
     intents.set(`exact-${rule.id}`, {
       id: `exact-${rule.id}`,
       contexts: new Set(contexts),

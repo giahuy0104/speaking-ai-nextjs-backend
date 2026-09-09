@@ -2,7 +2,7 @@ import { createHash } from "node:crypto";
 import type { PracticeContext } from "@/types/conversation";
 import { nowMs } from "@/lib/latency";
 import { getPromotedRuleAudioTexts } from "./promotedRules";
-import { getReviewedExactRuleAudioTexts } from "./exactRules";
+import { getReviewedRuleAudioTexts } from "./exactRules";
 import {
   getEnglishAudioCacheUrl,
   getTtsProfile,
@@ -102,7 +102,7 @@ async function getWarmupTexts(
   // official corpus order, then device-specific promoted rules.
   return [
     ...new Set(
-      [...getReviewedExactRuleAudioTexts(), ...promotedTextGroups.flat()]
+      [...getReviewedRuleAudioTexts(), ...promotedTextGroups.flat()]
         .map((text) => text.trim())
         .filter(Boolean),
     ),

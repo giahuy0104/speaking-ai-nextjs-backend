@@ -42,6 +42,7 @@ const maxHistoryResponseItems = 50;
 const maxStoredHistoryItems = 500;
 const ruleTextSources = new Set([
   "phrase_rule",
+  "corpus_rule",
   "keyword_rule",
   "promoted_rule",
   "semantic_cache",

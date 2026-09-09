@@ -39,6 +39,7 @@ type PreviewRequest = {
 const contexts = new Set<PracticeContext>(["home", "school", "outside"]);
 const safeFastSources = new Set<TextSource>([
   "phrase_rule",
+  "corpus_rule",
   "promoted_rule",
   "text_cache",
 ]);
