@@ -62,7 +62,7 @@ test("selects Cloudflare text and TTS profiles", () => {
   assert.deepEqual(getConfiguredTtsProfile(), {
     provider: "cloudflare",
     model: "@cf/deepgram/aura-1",
-    voice: "luna",
+    voice: "asteria",
     speed: 1,
     extension: "mp3",
   });
@@ -151,7 +151,7 @@ test("requests MP3 speech from Cloudflare", async () => {
     };
     assert.deepEqual(body, {
       text: "I am thirsty.",
-      speaker: "luna",
+      speaker: "asteria",
       encoding: "mp3",
     });
 
