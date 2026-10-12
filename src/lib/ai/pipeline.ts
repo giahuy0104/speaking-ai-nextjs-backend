@@ -3,6 +3,7 @@ import type {
   ConversationResponse,
 } from "@/types/conversation";
 import { measureStep, nowMs } from "@/lib/latency";
+import { AppError } from "@/lib/errors";
 import { logEvent } from "@/lib/observability";
 import { transcribeVietnamese } from "./asr";
 import { resolvePrefetchedTranscriptForPipeline } from "./prefetchedTranscriptPolicy";
@@ -10,7 +11,8 @@ import {
   generateEnglishSentence,
   type EnglishGenerationResult,
 } from "./llm";
-import { PROMPT_VERSION } from "./prompts";
+import { buildChineseInstruction, PROMPT_VERSION } from "./prompts";
+import { translateVietnameseWithCloudflare } from "./cloudflareText";
 import {
   prepareEnglishAudio,
   synthesizeEnglishAudio,
@@ -53,6 +55,66 @@ export type PreparedConversationPipeline = {
 
 function createId(prefix: string) {
   return `${prefix}_${crypto.randomUUID().slice(0, 8)}`;
+}
+
+export async function runChineseConversationPipeline(
+  input: ConversationRequest,
+): Promise<ConversationResponse> {
+  const startedAt = nowMs();
+  const asr = await measureStep(() => transcribeVietnamese(input));
+  const translation = await measureStep(() =>
+    translateVietnameseWithCloudflare(
+      asr.value,
+      buildChineseInstruction(input.context, input.childAge),
+    ),
+  );
+  const translatedText = translation.value.englishText
+    .trim()
+    .replace(/^(?:中文|翻译|譯文)\s*[:：]\s*/u, "")
+    .replace(/^[“「]/u, "")
+    .replace(/[”」]$/u, "")
+    .trim();
+  if (
+    !translatedText ||
+    translatedText.length > 240 ||
+    /[\r\n]/u.test(translatedText) ||
+    !/[\u3400-\u9fff]/u.test(translatedText)
+  ) {
+    throw new AppError("LLM_FAILED", "Chưa dịch được câu này sang tiếng Trung.");
+  }
+  const result = {
+    requestId: input.requestId,
+    clientId: input.clientId,
+    conversationId: "",
+    sessionId: "",
+    context: input.context,
+    vietnameseText: asr.value,
+    englishText: "",
+    targetLanguage: "zh",
+    translatedText,
+    audioUrl: null,
+    promptVersion: PROMPT_VERSION,
+    processingMode: "ai",
+    textSource: "cloudflare",
+    textProvider: "cloudflare",
+    textModel: translation.value.model,
+    audioSource: "device_tts",
+    asrMode: input.asrMode ?? (input.audioFile ? "batch_chunks" : "text"),
+    benchmark: input.benchmark,
+    latency: {
+      asrMs: asr.latencyMs,
+      llmMs: translation.latencyMs,
+      ttsMs: 0,
+      timeToFirstAudioMs: Math.round(nowMs() - startedAt),
+    },
+  } satisfies ConversationResponse;
+  logEvent("info", "conversation_pipeline_completed", {
+    requestId: input.requestId,
+    targetLanguage: "zh",
+    textModel: result.textModel,
+    latency: result.latency,
+  });
+  return result;
 }
 
 export async function prepareConversationPipeline(

@@ -14,6 +14,14 @@ export const sampleVietnameseByContext: Record<PracticeContext, string[]> = {
   outside: ["Con muon mua cai nay", "Con bi lac", "Con can giup do"],
 };
 
+export function buildChineseInstruction(context: PracticeContext, childAge = 6) {
+  return `Translate one child's Vietnamese utterance directly into natural Simplified Chinese.
+Preserve the speaker, addressee, kinship terms, negation, action, object, quantity, time, place, and whether the utterance is a statement, question or request.
+Do not answer the child, add information, change the meaning, or translate through English.
+Return exactly one short Simplified Chinese translation, without a label, quotation marks, pinyin or explanation.
+Context for resolving genuine ambiguity only: ${contextLabels[context]}; child_age=${childAge}.`;
+}
+
 export function buildEnglishInstruction(context: PracticeContext, childAge = 6) {
   return `You translate a child's Vietnamese utterance into faithful, natural, grammatically correct English.
 

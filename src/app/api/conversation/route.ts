@@ -1,7 +1,9 @@
-import type { ConversationRequest } from "@/types/conversation";
-import type { PracticeContext } from "@/types/conversation";
+import type { ConversationRequest, PracticeContext, TargetLanguage } from "@/types/conversation";
 import { AppError, toErrorResponse } from "@/lib/errors";
-import { runConversationPipeline } from "@/lib/ai/pipeline";
+import {
+  runChineseConversationPipeline,
+  runConversationPipeline,
+} from "@/lib/ai/pipeline";
 import { getCloudflareAudioMaxBytes } from "@/lib/ai/cloudflareWorkersAi";
 import { scheduleConversationPostResponseTasks } from "@/lib/ai/postResponseTasks";
 import { requireInstallationAccess } from "@/lib/installationAuth";
@@ -13,6 +15,12 @@ const validContexts = new Set(["home", "school", "outside"]);
 
 function isPracticeContext(value: unknown): value is PracticeContext {
   return typeof value === "string" && validContexts.has(value);
+}
+
+function parseTargetLanguage(value: unknown): TargetLanguage {
+  if (value === undefined || value === null || value === "en") return "en";
+  if (value === "zh") return "zh";
+  throw new AppError("BAD_REQUEST", "Ngôn ngữ dịch không được hỗ trợ.");
 }
 
 function validateRequest(body: unknown): ConversationRequest {
@@ -33,7 +41,7 @@ function validateRequest(body: unknown): ConversationRequest {
         : undefined,
     context: input.context,
     childAge: input.childAge ?? 6,
-    targetLanguage: "en",
+    targetLanguage: parseTargetLanguage(input.targetLanguage),
     sessionId: input.sessionId,
     sourceText: input.sourceText,
     asrMode:
@@ -102,7 +110,7 @@ function validateFormData(formData: FormData): ConversationRequest {
     clientId: getFormValue(formData, "clientId"),
     context,
     childAge,
-    targetLanguage: "en",
+    targetLanguage: parseTargetLanguage(getFormValue(formData, "targetLanguage")),
     sessionId: getFormValue(formData, "sessionId"),
     sourceText,
     audioFile: audioFile instanceof File ? audioFile : undefined,
@@ -145,29 +153,34 @@ export async function POST(request: Request) {
       parsedInput.clientId,
     );
     const input = { ...parsedInput, clientId: access.clientId };
-    const result = await runConversationPipeline(
-      { ...input, requestId },
-      {
-        deferTextCacheWrite: true,
-        // Worker Prepare is the primary iOS Web fast path. If a valid Worker
-        // transcript reaches this compatibility route instead, prime TTS while
-        // the JSON response is in flight so Safari does not start the provider
-        // request only after receiving the conversation result. APK Batch
-        // Chunks keeps its established behavior because it never uses
-        // browser_streaming here.
-        eagerAudioOnCacheMiss: input.asrMode === "browser_streaming",
-      },
-    );
-    scheduleConversationPostResponseTasks(
-      result,
-      isMultipart ||
-        input.asrMode === "browser_streaming" ||
-        input.asrMode === "openai_realtime" ||
-        input.asrMode === "ble_offline_intent"
-        ? "audio"
-        : "text",
-      { userAudio: input.audioFile },
-    );
+    const result =
+      input.targetLanguage === "zh"
+        ? await runChineseConversationPipeline({ ...input, requestId })
+        : await runConversationPipeline(
+            { ...input, requestId },
+            {
+              deferTextCacheWrite: true,
+              // Worker Prepare is the primary iOS Web fast path. If a valid Worker
+              // transcript reaches this compatibility route instead, prime TTS while
+              // the JSON response is in flight so Safari does not start the provider
+              // request only after receiving the conversation result. APK Batch
+              // Chunks keeps its established behavior because it never uses
+              // browser_streaming here.
+              eagerAudioOnCacheMiss: input.asrMode === "browser_streaming",
+            },
+          );
+    if (input.targetLanguage === "en") {
+      scheduleConversationPostResponseTasks(
+        result,
+        isMultipart ||
+          input.asrMode === "browser_streaming" ||
+          input.asrMode === "openai_realtime" ||
+          input.asrMode === "ble_offline_intent"
+          ? "audio"
+          : "text",
+        { userAudio: input.audioFile },
+      );
+    }
 
     return withRequestId(
       Response.json({ ...result, learning: null }),
