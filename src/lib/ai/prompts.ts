@@ -29,7 +29,7 @@ export function buildTargetLanguageInstruction(
 ) {
   if (language === "zh") return buildChineseInstruction(context, childAge);
   const target = {
-    ja: "natural Japanese",
+    ja: "natural Japanese written in Japanese script (hiragana, katakana, or kanji), never romaji",
     ko: "natural Korean",
     fr: "natural French",
   }[language];

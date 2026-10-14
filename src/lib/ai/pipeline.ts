@@ -57,6 +57,28 @@ function createId(prefix: string) {
   return `${prefix}_${crypto.randomUUID().slice(0, 8)}`;
 }
 
+function normalizeTargetTranslation(text: string) {
+  return text
+    .trim()
+    .replace(/^(?:中文|翻译|譯文|日本語|韓国語|한국어|Français|French|Japanese|Korean)\s*[:：]\s*/iu, "")
+    .replace(/^[“「«]/u, "")
+    .replace(/[”」»]$/u, "")
+    .trim();
+}
+
+function targetTranslationFailureReason(
+  text: string,
+  language: Exclude<ConversationRequest["targetLanguage"], "en">,
+) {
+  if (!text) return "empty";
+  if (text.length > 240) return "too_long";
+  if (/[\r\n]/u.test(text)) return "multiple_lines";
+  if (language === "zh" && !/[\u3400-\u9fff]/u.test(text)) return "missing_chinese_script";
+  if (language === "ja" && !/[\u3040-\u30ff\u3400-\u9fff]/u.test(text)) return "missing_japanese_script";
+  if (language === "ko" && !/[\uac00-\ud7af]/u.test(text)) return "missing_korean_script";
+  return null;
+}
+
 export async function runTargetLanguageConversationPipeline(
   input: ConversationRequest,
 ): Promise<ConversationResponse> {
@@ -66,26 +88,39 @@ export async function runTargetLanguageConversationPipeline(
   }
   const startedAt = nowMs();
   const asr = await measureStep(() => transcribeVietnamese(input));
-  const translation = await measureStep(() =>
-    translateVietnameseWithCloudflare(
-      asr.value,
-      buildTargetLanguageInstruction(targetLanguage, input.context, input.childAge),
-    ),
+  const instruction = buildTargetLanguageInstruction(
+    targetLanguage,
+    input.context,
+    input.childAge,
   );
-  const translatedText = translation.value.englishText
-    .trim()
-    .replace(/^(?:中文|翻译|譯文|日本語|韓国語|한국어|Français|French|Japanese|Korean)\s*[:：]\s*/iu, "")
-    .replace(/^[“「«]/u, "")
-    .replace(/[”」»]$/u, "")
-    .trim();
-  if (
-    !translatedText ||
-    translatedText.length > 240 ||
-    /[\r\n]/u.test(translatedText) ||
-    (input.targetLanguage === "zh" && !/[\u3400-\u9fff]/u.test(translatedText)) ||
-    (input.targetLanguage === "ja" && !/[\u3040-\u30ff\u3400-\u9fff]/u.test(translatedText)) ||
-    (input.targetLanguage === "ko" && !/[\uac00-\ud7af]/u.test(translatedText))
-  ) {
+  const translation = await measureStep(async () => {
+    const first = await translateVietnameseWithCloudflare(
+      asr.value,
+      instruction,
+    );
+    const firstReason = targetTranslationFailureReason(
+      normalizeTargetTranslation(first.englishText),
+      targetLanguage,
+    );
+    if (targetLanguage !== "ja" || firstReason === null) return first;
+    logEvent("warn", "target_translation_retry", {
+      requestId: input.requestId,
+      targetLanguage,
+      reason: firstReason,
+    });
+    return translateVietnameseWithCloudflare(
+      asr.value,
+      `${instruction}\nReturn only one Japanese sentence using Japanese script. Do not use English or romaji.`,
+    );
+  });
+  const translatedText = normalizeTargetTranslation(translation.value.englishText);
+  const failureReason = targetTranslationFailureReason(translatedText, targetLanguage);
+  if (failureReason !== null) {
+    logEvent("warn", "target_translation_invalid", {
+      requestId: input.requestId,
+      targetLanguage,
+      reason: failureReason,
+    });
     throw new AppError("LLM_FAILED", "Chưa dịch được câu này sang ngôn ngữ đã chọn.");
   }
   const result = {
