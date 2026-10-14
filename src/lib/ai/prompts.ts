@@ -1,4 +1,4 @@
-import type { PracticeContext } from "@/types/conversation";
+import type { PracticeContext, TargetLanguage } from "@/types/conversation";
 
 export { PROMPT_VERSION } from "./translationPolicy";
 
@@ -19,6 +19,24 @@ export function buildChineseInstruction(context: PracticeContext, childAge = 6) 
 Preserve the speaker, addressee, kinship terms, negation, action, object, quantity, time, place, and whether the utterance is a statement, question or request.
 Do not answer the child, add information, change the meaning, or translate through English.
 Return exactly one short Simplified Chinese translation, without a label, quotation marks, pinyin or explanation.
+Context for resolving genuine ambiguity only: ${contextLabels[context]}; child_age=${childAge}.`;
+}
+
+export function buildTargetLanguageInstruction(
+  language: Exclude<TargetLanguage, "en">,
+  context: PracticeContext,
+  childAge = 6,
+) {
+  if (language === "zh") return buildChineseInstruction(context, childAge);
+  const target = {
+    ja: "natural Japanese",
+    ko: "natural Korean",
+    fr: "natural French",
+  }[language];
+  return `Translate one child's Vietnamese utterance directly into ${target}.
+Preserve the speaker, addressee, kinship terms, negation, action, object, quantity, time, place, and whether the utterance is a statement, question or request.
+Do not answer the child, add information, change the meaning, or translate through English.
+Return exactly one short translation in ${target}, without a label, quotation marks, romanization or explanation.
 Context for resolving genuine ambiguity only: ${contextLabels[context]}; child_age=${childAge}.`;
 }
 

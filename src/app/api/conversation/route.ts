@@ -1,7 +1,7 @@
 import type { ConversationRequest, PracticeContext, TargetLanguage } from "@/types/conversation";
 import { AppError, toErrorResponse } from "@/lib/errors";
 import {
-  runChineseConversationPipeline,
+  runTargetLanguageConversationPipeline,
   runConversationPipeline,
 } from "@/lib/ai/pipeline";
 import { getCloudflareAudioMaxBytes } from "@/lib/ai/cloudflareWorkersAi";
@@ -19,7 +19,7 @@ function isPracticeContext(value: unknown): value is PracticeContext {
 
 function parseTargetLanguage(value: unknown): TargetLanguage {
   if (value === undefined || value === null || value === "en") return "en";
-  if (value === "zh") return "zh";
+  if (value === "zh" || value === "ja" || value === "ko" || value === "fr") return value;
   throw new AppError("BAD_REQUEST", "Ngôn ngữ dịch không được hỗ trợ.");
 }
 
@@ -154,8 +154,8 @@ export async function POST(request: Request) {
     );
     const input = { ...parsedInput, clientId: access.clientId };
     const result =
-      input.targetLanguage === "zh"
-        ? await runChineseConversationPipeline({ ...input, requestId })
+      input.targetLanguage !== "en"
+        ? await runTargetLanguageConversationPipeline({ ...input, requestId })
         : await runConversationPipeline(
             { ...input, requestId },
             {

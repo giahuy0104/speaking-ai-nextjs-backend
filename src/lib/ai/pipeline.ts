@@ -11,7 +11,7 @@ import {
   generateEnglishSentence,
   type EnglishGenerationResult,
 } from "./llm";
-import { buildChineseInstruction, PROMPT_VERSION } from "./prompts";
+import { buildTargetLanguageInstruction, PROMPT_VERSION } from "./prompts";
 import { translateVietnameseWithCloudflare } from "./cloudflareText";
 import {
   prepareEnglishAudio,
@@ -57,30 +57,36 @@ function createId(prefix: string) {
   return `${prefix}_${crypto.randomUUID().slice(0, 8)}`;
 }
 
-export async function runChineseConversationPipeline(
+export async function runTargetLanguageConversationPipeline(
   input: ConversationRequest,
 ): Promise<ConversationResponse> {
+  const targetLanguage = input.targetLanguage;
+  if (targetLanguage === "en") {
+    throw new AppError("BAD_REQUEST", "Ngôn ngữ dịch không hợp lệ.");
+  }
   const startedAt = nowMs();
   const asr = await measureStep(() => transcribeVietnamese(input));
   const translation = await measureStep(() =>
     translateVietnameseWithCloudflare(
       asr.value,
-      buildChineseInstruction(input.context, input.childAge),
+      buildTargetLanguageInstruction(targetLanguage, input.context, input.childAge),
     ),
   );
   const translatedText = translation.value.englishText
     .trim()
-    .replace(/^(?:中文|翻译|譯文)\s*[:：]\s*/u, "")
-    .replace(/^[“「]/u, "")
-    .replace(/[”」]$/u, "")
+    .replace(/^(?:中文|翻译|譯文|日本語|韓国語|한국어|Français|French|Japanese|Korean)\s*[:：]\s*/iu, "")
+    .replace(/^[“「«]/u, "")
+    .replace(/[”」»]$/u, "")
     .trim();
   if (
     !translatedText ||
     translatedText.length > 240 ||
     /[\r\n]/u.test(translatedText) ||
-    !/[\u3400-\u9fff]/u.test(translatedText)
+    (input.targetLanguage === "zh" && !/[\u3400-\u9fff]/u.test(translatedText)) ||
+    (input.targetLanguage === "ja" && !/[\u3040-\u30ff\u3400-\u9fff]/u.test(translatedText)) ||
+    (input.targetLanguage === "ko" && !/[\uac00-\ud7af]/u.test(translatedText))
   ) {
-    throw new AppError("LLM_FAILED", "Chưa dịch được câu này sang tiếng Trung.");
+    throw new AppError("LLM_FAILED", "Chưa dịch được câu này sang ngôn ngữ đã chọn.");
   }
   const result = {
     requestId: input.requestId,
@@ -90,7 +96,7 @@ export async function runChineseConversationPipeline(
     context: input.context,
     vietnameseText: asr.value,
     englishText: "",
-    targetLanguage: "zh",
+    targetLanguage: input.targetLanguage,
     translatedText,
     audioUrl: null,
     promptVersion: PROMPT_VERSION,
@@ -110,7 +116,7 @@ export async function runChineseConversationPipeline(
   } satisfies ConversationResponse;
   logEvent("info", "conversation_pipeline_completed", {
     requestId: input.requestId,
-    targetLanguage: "zh",
+    targetLanguage: input.targetLanguage,
     textModel: result.textModel,
     latency: result.latency,
   });

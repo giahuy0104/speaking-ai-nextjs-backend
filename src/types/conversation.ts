@@ -1,6 +1,6 @@
 export type PracticeContext = "home" | "school" | "outside";
 
-export type TargetLanguage = "en" | "zh";
+export type TargetLanguage = "en" | "zh" | "ja" | "ko" | "fr";
 
 export type AsrMode =
   | "text"
