@@ -18,6 +18,7 @@ import {
   synthesizeEnglishAudio,
   type AudioSynthesisResult,
 } from "./tts";
+import { getTargetAudioStreamUrl } from "./targetTts";
 
 export type ConversationPipelineOptions = {
   deferTextCacheWrite?: boolean;
@@ -133,13 +134,13 @@ export async function runTargetLanguageConversationPipeline(
     englishText: "",
     targetLanguage: input.targetLanguage,
     translatedText,
-    audioUrl: null,
+    audioUrl: getTargetAudioStreamUrl(translatedText, targetLanguage),
     promptVersion: PROMPT_VERSION,
     processingMode: "ai",
     textSource: "cloudflare",
     textProvider: "cloudflare",
     textModel: translation.value.model,
-    audioSource: "device_tts",
+    audioSource: "cloudflare_tts",
     asrMode: input.asrMode ?? (input.audioFile ? "batch_chunks" : "text"),
     benchmark: input.benchmark,
     latency: {

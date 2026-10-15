@@ -6,6 +6,16 @@ import { AppError } from "@/lib/appError";
 const defaultCloudflareAsrModel = "@cf/openai/whisper-large-v3-turbo";
 const defaultCloudflareTextModel = "@cf/qwen/qwen3-30b-a3b-fp8";
 const defaultCloudflareTtsModel = "@cf/deepgram/aura-1";
+const multilingualCloudflareTtsModel = "@cf/myshell-ai/melotts";
+
+export type TargetSpeechLanguage = "zh" | "ja" | "ko" | "fr";
+
+const targetSpeechCodes: Record<TargetSpeechLanguage, string> = {
+  zh: "ZH",
+  ja: "JP",
+  ko: "KR",
+  fr: "FR",
+};
 
 type ProviderErrorCode = Extract<
   ApiErrorCode,
@@ -303,6 +313,61 @@ export function getConfiguredTtsProfile(): TtsProfile {
     speed: 1,
     extension: "mp3",
   };
+}
+
+export function getTargetTtsProfile(language: TargetSpeechLanguage): TtsProfile {
+  requireCloudflareConfig("TTS_FAILED");
+  return {
+    provider: "cloudflare",
+    model: multilingualCloudflareTtsModel,
+    voice: targetSpeechCodes[language],
+    speed: 1,
+    extension: "mp3",
+  };
+}
+
+export async function requestTargetSpeech(
+  text: string,
+  language: TargetSpeechLanguage,
+): Promise<ArrayBuffer> {
+  const config = requireCloudflareConfig("TTS_FAILED");
+  const response = await fetchProvider(
+    cloudflareRunUrl(config.accountId, multilingualCloudflareTtsModel),
+    {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${config.apiToken}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ prompt: text, lang: targetSpeechCodes[language] }),
+    },
+    "TTS_FAILED",
+    positiveInteger("CLOUDFLARE_MULTILINGUAL_TTS_TIMEOUT_MS", 20_000),
+  );
+
+  if (!response.ok) {
+    throw new AppError(
+      "TTS_FAILED",
+      providerMessage(response.status, "Cloudflare chưa tạo được giọng đọc bản dịch."),
+      providerStatus(response.status),
+    );
+  }
+
+  if (response.headers.get("content-type")?.includes("audio/mpeg")) {
+    const audio = await response.arrayBuffer();
+    if (audio.byteLength > 0) return audio;
+  } else {
+    const payload = (await response.json().catch(() => null)) as
+      | CloudflareEnvelope<{ audio?: unknown }>
+      | null;
+    const encoded = payload?.result?.audio;
+    if (payload?.success !== false && typeof encoded === "string" && encoded.length > 0) {
+      const audio = Buffer.from(encoded, "base64");
+      if (audio.byteLength > 0) return Uint8Array.from(audio).buffer;
+    }
+  }
+
+  throw new AppError("TTS_FAILED", "Cloudflare trả về âm thanh bản dịch không hợp lệ.", 502);
 }
 
 export async function generateAiText(options: {

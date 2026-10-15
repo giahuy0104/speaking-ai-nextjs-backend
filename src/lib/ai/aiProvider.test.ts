@@ -4,8 +4,10 @@ import { AppError } from "@/lib/appError";
 import {
   generateAiText,
   getConfiguredTtsProfile,
+  getTargetTtsProfile,
   getTextAiProfile,
   requestEnglishSpeech,
+  requestTargetSpeech,
   transcribeVietnameseAudio,
 } from "./aiProvider";
 
@@ -57,6 +59,36 @@ test("selects Cloudflare-only profiles", () => {
     speed: 1,
     extension: "mp3",
   });
+});
+
+test("synthesizes each target language with the Cloudflare MeloTTS language code", async () => {
+  configureCloudflare();
+  const samples = [
+    ["zh", "ZH"],
+    ["ja", "JP"],
+    ["ko", "KR"],
+    ["fr", "FR"],
+  ] as const;
+  const expectedAudio = Buffer.from([0x49, 0x44, 0x33, 0x04]);
+  globalThis.fetch = async (input, init) => {
+    assert.equal(
+      String(input),
+      "https://api.cloudflare.com/client/v4/accounts/test-account/ai/run/@cf/myshell-ai/melotts",
+    );
+    const body = JSON.parse(String(init?.body)) as { prompt: string; lang: string };
+    assert.equal(body.prompt, "Xin chào");
+    assert.ok(samples.some(([, code]) => code === body.lang));
+    return Response.json({
+      success: true,
+      result: { audio: expectedAudio.toString("base64") },
+    });
+  };
+
+  for (const [language, code] of samples) {
+    assert.equal(getTargetTtsProfile(language).voice, code);
+    const audio = await requestTargetSpeech("Xin chào", language);
+    assert.deepEqual(Buffer.from(audio), expectedAudio);
+  }
 });
 
 test("generates text through the Cloudflare chat-completions endpoint", async () => {
