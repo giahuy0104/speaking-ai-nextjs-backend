@@ -232,7 +232,7 @@ export function getConfiguredTtsProfile(): TtsProfile {
       defaultCloudflareTtsModel,
       "TTS_FAILED",
     ),
-    voice: process.env.CLOUDFLARE_TTS_SPEAKER?.trim() || "asteria",
+    voice: process.env.CLOUDFLARE_TTS_SPEAKER?.trim() || "luna",
     speed: 1,
     extension: "mp3",
   };

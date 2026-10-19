@@ -1,0 +1,67 @@
+{
+  "model": "@cf/deepgram/aura-2-en",
+  "speaker": "luna",
+  "generatedAt": "2026-10-06T09:17:01.379Z",
+  "sentences": [
+    {
+      "index": 1,
+      "text": "What have you been up to lately?",
+      "file": "01-what-have-you-been-up-to-lately.mp3",
+      "bytes": 10944
+    },
+    {
+      "index": 2,
+      "text": "I’m a little tired, but I’m doing pretty well.",
+      "file": "02-im-a-little-tired-but-im-doing-pretty-well.mp3",
+      "bytes": 14688
+    },
+    {
+      "index": 3,
+      "text": "Do you mind if I join you?",
+      "file": "03-do-you-mind-if-i-join-you.mp3",
+      "bytes": 10224
+    },
+    {
+      "index": 4,
+      "text": "I’m not sure, but I’ll find out for you.",
+      "file": "04-im-not-sure-but-ill-find-out-for-you.mp3",
+      "bytes": 20304
+    },
+    {
+      "index": 5,
+      "text": "That sounds like a good idea.",
+      "file": "05-that-sounds-like-a-good-idea.mp3",
+      "bytes": 10368
+    },
+    {
+      "index": 6,
+      "text": "Could you give me a hand with this?",
+      "file": "06-could-you-give-me-a-hand-with-this.mp3",
+      "bytes": 11088
+    },
+    {
+      "index": 7,
+      "text": "I’ll get back to you later.",
+      "file": "07-ill-get-back-to-you-later.mp3",
+      "bytes": 9216
+    },
+    {
+      "index": 8,
+      "text": "It depends on what you’re looking for.",
+      "file": "08-it-depends-on-what-youre-looking-for.mp3",
+      "bytes": 11664
+    },
+    {
+      "index": 9,
+      "text": "I didn’t expect it to be so difficult.",
+      "file": "09-i-didnt-expect-it-to-be-so-difficult.mp3",
+      "bytes": 13968
+    },
+    {
+      "index": 10,
+      "text": "Let me know if you need anything.",
+      "file": "10-let-me-know-if-you-need-anything.mp3",
+      "bytes": 11088
+    }
+  ]
+}

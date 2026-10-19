@@ -1,0 +1,64 @@
+{
+  "sourceModel": "@cf/deepgram/aura-1",
+  "voices": [
+    "stella",
+    "luna"
+  ],
+  "playbackSpeed": 0.8,
+  "processing": "FFmpeg atempo=0.8; pitch preserved",
+  "additionalModelCostUsd": 0,
+  "totalFiles": 10,
+  "generatedAt": "2026-10-06T18:55:06.179Z",
+  "files": [
+    {
+      "voice": "stella",
+      "file": "stella/01-could-you-give-me-a-hand-with-this.mp3",
+      "bytes": 15428
+    },
+    {
+      "voice": "stella",
+      "file": "stella/02-ill-get-back-to-you-later.mp3",
+      "bytes": 13472
+    },
+    {
+      "voice": "stella",
+      "file": "stella/03-it-depends-on-what-youre-looking-for.mp3",
+      "bytes": 20060
+    },
+    {
+      "voice": "stella",
+      "file": "stella/04-i-didnt-expect-it-to-be-so-difficult.mp3",
+      "bytes": 21160
+    },
+    {
+      "voice": "stella",
+      "file": "stella/05-let-me-know-if-you-need-anything.mp3",
+      "bytes": 17558
+    },
+    {
+      "voice": "luna",
+      "file": "luna/01-could-you-give-me-a-hand-with-this.mp3",
+      "bytes": 19749
+    },
+    {
+      "voice": "luna",
+      "file": "luna/02-ill-get-back-to-you-later.mp3",
+      "bytes": 17830
+    },
+    {
+      "voice": "luna",
+      "file": "luna/03-it-depends-on-what-youre-looking-for.mp3",
+      "bytes": 19620
+    },
+    {
+      "voice": "luna",
+      "file": "luna/04-i-didnt-expect-it-to-be-so-difficult.mp3",
+      "bytes": 23940
+    },
+    {
+      "voice": "luna",
+      "file": "luna/05-let-me-know-if-you-need-anything.mp3",
+      "bytes": 15713
+    }
+  ]
+}

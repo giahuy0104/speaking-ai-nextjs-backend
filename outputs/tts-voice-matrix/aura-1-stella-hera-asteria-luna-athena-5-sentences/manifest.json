@@ -1,0 +1,221 @@
+{
+  "model": "@cf/deepgram/aura-1",
+  "voices": [
+    "stella",
+    "hera",
+    "asteria",
+    "luna",
+    "athena"
+  ],
+  "sentences": [
+    "What have you been up to lately?",
+    "I’m a little tired, but I’m doing pretty well.",
+    "Do you mind if I join you?",
+    "I’m not sure, but I’ll find out for you.",
+    "That sounds like a good idea."
+  ],
+  "totalFiles": 25,
+  "totalCharacters": 865,
+  "estimatedModelCostUsd": 0.012975,
+  "generatedAt": "2026-10-06T09:25:35.539Z",
+  "files": [
+    {
+      "voice": "stella",
+      "index": 1,
+      "text": "What have you been up to lately?",
+      "file": "stella/01-what-have-you-been-up-to-lately.mp3",
+      "bytes": 9090,
+      "reused": true
+    },
+    {
+      "voice": "stella",
+      "index": 2,
+      "text": "I’m a little tired, but I’m doing pretty well.",
+      "file": "stella/02-im-a-little-tired-but-im-doing-pretty-well.mp3",
+      "bytes": 14576,
+      "reused": true
+    },
+    {
+      "voice": "stella",
+      "index": 3,
+      "text": "Do you mind if I join you?",
+      "file": "stella/03-do-you-mind-if-i-join-you.mp3",
+      "bytes": 7053,
+      "reused": true
+    },
+    {
+      "voice": "stella",
+      "index": 4,
+      "text": "I’m not sure, but I’ll find out for you.",
+      "file": "stella/04-im-not-sure-but-ill-find-out-for-you.mp3",
+      "bytes": 12225,
+      "reused": true
+    },
+    {
+      "voice": "stella",
+      "index": 5,
+      "text": "That sounds like a good idea.",
+      "file": "stella/05-that-sounds-like-a-good-idea.mp3",
+      "bytes": 9247,
+      "reused": true
+    },
+    {
+      "voice": "hera",
+      "index": 1,
+      "text": "What have you been up to lately?",
+      "file": "hera/01-what-have-you-been-up-to-lately.mp3",
+      "bytes": 11912,
+      "reused": true
+    },
+    {
+      "voice": "hera",
+      "index": 2,
+      "text": "I’m a little tired, but I’m doing pretty well.",
+      "file": "hera/02-im-a-little-tired-but-im-doing-pretty-well.mp3",
+      "bytes": 15203
+    },
+    {
+      "voice": "hera",
+      "index": 3,
+      "text": "Do you mind if I join you?",
+      "file": "hera/03-do-you-mind-if-i-join-you.mp3",
+      "bytes": 10031,
+      "reused": true
+    },
+    {
+      "voice": "hera",
+      "index": 4,
+      "text": "I’m not sure, but I’ll find out for you.",
+      "file": "hera/04-im-not-sure-but-ill-find-out-for-you.mp3",
+      "bytes": 14106
+    },
+    {
+      "voice": "hera",
+      "index": 5,
+      "text": "That sounds like a good idea.",
+      "file": "hera/05-that-sounds-like-a-good-idea.mp3",
+      "bytes": 11598,
+      "reused": true
+    },
+    {
+      "voice": "asteria",
+      "index": 1,
+      "text": "What have you been up to lately?",
+      "file": "asteria/01-what-have-you-been-up-to-lately.mp3",
+      "bytes": 9561,
+      "reused": true
+    },
+    {
+      "voice": "asteria",
+      "index": 2,
+      "text": "I’m a little tired, but I’m doing pretty well.",
+      "file": "asteria/02-im-a-little-tired-but-im-doing-pretty-well.mp3",
+      "bytes": 14576,
+      "reused": true
+    },
+    {
+      "voice": "asteria",
+      "index": 3,
+      "text": "Do you mind if I join you?",
+      "file": "asteria/03-do-you-mind-if-i-join-you.mp3",
+      "bytes": 10344,
+      "reused": true
+    },
+    {
+      "voice": "asteria",
+      "index": 4,
+      "text": "I’m not sure, but I’ll find out for you.",
+      "file": "asteria/04-im-not-sure-but-ill-find-out-for-you.mp3",
+      "bytes": 11598,
+      "reused": true
+    },
+    {
+      "voice": "asteria",
+      "index": 5,
+      "text": "That sounds like a good idea.",
+      "file": "asteria/05-that-sounds-like-a-good-idea.mp3",
+      "bytes": 11128,
+      "reused": true
+    },
+    {
+      "voice": "luna",
+      "index": 1,
+      "text": "What have you been up to lately?",
+      "file": "luna/01-what-have-you-been-up-to-lately.mp3",
+      "bytes": 8620,
+      "reused": true
+    },
+    {
+      "voice": "luna",
+      "index": 2,
+      "text": "I’m a little tired, but I’m doing pretty well.",
+      "file": "luna/02-im-a-little-tired-but-im-doing-pretty-well.mp3",
+      "bytes": 11598,
+      "reused": true
+    },
+    {
+      "voice": "luna",
+      "index": 3,
+      "text": "Do you mind if I join you?",
+      "file": "luna/03-do-you-mind-if-i-join-you.mp3",
+      "bytes": 10031,
+      "reused": true
+    },
+    {
+      "voice": "luna",
+      "index": 4,
+      "text": "I’m not sure, but I’ll find out for you.",
+      "file": "luna/04-im-not-sure-but-ill-find-out-for-you.mp3",
+      "bytes": 11285,
+      "reused": true
+    },
+    {
+      "voice": "luna",
+      "index": 5,
+      "text": "That sounds like a good idea.",
+      "file": "luna/05-that-sounds-like-a-good-idea.mp3",
+      "bytes": 8777,
+      "reused": true
+    },
+    {
+      "voice": "athena",
+      "index": 1,
+      "text": "What have you been up to lately?",
+      "file": "athena/01-what-have-you-been-up-to-lately.mp3",
+      "bytes": 11441,
+      "reused": true
+    },
+    {
+      "voice": "athena",
+      "index": 2,
+      "text": "I’m a little tired, but I’m doing pretty well.",
+      "file": "athena/02-im-a-little-tired-but-im-doing-pretty-well.mp3",
+      "bytes": 15830,
+      "reused": true
+    },
+    {
+      "voice": "athena",
+      "index": 3,
+      "text": "Do you mind if I join you?",
+      "file": "athena/03-do-you-mind-if-i-join-you.mp3",
+      "bytes": 10501,
+      "reused": true
+    },
+    {
+      "voice": "athena",
+      "index": 4,
+      "text": "I’m not sure, but I’ll find out for you.",
+      "file": "athena/04-im-not-sure-but-ill-find-out-for-you.mp3",
+      "bytes": 12695,
+      "reused": true
+    },
+    {
+      "voice": "athena",
+      "index": 5,
+      "text": "That sounds like a good idea.",
+      "file": "athena/05-that-sounds-like-a-good-idea.mp3",
+      "bytes": 9717,
+      "reused": true
+    }
+  ]
+}

@@ -1,0 +1,207 @@
+{
+  "model": "@cf/deepgram/aura-2-en",
+  "text": "Hello! My name is Homi. Let us practice English together. What would you like to talk about today?",
+  "generatedAt": "2026-10-05T09:16:17.252Z",
+  "voices": [
+    {
+      "voice": "amalthea",
+      "file": "aura-2-en-amalthea.mp3",
+      "bytes": 31104
+    },
+    {
+      "voice": "andromeda",
+      "file": "aura-2-en-andromeda.mp3",
+      "bytes": 36144
+    },
+    {
+      "voice": "apollo",
+      "file": "aura-2-en-apollo.mp3",
+      "bytes": 37728
+    },
+    {
+      "voice": "arcas",
+      "file": "aura-2-en-arcas.mp3",
+      "bytes": 31968
+    },
+    {
+      "voice": "aries",
+      "file": "aura-2-en-aries.mp3",
+      "bytes": 30384
+    },
+    {
+      "voice": "asteria",
+      "file": "aura-2-en-asteria.mp3",
+      "bytes": 33264
+    },
+    {
+      "voice": "athena",
+      "file": "aura-2-en-athena.mp3",
+      "bytes": 31248
+    },
+    {
+      "voice": "atlas",
+      "file": "aura-2-en-atlas.mp3",
+      "bytes": 34848
+    },
+    {
+      "voice": "aurora",
+      "file": "aura-2-en-aurora.mp3",
+      "bytes": 33984
+    },
+    {
+      "voice": "callista",
+      "file": "aura-2-en-callista.mp3",
+      "bytes": 36576
+    },
+    {
+      "voice": "cora",
+      "file": "aura-2-en-cora.mp3",
+      "bytes": 35136
+    },
+    {
+      "voice": "cordelia",
+      "file": "aura-2-en-cordelia.mp3",
+      "bytes": 36864
+    },
+    {
+      "voice": "delia",
+      "file": "aura-2-en-delia.mp3",
+      "bytes": 32976
+    },
+    {
+      "voice": "draco",
+      "file": "aura-2-en-draco.mp3",
+      "bytes": 39744
+    },
+    {
+      "voice": "electra",
+      "file": "aura-2-en-electra.mp3",
+      "bytes": 39024
+    },
+    {
+      "voice": "harmonia",
+      "file": "aura-2-en-harmonia.mp3",
+      "bytes": 31536
+    },
+    {
+      "voice": "helena",
+      "file": "aura-2-en-helena.mp3",
+      "bytes": 38736
+    },
+    {
+      "voice": "hera",
+      "file": "aura-2-en-hera.mp3",
+      "bytes": 34848
+    },
+    {
+      "voice": "hermes",
+      "file": "aura-2-en-hermes.mp3",
+      "bytes": 35136
+    },
+    {
+      "voice": "hyperion",
+      "file": "aura-2-en-hyperion.mp3",
+      "bytes": 37728
+    },
+    {
+      "voice": "iris",
+      "file": "aura-2-en-iris.mp3",
+      "bytes": 39744
+    },
+    {
+      "voice": "janus",
+      "file": "aura-2-en-janus.mp3",
+      "bytes": 37728
+    },
+    {
+      "voice": "juno",
+      "file": "aura-2-en-juno.mp3",
+      "bytes": 31968
+    },
+    {
+      "voice": "jupiter",
+      "file": "aura-2-en-jupiter.mp3",
+      "bytes": 32544
+    },
+    {
+      "voice": "luna",
+      "file": "aura-2-en-luna.mp3",
+      "bytes": 31968
+    },
+    {
+      "voice": "mars",
+      "file": "aura-2-en-mars.mp3",
+      "bytes": 34704
+    },
+    {
+      "voice": "minerva",
+      "file": "aura-2-en-minerva.mp3",
+      "bytes": 35136
+    },
+    {
+      "voice": "neptune",
+      "file": "aura-2-en-neptune.mp3",
+      "bytes": 31824
+    },
+    {
+      "voice": "odysseus",
+      "file": "aura-2-en-odysseus.mp3",
+      "bytes": 34128
+    },
+    {
+      "voice": "ophelia",
+      "file": "aura-2-en-ophelia.mp3",
+      "bytes": 37008
+    },
+    {
+      "voice": "orion",
+      "file": "aura-2-en-orion.mp3",
+      "bytes": 39024
+    },
+    {
+      "voice": "orpheus",
+      "file": "aura-2-en-orpheus.mp3",
+      "bytes": 33984
+    },
+    {
+      "voice": "pandora",
+      "file": "aura-2-en-pandora.mp3",
+      "bytes": 37008
+    },
+    {
+      "voice": "phoebe",
+      "file": "aura-2-en-phoebe.mp3",
+      "bytes": 31536
+    },
+    {
+      "voice": "pluto",
+      "file": "aura-2-en-pluto.mp3",
+      "bytes": 35856
+    },
+    {
+      "voice": "saturn",
+      "file": "aura-2-en-saturn.mp3",
+      "bytes": 34848
+    },
+    {
+      "voice": "thalia",
+      "file": "aura-2-en-thalia.mp3",
+      "bytes": 36576
+    },
+    {
+      "voice": "theia",
+      "file": "aura-2-en-theia.mp3",
+      "bytes": 31536
+    },
+    {
+      "voice": "vesta",
+      "file": "aura-2-en-vesta.mp3",
+      "bytes": 46224
+    },
+    {
+      "voice": "zeus",
+      "file": "aura-2-en-zeus.mp3",
+      "bytes": 30528
+    }
+  ]
+}

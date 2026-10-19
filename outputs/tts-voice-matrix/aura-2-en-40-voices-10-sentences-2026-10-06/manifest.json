@@ -1,0 +1,2863 @@
+{
+  "model": "@cf/deepgram/aura-2-en",
+  "voices": [
+    "amalthea",
+    "andromeda",
+    "apollo",
+    "arcas",
+    "aries",
+    "asteria",
+    "athena",
+    "atlas",
+    "aurora",
+    "callista",
+    "cora",
+    "cordelia",
+    "delia",
+    "draco",
+    "electra",
+    "harmonia",
+    "helena",
+    "hera",
+    "hermes",
+    "hyperion",
+    "iris",
+    "janus",
+    "juno",
+    "jupiter",
+    "luna",
+    "mars",
+    "minerva",
+    "neptune",
+    "odysseus",
+    "ophelia",
+    "orion",
+    "orpheus",
+    "pandora",
+    "phoebe",
+    "pluto",
+    "saturn",
+    "thalia",
+    "theia",
+    "vesta",
+    "zeus"
+  ],
+  "sentences": [
+    "What have you been up to lately?",
+    "I’m a little tired, but I’m doing pretty well.",
+    "Do you mind if I join you?",
+    "I’m not sure, but I’ll find out for you.",
+    "That sounds like a good idea.",
+    "Could you give me a hand with this?",
+    "I’ll get back to you later.",
+    "It depends on what you’re looking for.",
+    "I didn’t expect it to be so difficult.",
+    "Let me know if you need anything."
+  ],
+  "totalFiles": 400,
+  "totalCharacters": 13760,
+  "estimatedModelCostUsd": 0.4128,
+  "generatedAt": "2026-10-06T09:19:56.320Z",
+  "files": [
+    {
+      "voice": "amalthea",
+      "index": 1,
+      "text": "What have you been up to lately?",
+      "file": "amalthea/01-what-have-you-been-up-to-lately.mp3",
+      "bytes": 13248
+    },
+    {
+      "voice": "amalthea",
+      "index": 2,
+      "text": "I’m a little tired, but I’m doing pretty well.",
+      "file": "amalthea/02-im-a-little-tired-but-im-doing-pretty-well.mp3",
+      "bytes": 19728
+    },
+    {
+      "voice": "amalthea",
+      "index": 3,
+      "text": "Do you mind if I join you?",
+      "file": "amalthea/03-do-you-mind-if-i-join-you.mp3",
+      "bytes": 10224
+    },
+    {
+      "voice": "amalthea",
+      "index": 4,
+      "text": "I’m not sure, but I’ll find out for you.",
+      "file": "amalthea/04-im-not-sure-but-ill-find-out-for-you.mp3",
+      "bytes": 14544
+    },
+    {
+      "voice": "amalthea",
+      "index": 5,
+      "text": "That sounds like a good idea.",
+      "file": "amalthea/05-that-sounds-like-a-good-idea.mp3",
+      "bytes": 10656
+    },
+    {
+      "voice": "amalthea",
+      "index": 6,
+      "text": "Could you give me a hand with this?",
+      "file": "amalthea/06-could-you-give-me-a-hand-with-this.mp3",
+      "bytes": 11088
+    },
+    {
+      "voice": "amalthea",
+      "index": 7,
+      "text": "I’ll get back to you later.",
+      "file": "amalthea/07-ill-get-back-to-you-later.mp3",
+      "bytes": 12816
+    },
+    {
+      "voice": "amalthea",
+      "index": 8,
+      "text": "It depends on what you’re looking for.",
+      "file": "amalthea/08-it-depends-on-what-youre-looking-for.mp3",
+      "bytes": 13248
+    },
+    {
+      "voice": "amalthea",
+      "index": 9,
+      "text": "I didn’t expect it to be so difficult.",
+      "file": "amalthea/09-i-didnt-expect-it-to-be-so-difficult.mp3",
+      "bytes": 17856
+    },
+    {
+      "voice": "amalthea",
+      "index": 10,
+      "text": "Let me know if you need anything.",
+      "file": "amalthea/10-let-me-know-if-you-need-anything.mp3",
+      "bytes": 11088
+    },
+    {
+      "voice": "andromeda",
+      "index": 1,
+      "text": "What have you been up to lately?",
+      "file": "andromeda/01-what-have-you-been-up-to-lately.mp3",
+      "bytes": 11088
+    },
+    {
+      "voice": "andromeda",
+      "index": 2,
+      "text": "I’m a little tired, but I’m doing pretty well.",
+      "file": "andromeda/02-im-a-little-tired-but-im-doing-pretty-well.mp3",
+      "bytes": 13824
+    },
+    {
+      "voice": "andromeda",
+      "index": 3,
+      "text": "Do you mind if I join you?",
+      "file": "andromeda/03-do-you-mind-if-i-join-you.mp3",
+      "bytes": 9936
+    },
+    {
+      "voice": "andromeda",
+      "index": 4,
+      "text": "I’m not sure, but I’ll find out for you.",
+      "file": "andromeda/04-im-not-sure-but-ill-find-out-for-you.mp3",
+      "bytes": 12096
+    },
+    {
+      "voice": "andromeda",
+      "index": 5,
+      "text": "That sounds like a good idea.",
+      "file": "andromeda/05-that-sounds-like-a-good-idea.mp3",
+      "bytes": 10368
+    },
+    {
+      "voice": "andromeda",
+      "index": 6,
+      "text": "Could you give me a hand with this?",
+      "file": "andromeda/06-could-you-give-me-a-hand-with-this.mp3",
+      "bytes": 10656
+    },
+    {
+      "voice": "andromeda",
+      "index": 7,
+      "text": "I’ll get back to you later.",
+      "file": "andromeda/07-ill-get-back-to-you-later.mp3",
+      "bytes": 9216
+    },
+    {
+      "voice": "andromeda",
+      "index": 8,
+      "text": "It depends on what you’re looking for.",
+      "file": "andromeda/08-it-depends-on-what-youre-looking-for.mp3",
+      "bytes": 11808
+    },
+    {
+      "voice": "andromeda",
+      "index": 9,
+      "text": "I didn’t expect it to be so difficult.",
+      "file": "andromeda/09-i-didnt-expect-it-to-be-so-difficult.mp3",
+      "bytes": 13536
+    },
+    {
+      "voice": "andromeda",
+      "index": 10,
+      "text": "Let me know if you need anything.",
+      "file": "andromeda/10-let-me-know-if-you-need-anything.mp3",
+      "bytes": 10224
+    },
+    {
+      "voice": "apollo",
+      "index": 1,
+      "text": "What have you been up to lately?",
+      "file": "apollo/01-what-have-you-been-up-to-lately.mp3",
+      "bytes": 11088
+    },
+    {
+      "voice": "apollo",
+      "index": 2,
+      "text": "I’m a little tired, but I’m doing pretty well.",
+      "file": "apollo/02-im-a-little-tired-but-im-doing-pretty-well.mp3",
+      "bytes": 18864
+    },
+    {
+      "voice": "apollo",
+      "index": 3,
+      "text": "Do you mind if I join you?",
+      "file": "apollo/03-do-you-mind-if-i-join-you.mp3",
+      "bytes": 9504
+    },
+    {
+      "voice": "apollo",
+      "index": 4,
+      "text": "I’m not sure, but I’ll find out for you.",
+      "file": "apollo/04-im-not-sure-but-ill-find-out-for-you.mp3",
+      "bytes": 14544
+    },
+    {
+      "voice": "apollo",
+      "index": 5,
+      "text": "That sounds like a good idea.",
+      "file": "apollo/05-that-sounds-like-a-good-idea.mp3",
+      "bytes": 11664
+    },
+    {
+      "voice": "apollo",
+      "index": 6,
+      "text": "Could you give me a hand with this?",
+      "file": "apollo/06-could-you-give-me-a-hand-with-this.mp3",
+      "bytes": 11376
+    },
+    {
+      "voice": "apollo",
+      "index": 7,
+      "text": "I’ll get back to you later.",
+      "file": "apollo/07-ill-get-back-to-you-later.mp3",
+      "bytes": 8928
+    },
+    {
+      "voice": "apollo",
+      "index": 8,
+      "text": "It depends on what you’re looking for.",
+      "file": "apollo/08-it-depends-on-what-youre-looking-for.mp3",
+      "bytes": 12528
+    },
+    {
+      "voice": "apollo",
+      "index": 9,
+      "text": "I didn’t expect it to be so difficult.",
+      "file": "apollo/09-i-didnt-expect-it-to-be-so-difficult.mp3",
+      "bytes": 13824
+    },
+    {
+      "voice": "apollo",
+      "index": 10,
+      "text": "Let me know if you need anything.",
+      "file": "apollo/10-let-me-know-if-you-need-anything.mp3",
+      "bytes": 10944
+    },
+    {
+      "voice": "arcas",
+      "index": 1,
+      "text": "What have you been up to lately?",
+      "file": "arcas/01-what-have-you-been-up-to-lately.mp3",
+      "bytes": 10656
+    },
+    {
+      "voice": "arcas",
+      "index": 2,
+      "text": "I’m a little tired, but I’m doing pretty well.",
+      "file": "arcas/02-im-a-little-tired-but-im-doing-pretty-well.mp3",
+      "bytes": 15696
+    },
+    {
+      "voice": "arcas",
+      "index": 3,
+      "text": "Do you mind if I join you?",
+      "file": "arcas/03-do-you-mind-if-i-join-you.mp3",
+      "bytes": 9936
+    },
+    {
+      "voice": "arcas",
+      "index": 4,
+      "text": "I’m not sure, but I’ll find out for you.",
+      "file": "arcas/04-im-not-sure-but-ill-find-out-for-you.mp3",
+      "bytes": 12816
+    },
+    {
+      "voice": "arcas",
+      "index": 5,
+      "text": "That sounds like a good idea.",
+      "file": "arcas/05-that-sounds-like-a-good-idea.mp3",
+      "bytes": 10368
+    },
+    {
+      "voice": "arcas",
+      "index": 6,
+      "text": "Could you give me a hand with this?",
+      "file": "arcas/06-could-you-give-me-a-hand-with-this.mp3",
+      "bytes": 10944
+    },
+    {
+      "voice": "arcas",
+      "index": 7,
+      "text": "I’ll get back to you later.",
+      "file": "arcas/07-ill-get-back-to-you-later.mp3",
+      "bytes": 9504
+    },
+    {
+      "voice": "arcas",
+      "index": 8,
+      "text": "It depends on what you’re looking for.",
+      "file": "arcas/08-it-depends-on-what-youre-looking-for.mp3",
+      "bytes": 11808
+    },
+    {
+      "voice": "arcas",
+      "index": 9,
+      "text": "I didn’t expect it to be so difficult.",
+      "file": "arcas/09-i-didnt-expect-it-to-be-so-difficult.mp3",
+      "bytes": 13536
+    },
+    {
+      "voice": "arcas",
+      "index": 10,
+      "text": "Let me know if you need anything.",
+      "file": "arcas/10-let-me-know-if-you-need-anything.mp3",
+      "bytes": 10368
+    },
+    {
+      "voice": "aries",
+      "index": 1,
+      "text": "What have you been up to lately?",
+      "file": "aries/01-what-have-you-been-up-to-lately.mp3",
+      "bytes": 7776
+    },
+    {
+      "voice": "aries",
+      "index": 2,
+      "text": "I’m a little tired, but I’m doing pretty well.",
+      "file": "aries/02-im-a-little-tired-but-im-doing-pretty-well.mp3",
+      "bytes": 13824
+    },
+    {
+      "voice": "aries",
+      "index": 3,
+      "text": "Do you mind if I join you?",
+      "file": "aries/03-do-you-mind-if-i-join-you.mp3",
+      "bytes": 7488
+    },
+    {
+      "voice": "aries",
+      "index": 4,
+      "text": "I’m not sure, but I’ll find out for you.",
+      "file": "aries/04-im-not-sure-but-ill-find-out-for-you.mp3",
+      "bytes": 16416
+    },
+    {
+      "voice": "aries",
+      "index": 5,
+      "text": "That sounds like a good idea.",
+      "file": "aries/05-that-sounds-like-a-good-idea.mp3",
+      "bytes": 8496
+    },
+    {
+      "voice": "aries",
+      "index": 6,
+      "text": "Could you give me a hand with this?",
+      "file": "aries/06-could-you-give-me-a-hand-with-this.mp3",
+      "bytes": 10368
+    },
+    {
+      "voice": "aries",
+      "index": 7,
+      "text": "I’ll get back to you later.",
+      "file": "aries/07-ill-get-back-to-you-later.mp3",
+      "bytes": 6768
+    },
+    {
+      "voice": "aries",
+      "index": 8,
+      "text": "It depends on what you’re looking for.",
+      "file": "aries/08-it-depends-on-what-youre-looking-for.mp3",
+      "bytes": 10224
+    },
+    {
+      "voice": "aries",
+      "index": 9,
+      "text": "I didn’t expect it to be so difficult.",
+      "file": "aries/09-i-didnt-expect-it-to-be-so-difficult.mp3",
+      "bytes": 12384
+    },
+    {
+      "voice": "aries",
+      "index": 10,
+      "text": "Let me know if you need anything.",
+      "file": "aries/10-let-me-know-if-you-need-anything.mp3",
+      "bytes": 9936
+    },
+    {
+      "voice": "asteria",
+      "index": 1,
+      "text": "What have you been up to lately?",
+      "file": "asteria/01-what-have-you-been-up-to-lately.mp3",
+      "bytes": 10944
+    },
+    {
+      "voice": "asteria",
+      "index": 2,
+      "text": "I’m a little tired, but I’m doing pretty well.",
+      "file": "asteria/02-im-a-little-tired-but-im-doing-pretty-well.mp3",
+      "bytes": 15264
+    },
+    {
+      "voice": "asteria",
+      "index": 3,
+      "text": "Do you mind if I join you?",
+      "file": "asteria/03-do-you-mind-if-i-join-you.mp3",
+      "bytes": 9936
+    },
+    {
+      "voice": "asteria",
+      "index": 4,
+      "text": "I’m not sure, but I’ll find out for you.",
+      "file": "asteria/04-im-not-sure-but-ill-find-out-for-you.mp3",
+      "bytes": 18288
+    },
+    {
+      "voice": "asteria",
+      "index": 5,
+      "text": "That sounds like a good idea.",
+      "file": "asteria/05-that-sounds-like-a-good-idea.mp3",
+      "bytes": 10368
+    },
+    {
+      "voice": "asteria",
+      "index": 6,
+      "text": "Could you give me a hand with this?",
+      "file": "asteria/06-could-you-give-me-a-hand-with-this.mp3",
+      "bytes": 10656
+    },
+    {
+      "voice": "asteria",
+      "index": 7,
+      "text": "I’ll get back to you later.",
+      "file": "asteria/07-ill-get-back-to-you-later.mp3",
+      "bytes": 9216
+    },
+    {
+      "voice": "asteria",
+      "index": 8,
+      "text": "It depends on what you’re looking for.",
+      "file": "asteria/08-it-depends-on-what-youre-looking-for.mp3",
+      "bytes": 13104
+    },
+    {
+      "voice": "asteria",
+      "index": 9,
+      "text": "I didn’t expect it to be so difficult.",
+      "file": "asteria/09-i-didnt-expect-it-to-be-so-difficult.mp3",
+      "bytes": 15264
+    },
+    {
+      "voice": "asteria",
+      "index": 10,
+      "text": "Let me know if you need anything.",
+      "file": "asteria/10-let-me-know-if-you-need-anything.mp3",
+      "bytes": 11088
+    },
+    {
+      "voice": "athena",
+      "index": 1,
+      "text": "What have you been up to lately?",
+      "file": "athena/01-what-have-you-been-up-to-lately.mp3",
+      "bytes": 8784
+    },
+    {
+      "voice": "athena",
+      "index": 2,
+      "text": "I’m a little tired, but I’m doing pretty well.",
+      "file": "athena/02-im-a-little-tired-but-im-doing-pretty-well.mp3",
+      "bytes": 14688
+    },
+    {
+      "voice": "athena",
+      "index": 3,
+      "text": "Do you mind if I join you?",
+      "file": "athena/03-do-you-mind-if-i-join-you.mp3",
+      "bytes": 8064
+    },
+    {
+      "voice": "athena",
+      "index": 4,
+      "text": "I’m not sure, but I’ll find out for you.",
+      "file": "athena/04-im-not-sure-but-ill-find-out-for-you.mp3",
+      "bytes": 14544
+    },
+    {
+      "voice": "athena",
+      "index": 5,
+      "text": "That sounds like a good idea.",
+      "file": "athena/05-that-sounds-like-a-good-idea.mp3",
+      "bytes": 8208
+    },
+    {
+      "voice": "athena",
+      "index": 6,
+      "text": "Could you give me a hand with this?",
+      "file": "athena/06-could-you-give-me-a-hand-with-this.mp3",
+      "bytes": 10368
+    },
+    {
+      "voice": "athena",
+      "index": 7,
+      "text": "I’ll get back to you later.",
+      "file": "athena/07-ill-get-back-to-you-later.mp3",
+      "bytes": 7776
+    },
+    {
+      "voice": "athena",
+      "index": 8,
+      "text": "It depends on what you’re looking for.",
+      "file": "athena/08-it-depends-on-what-youre-looking-for.mp3",
+      "bytes": 10224
+    },
+    {
+      "voice": "athena",
+      "index": 9,
+      "text": "I didn’t expect it to be so difficult.",
+      "file": "athena/09-i-didnt-expect-it-to-be-so-difficult.mp3",
+      "bytes": 11664
+    },
+    {
+      "voice": "athena",
+      "index": 10,
+      "text": "Let me know if you need anything.",
+      "file": "athena/10-let-me-know-if-you-need-anything.mp3",
+      "bytes": 9504
+    },
+    {
+      "voice": "atlas",
+      "index": 1,
+      "text": "What have you been up to lately?",
+      "file": "atlas/01-what-have-you-been-up-to-lately.mp3",
+      "bytes": 9216
+    },
+    {
+      "voice": "atlas",
+      "index": 2,
+      "text": "I’m a little tired, but I’m doing pretty well.",
+      "file": "atlas/02-im-a-little-tired-but-im-doing-pretty-well.mp3",
+      "bytes": 15264
+    },
+    {
+      "voice": "atlas",
+      "index": 3,
+      "text": "Do you mind if I join you?",
+      "file": "atlas/03-do-you-mind-if-i-join-you.mp3",
+      "bytes": 8496
+    },
+    {
+      "voice": "atlas",
+      "index": 4,
+      "text": "I’m not sure, but I’ll find out for you.",
+      "file": "atlas/04-im-not-sure-but-ill-find-out-for-you.mp3",
+      "bytes": 14688
+    },
+    {
+      "voice": "atlas",
+      "index": 5,
+      "text": "That sounds like a good idea.",
+      "file": "atlas/05-that-sounds-like-a-good-idea.mp3",
+      "bytes": 8784
+    },
+    {
+      "voice": "atlas",
+      "index": 6,
+      "text": "Could you give me a hand with this?",
+      "file": "atlas/06-could-you-give-me-a-hand-with-this.mp3",
+      "bytes": 10368
+    },
+    {
+      "voice": "atlas",
+      "index": 7,
+      "text": "I’ll get back to you later.",
+      "file": "atlas/07-ill-get-back-to-you-later.mp3",
+      "bytes": 8784
+    },
+    {
+      "voice": "atlas",
+      "index": 8,
+      "text": "It depends on what you’re looking for.",
+      "file": "atlas/08-it-depends-on-what-youre-looking-for.mp3",
+      "bytes": 10944
+    },
+    {
+      "voice": "atlas",
+      "index": 9,
+      "text": "I didn’t expect it to be so difficult.",
+      "file": "atlas/09-i-didnt-expect-it-to-be-so-difficult.mp3",
+      "bytes": 13536
+    },
+    {
+      "voice": "atlas",
+      "index": 10,
+      "text": "Let me know if you need anything.",
+      "file": "atlas/10-let-me-know-if-you-need-anything.mp3",
+      "bytes": 10656
+    },
+    {
+      "voice": "aurora",
+      "index": 1,
+      "text": "What have you been up to lately?",
+      "file": "aurora/01-what-have-you-been-up-to-lately.mp3",
+      "bytes": 10656
+    },
+    {
+      "voice": "aurora",
+      "index": 2,
+      "text": "I’m a little tired, but I’m doing pretty well.",
+      "file": "aurora/02-im-a-little-tired-but-im-doing-pretty-well.mp3",
+      "bytes": 14976
+    },
+    {
+      "voice": "aurora",
+      "index": 3,
+      "text": "Do you mind if I join you?",
+      "file": "aurora/03-do-you-mind-if-i-join-you.mp3",
+      "bytes": 8064
+    },
+    {
+      "voice": "aurora",
+      "index": 4,
+      "text": "I’m not sure, but I’ll find out for you.",
+      "file": "aurora/04-im-not-sure-but-ill-find-out-for-you.mp3",
+      "bytes": 13104
+    },
+    {
+      "voice": "aurora",
+      "index": 5,
+      "text": "That sounds like a good idea.",
+      "file": "aurora/05-that-sounds-like-a-good-idea.mp3",
+      "bytes": 10368
+    },
+    {
+      "voice": "aurora",
+      "index": 6,
+      "text": "Could you give me a hand with this?",
+      "file": "aurora/06-could-you-give-me-a-hand-with-this.mp3",
+      "bytes": 11664
+    },
+    {
+      "voice": "aurora",
+      "index": 7,
+      "text": "I’ll get back to you later.",
+      "file": "aurora/07-ill-get-back-to-you-later.mp3",
+      "bytes": 8784
+    },
+    {
+      "voice": "aurora",
+      "index": 8,
+      "text": "It depends on what you’re looking for.",
+      "file": "aurora/08-it-depends-on-what-youre-looking-for.mp3",
+      "bytes": 10224
+    },
+    {
+      "voice": "aurora",
+      "index": 9,
+      "text": "I didn’t expect it to be so difficult.",
+      "file": "aurora/09-i-didnt-expect-it-to-be-so-difficult.mp3",
+      "bytes": 13824
+    },
+    {
+      "voice": "aurora",
+      "index": 10,
+      "text": "Let me know if you need anything.",
+      "file": "aurora/10-let-me-know-if-you-need-anything.mp3",
+      "bytes": 10944
+    },
+    {
+      "voice": "callista",
+      "index": 1,
+      "text": "What have you been up to lately?",
+      "file": "callista/01-what-have-you-been-up-to-lately.mp3",
+      "bytes": 11088
+    },
+    {
+      "voice": "callista",
+      "index": 2,
+      "text": "I’m a little tired, but I’m doing pretty well.",
+      "file": "callista/02-im-a-little-tired-but-im-doing-pretty-well.mp3",
+      "bytes": 15408
+    },
+    {
+      "voice": "callista",
+      "index": 3,
+      "text": "Do you mind if I join you?",
+      "file": "callista/03-do-you-mind-if-i-join-you.mp3",
+      "bytes": 10368
+    },
+    {
+      "voice": "callista",
+      "index": 4,
+      "text": "I’m not sure, but I’ll find out for you.",
+      "file": "callista/04-im-not-sure-but-ill-find-out-for-you.mp3",
+      "bytes": 14544
+    },
+    {
+      "voice": "callista",
+      "index": 5,
+      "text": "That sounds like a good idea.",
+      "file": "callista/05-that-sounds-like-a-good-idea.mp3",
+      "bytes": 10224
+    },
+    {
+      "voice": "callista",
+      "index": 6,
+      "text": "Could you give me a hand with this?",
+      "file": "callista/06-could-you-give-me-a-hand-with-this.mp3",
+      "bytes": 10944
+    },
+    {
+      "voice": "callista",
+      "index": 7,
+      "text": "I’ll get back to you later.",
+      "file": "callista/07-ill-get-back-to-you-later.mp3",
+      "bytes": 9216
+    },
+    {
+      "voice": "callista",
+      "index": 8,
+      "text": "It depends on what you’re looking for.",
+      "file": "callista/08-it-depends-on-what-youre-looking-for.mp3",
+      "bytes": 12384
+    },
+    {
+      "voice": "callista",
+      "index": 9,
+      "text": "I didn’t expect it to be so difficult.",
+      "file": "callista/09-i-didnt-expect-it-to-be-so-difficult.mp3",
+      "bytes": 14256
+    },
+    {
+      "voice": "callista",
+      "index": 10,
+      "text": "Let me know if you need anything.",
+      "file": "callista/10-let-me-know-if-you-need-anything.mp3",
+      "bytes": 11088
+    },
+    {
+      "voice": "cora",
+      "index": 1,
+      "text": "What have you been up to lately?",
+      "file": "cora/01-what-have-you-been-up-to-lately.mp3",
+      "bytes": 10944
+    },
+    {
+      "voice": "cora",
+      "index": 2,
+      "text": "I’m a little tired, but I’m doing pretty well.",
+      "file": "cora/02-im-a-little-tired-but-im-doing-pretty-well.mp3",
+      "bytes": 19008
+    },
+    {
+      "voice": "cora",
+      "index": 3,
+      "text": "Do you mind if I join you?",
+      "file": "cora/03-do-you-mind-if-i-join-you.mp3",
+      "bytes": 9504
+    },
+    {
+      "voice": "cora",
+      "index": 4,
+      "text": "I’m not sure, but I’ll find out for you.",
+      "file": "cora/04-im-not-sure-but-ill-find-out-for-you.mp3",
+      "bytes": 13968
+    },
+    {
+      "voice": "cora",
+      "index": 5,
+      "text": "That sounds like a good idea.",
+      "file": "cora/05-that-sounds-like-a-good-idea.mp3",
+      "bytes": 10656
+    },
+    {
+      "voice": "cora",
+      "index": 6,
+      "text": "Could you give me a hand with this?",
+      "file": "cora/06-could-you-give-me-a-hand-with-this.mp3",
+      "bytes": 11664
+    },
+    {
+      "voice": "cora",
+      "index": 7,
+      "text": "I’ll get back to you later.",
+      "file": "cora/07-ill-get-back-to-you-later.mp3",
+      "bytes": 9216
+    },
+    {
+      "voice": "cora",
+      "index": 8,
+      "text": "It depends on what you’re looking for.",
+      "file": "cora/08-it-depends-on-what-youre-looking-for.mp3",
+      "bytes": 12528
+    },
+    {
+      "voice": "cora",
+      "index": 9,
+      "text": "I didn’t expect it to be so difficult.",
+      "file": "cora/09-i-didnt-expect-it-to-be-so-difficult.mp3",
+      "bytes": 15264
+    },
+    {
+      "voice": "cora",
+      "index": 10,
+      "text": "Let me know if you need anything.",
+      "file": "cora/10-let-me-know-if-you-need-anything.mp3",
+      "bytes": 10656
+    },
+    {
+      "voice": "cordelia",
+      "index": 1,
+      "text": "What have you been up to lately?",
+      "file": "cordelia/01-what-have-you-been-up-to-lately.mp3",
+      "bytes": 10368
+    },
+    {
+      "voice": "cordelia",
+      "index": 2,
+      "text": "I’m a little tired, but I’m doing pretty well.",
+      "file": "cordelia/02-im-a-little-tired-but-im-doing-pretty-well.mp3",
+      "bytes": 14544
+    },
+    {
+      "voice": "cordelia",
+      "index": 3,
+      "text": "Do you mind if I join you?",
+      "file": "cordelia/03-do-you-mind-if-i-join-you.mp3",
+      "bytes": 8928
+    },
+    {
+      "voice": "cordelia",
+      "index": 4,
+      "text": "I’m not sure, but I’ll find out for you.",
+      "file": "cordelia/04-im-not-sure-but-ill-find-out-for-you.mp3",
+      "bytes": 15696
+    },
+    {
+      "voice": "cordelia",
+      "index": 5,
+      "text": "That sounds like a good idea.",
+      "file": "cordelia/05-that-sounds-like-a-good-idea.mp3",
+      "bytes": 9216
+    },
+    {
+      "voice": "cordelia",
+      "index": 6,
+      "text": "Could you give me a hand with this?",
+      "file": "cordelia/06-could-you-give-me-a-hand-with-this.mp3",
+      "bytes": 11088
+    },
+    {
+      "voice": "cordelia",
+      "index": 7,
+      "text": "I’ll get back to you later.",
+      "file": "cordelia/07-ill-get-back-to-you-later.mp3",
+      "bytes": 9216
+    },
+    {
+      "voice": "cordelia",
+      "index": 8,
+      "text": "It depends on what you’re looking for.",
+      "file": "cordelia/08-it-depends-on-what-youre-looking-for.mp3",
+      "bytes": 9936
+    },
+    {
+      "voice": "cordelia",
+      "index": 9,
+      "text": "I didn’t expect it to be so difficult.",
+      "file": "cordelia/09-i-didnt-expect-it-to-be-so-difficult.mp3",
+      "bytes": 14256
+    },
+    {
+      "voice": "cordelia",
+      "index": 10,
+      "text": "Let me know if you need anything.",
+      "file": "cordelia/10-let-me-know-if-you-need-anything.mp3",
+      "bytes": 10944
+    },
+    {
+      "voice": "delia",
+      "index": 1,
+      "text": "What have you been up to lately?",
+      "file": "delia/01-what-have-you-been-up-to-lately.mp3",
+      "bytes": 9504
+    },
+    {
+      "voice": "delia",
+      "index": 2,
+      "text": "I’m a little tired, but I’m doing pretty well.",
+      "file": "delia/02-im-a-little-tired-but-im-doing-pretty-well.mp3",
+      "bytes": 16416
+    },
+    {
+      "voice": "delia",
+      "index": 3,
+      "text": "Do you mind if I join you?",
+      "file": "delia/03-do-you-mind-if-i-join-you.mp3",
+      "bytes": 10224
+    },
+    {
+      "voice": "delia",
+      "index": 4,
+      "text": "I’m not sure, but I’ll find out for you.",
+      "file": "delia/04-im-not-sure-but-ill-find-out-for-you.mp3",
+      "bytes": 13104
+    },
+    {
+      "voice": "delia",
+      "index": 5,
+      "text": "That sounds like a good idea.",
+      "file": "delia/05-that-sounds-like-a-good-idea.mp3",
+      "bytes": 11088
+    },
+    {
+      "voice": "delia",
+      "index": 6,
+      "text": "Could you give me a hand with this?",
+      "file": "delia/06-could-you-give-me-a-hand-with-this.mp3",
+      "bytes": 10944
+    },
+    {
+      "voice": "delia",
+      "index": 7,
+      "text": "I’ll get back to you later.",
+      "file": "delia/07-ill-get-back-to-you-later.mp3",
+      "bytes": 9216
+    },
+    {
+      "voice": "delia",
+      "index": 8,
+      "text": "It depends on what you’re looking for.",
+      "file": "delia/08-it-depends-on-what-youre-looking-for.mp3",
+      "bytes": 12384
+    },
+    {
+      "voice": "delia",
+      "index": 9,
+      "text": "I didn’t expect it to be so difficult.",
+      "file": "delia/09-i-didnt-expect-it-to-be-so-difficult.mp3",
+      "bytes": 13536
+    },
+    {
+      "voice": "delia",
+      "index": 10,
+      "text": "Let me know if you need anything.",
+      "file": "delia/10-let-me-know-if-you-need-anything.mp3",
+      "bytes": 10944
+    },
+    {
+      "voice": "draco",
+      "index": 1,
+      "text": "What have you been up to lately?",
+      "file": "draco/01-what-have-you-been-up-to-lately.mp3",
+      "bytes": 10368
+    },
+    {
+      "voice": "draco",
+      "index": 2,
+      "text": "I’m a little tired, but I’m doing pretty well.",
+      "file": "draco/02-im-a-little-tired-but-im-doing-pretty-well.mp3",
+      "bytes": 16704
+    },
+    {
+      "voice": "draco",
+      "index": 3,
+      "text": "Do you mind if I join you?",
+      "file": "draco/03-do-you-mind-if-i-join-you.mp3",
+      "bytes": 8928
+    },
+    {
+      "voice": "draco",
+      "index": 4,
+      "text": "I’m not sure, but I’ll find out for you.",
+      "file": "draco/04-im-not-sure-but-ill-find-out-for-you.mp3",
+      "bytes": 18288
+    },
+    {
+      "voice": "draco",
+      "index": 5,
+      "text": "That sounds like a good idea.",
+      "file": "draco/05-that-sounds-like-a-good-idea.mp3",
+      "bytes": 10656
+    },
+    {
+      "voice": "draco",
+      "index": 6,
+      "text": "Could you give me a hand with this?",
+      "file": "draco/06-could-you-give-me-a-hand-with-this.mp3",
+      "bytes": 10224
+    },
+    {
+      "voice": "draco",
+      "index": 7,
+      "text": "I’ll get back to you later.",
+      "file": "draco/07-ill-get-back-to-you-later.mp3",
+      "bytes": 10368
+    },
+    {
+      "voice": "draco",
+      "index": 8,
+      "text": "It depends on what you’re looking for.",
+      "file": "draco/08-it-depends-on-what-youre-looking-for.mp3",
+      "bytes": 12384
+    },
+    {
+      "voice": "draco",
+      "index": 9,
+      "text": "I didn’t expect it to be so difficult.",
+      "file": "draco/09-i-didnt-expect-it-to-be-so-difficult.mp3",
+      "bytes": 14256
+    },
+    {
+      "voice": "draco",
+      "index": 10,
+      "text": "Let me know if you need anything.",
+      "file": "draco/10-let-me-know-if-you-need-anything.mp3",
+      "bytes": 10656
+    },
+    {
+      "voice": "electra",
+      "index": 1,
+      "text": "What have you been up to lately?",
+      "file": "electra/01-what-have-you-been-up-to-lately.mp3",
+      "bytes": 10224
+    },
+    {
+      "voice": "electra",
+      "index": 2,
+      "text": "I’m a little tired, but I’m doing pretty well.",
+      "file": "electra/02-im-a-little-tired-but-im-doing-pretty-well.mp3",
+      "bytes": 16416
+    },
+    {
+      "voice": "electra",
+      "index": 3,
+      "text": "Do you mind if I join you?",
+      "file": "electra/03-do-you-mind-if-i-join-you.mp3",
+      "bytes": 8784
+    },
+    {
+      "voice": "electra",
+      "index": 4,
+      "text": "I’m not sure, but I’ll find out for you.",
+      "file": "electra/04-im-not-sure-but-ill-find-out-for-you.mp3",
+      "bytes": 17424
+    },
+    {
+      "voice": "electra",
+      "index": 5,
+      "text": "That sounds like a good idea.",
+      "file": "electra/05-that-sounds-like-a-good-idea.mp3",
+      "bytes": 11808
+    },
+    {
+      "voice": "electra",
+      "index": 6,
+      "text": "Could you give me a hand with this?",
+      "file": "electra/06-could-you-give-me-a-hand-with-this.mp3",
+      "bytes": 11664
+    },
+    {
+      "voice": "electra",
+      "index": 7,
+      "text": "I’ll get back to you later.",
+      "file": "electra/07-ill-get-back-to-you-later.mp3",
+      "bytes": 10224
+    },
+    {
+      "voice": "electra",
+      "index": 8,
+      "text": "It depends on what you’re looking for.",
+      "file": "electra/08-it-depends-on-what-youre-looking-for.mp3",
+      "bytes": 14688
+    },
+    {
+      "voice": "electra",
+      "index": 9,
+      "text": "I didn’t expect it to be so difficult.",
+      "file": "electra/09-i-didnt-expect-it-to-be-so-difficult.mp3",
+      "bytes": 15408
+    },
+    {
+      "voice": "electra",
+      "index": 10,
+      "text": "Let me know if you need anything.",
+      "file": "electra/10-let-me-know-if-you-need-anything.mp3",
+      "bytes": 12096
+    },
+    {
+      "voice": "harmonia",
+      "index": 1,
+      "text": "What have you been up to lately?",
+      "file": "harmonia/01-what-have-you-been-up-to-lately.mp3",
+      "bytes": 10368
+    },
+    {
+      "voice": "harmonia",
+      "index": 2,
+      "text": "I’m a little tired, but I’m doing pretty well.",
+      "file": "harmonia/02-im-a-little-tired-but-im-doing-pretty-well.mp3",
+      "bytes": 15696
+    },
+    {
+      "voice": "harmonia",
+      "index": 3,
+      "text": "Do you mind if I join you?",
+      "file": "harmonia/03-do-you-mind-if-i-join-you.mp3",
+      "bytes": 9648
+    },
+    {
+      "voice": "harmonia",
+      "index": 4,
+      "text": "I’m not sure, but I’ll find out for you.",
+      "file": "harmonia/04-im-not-sure-but-ill-find-out-for-you.mp3",
+      "bytes": 11088
+    },
+    {
+      "voice": "harmonia",
+      "index": 5,
+      "text": "That sounds like a good idea.",
+      "file": "harmonia/05-that-sounds-like-a-good-idea.mp3",
+      "bytes": 10656
+    },
+    {
+      "voice": "harmonia",
+      "index": 6,
+      "text": "Could you give me a hand with this?",
+      "file": "harmonia/06-could-you-give-me-a-hand-with-this.mp3",
+      "bytes": 11088
+    },
+    {
+      "voice": "harmonia",
+      "index": 7,
+      "text": "I’ll get back to you later.",
+      "file": "harmonia/07-ill-get-back-to-you-later.mp3",
+      "bytes": 8928
+    },
+    {
+      "voice": "harmonia",
+      "index": 8,
+      "text": "It depends on what you’re looking for.",
+      "file": "harmonia/08-it-depends-on-what-youre-looking-for.mp3",
+      "bytes": 11808
+    },
+    {
+      "voice": "harmonia",
+      "index": 9,
+      "text": "I didn’t expect it to be so difficult.",
+      "file": "harmonia/09-i-didnt-expect-it-to-be-so-difficult.mp3",
+      "bytes": 13824
+    },
+    {
+      "voice": "harmonia",
+      "index": 10,
+      "text": "Let me know if you need anything.",
+      "file": "harmonia/10-let-me-know-if-you-need-anything.mp3",
+      "bytes": 10656
+    },
+    {
+      "voice": "helena",
+      "index": 1,
+      "text": "What have you been up to lately?",
+      "file": "helena/01-what-have-you-been-up-to-lately.mp3",
+      "bytes": 9216
+    },
+    {
+      "voice": "helena",
+      "index": 2,
+      "text": "I’m a little tired, but I’m doing pretty well.",
+      "file": "helena/02-im-a-little-tired-but-im-doing-pretty-well.mp3",
+      "bytes": 18576
+    },
+    {
+      "voice": "helena",
+      "index": 3,
+      "text": "Do you mind if I join you?",
+      "file": "helena/03-do-you-mind-if-i-join-you.mp3",
+      "bytes": 9648
+    },
+    {
+      "voice": "helena",
+      "index": 4,
+      "text": "I’m not sure, but I’ll find out for you.",
+      "file": "helena/04-im-not-sure-but-ill-find-out-for-you.mp3",
+      "bytes": 15264
+    },
+    {
+      "voice": "helena",
+      "index": 5,
+      "text": "That sounds like a good idea.",
+      "file": "helena/05-that-sounds-like-a-good-idea.mp3",
+      "bytes": 11376
+    },
+    {
+      "voice": "helena",
+      "index": 6,
+      "text": "Could you give me a hand with this?",
+      "file": "helena/06-could-you-give-me-a-hand-with-this.mp3",
+      "bytes": 11664
+    },
+    {
+      "voice": "helena",
+      "index": 7,
+      "text": "I’ll get back to you later.",
+      "file": "helena/07-ill-get-back-to-you-later.mp3",
+      "bytes": 10368
+    },
+    {
+      "voice": "helena",
+      "index": 8,
+      "text": "It depends on what you’re looking for.",
+      "file": "helena/08-it-depends-on-what-youre-looking-for.mp3",
+      "bytes": 11088
+    },
+    {
+      "voice": "helena",
+      "index": 9,
+      "text": "I didn’t expect it to be so difficult.",
+      "file": "helena/09-i-didnt-expect-it-to-be-so-difficult.mp3",
+      "bytes": 13968
+    },
+    {
+      "voice": "helena",
+      "index": 10,
+      "text": "Let me know if you need anything.",
+      "file": "helena/10-let-me-know-if-you-need-anything.mp3",
+      "bytes": 10944
+    },
+    {
+      "voice": "hera",
+      "index": 1,
+      "text": "What have you been up to lately?",
+      "file": "hera/01-what-have-you-been-up-to-lately.mp3",
+      "bytes": 9936
+    },
+    {
+      "voice": "hera",
+      "index": 2,
+      "text": "I’m a little tired, but I’m doing pretty well.",
+      "file": "hera/02-im-a-little-tired-but-im-doing-pretty-well.mp3",
+      "bytes": 14544
+    },
+    {
+      "voice": "hera",
+      "index": 3,
+      "text": "Do you mind if I join you?",
+      "file": "hera/03-do-you-mind-if-i-join-you.mp3",
+      "bytes": 8208
+    },
+    {
+      "voice": "hera",
+      "index": 4,
+      "text": "I’m not sure, but I’ll find out for you.",
+      "file": "hera/04-im-not-sure-but-ill-find-out-for-you.mp3",
+      "bytes": 13104
+    },
+    {
+      "voice": "hera",
+      "index": 5,
+      "text": "That sounds like a good idea.",
+      "file": "hera/05-that-sounds-like-a-good-idea.mp3",
+      "bytes": 9648
+    },
+    {
+      "voice": "hera",
+      "index": 6,
+      "text": "Could you give me a hand with this?",
+      "file": "hera/06-could-you-give-me-a-hand-with-this.mp3",
+      "bytes": 10368
+    },
+    {
+      "voice": "hera",
+      "index": 7,
+      "text": "I’ll get back to you later.",
+      "file": "hera/07-ill-get-back-to-you-later.mp3",
+      "bytes": 8928
+    },
+    {
+      "voice": "hera",
+      "index": 8,
+      "text": "It depends on what you’re looking for.",
+      "file": "hera/08-it-depends-on-what-youre-looking-for.mp3",
+      "bytes": 12816
+    },
+    {
+      "voice": "hera",
+      "index": 9,
+      "text": "I didn’t expect it to be so difficult.",
+      "file": "hera/09-i-didnt-expect-it-to-be-so-difficult.mp3",
+      "bytes": 13968
+    },
+    {
+      "voice": "hera",
+      "index": 10,
+      "text": "Let me know if you need anything.",
+      "file": "hera/10-let-me-know-if-you-need-anything.mp3",
+      "bytes": 10368
+    },
+    {
+      "voice": "hermes",
+      "index": 1,
+      "text": "What have you been up to lately?",
+      "file": "hermes/01-what-have-you-been-up-to-lately.mp3",
+      "bytes": 9504
+    },
+    {
+      "voice": "hermes",
+      "index": 2,
+      "text": "I’m a little tired, but I’m doing pretty well.",
+      "file": "hermes/02-im-a-little-tired-but-im-doing-pretty-well.mp3",
+      "bytes": 15696
+    },
+    {
+      "voice": "hermes",
+      "index": 3,
+      "text": "Do you mind if I join you?",
+      "file": "hermes/03-do-you-mind-if-i-join-you.mp3",
+      "bytes": 9216
+    },
+    {
+      "voice": "hermes",
+      "index": 4,
+      "text": "I’m not sure, but I’ll find out for you.",
+      "file": "hermes/04-im-not-sure-but-ill-find-out-for-you.mp3",
+      "bytes": 14688
+    },
+    {
+      "voice": "hermes",
+      "index": 5,
+      "text": "That sounds like a good idea.",
+      "file": "hermes/05-that-sounds-like-a-good-idea.mp3",
+      "bytes": 9216
+    },
+    {
+      "voice": "hermes",
+      "index": 6,
+      "text": "Could you give me a hand with this?",
+      "file": "hermes/06-could-you-give-me-a-hand-with-this.mp3",
+      "bytes": 10368
+    },
+    {
+      "voice": "hermes",
+      "index": 7,
+      "text": "I’ll get back to you later.",
+      "file": "hermes/07-ill-get-back-to-you-later.mp3",
+      "bytes": 8496
+    },
+    {
+      "voice": "hermes",
+      "index": 8,
+      "text": "It depends on what you’re looking for.",
+      "file": "hermes/08-it-depends-on-what-youre-looking-for.mp3",
+      "bytes": 10656
+    },
+    {
+      "voice": "hermes",
+      "index": 9,
+      "text": "I didn’t expect it to be so difficult.",
+      "file": "hermes/09-i-didnt-expect-it-to-be-so-difficult.mp3",
+      "bytes": 13824
+    },
+    {
+      "voice": "hermes",
+      "index": 10,
+      "text": "Let me know if you need anything.",
+      "file": "hermes/10-let-me-know-if-you-need-anything.mp3",
+      "bytes": 9936
+    },
+    {
+      "voice": "hyperion",
+      "index": 1,
+      "text": "What have you been up to lately?",
+      "file": "hyperion/01-what-have-you-been-up-to-lately.mp3",
+      "bytes": 11376
+    },
+    {
+      "voice": "hyperion",
+      "index": 2,
+      "text": "I’m a little tired, but I’m doing pretty well.",
+      "file": "hyperion/02-im-a-little-tired-but-im-doing-pretty-well.mp3",
+      "bytes": 16848
+    },
+    {
+      "voice": "hyperion",
+      "index": 3,
+      "text": "Do you mind if I join you?",
+      "file": "hyperion/03-do-you-mind-if-i-join-you.mp3",
+      "bytes": 10368
+    },
+    {
+      "voice": "hyperion",
+      "index": 4,
+      "text": "I’m not sure, but I’ll find out for you.",
+      "file": "hyperion/04-im-not-sure-but-ill-find-out-for-you.mp3",
+      "bytes": 16416
+    },
+    {
+      "voice": "hyperion",
+      "index": 5,
+      "text": "That sounds like a good idea.",
+      "file": "hyperion/05-that-sounds-like-a-good-idea.mp3",
+      "bytes": 10656
+    },
+    {
+      "voice": "hyperion",
+      "index": 6,
+      "text": "Could you give me a hand with this?",
+      "file": "hyperion/06-could-you-give-me-a-hand-with-this.mp3",
+      "bytes": 11088
+    },
+    {
+      "voice": "hyperion",
+      "index": 7,
+      "text": "I’ll get back to you later.",
+      "file": "hyperion/07-ill-get-back-to-you-later.mp3",
+      "bytes": 9504
+    },
+    {
+      "voice": "hyperion",
+      "index": 8,
+      "text": "It depends on what you’re looking for.",
+      "file": "hyperion/08-it-depends-on-what-youre-looking-for.mp3",
+      "bytes": 11664
+    },
+    {
+      "voice": "hyperion",
+      "index": 9,
+      "text": "I didn’t expect it to be so difficult.",
+      "file": "hyperion/09-i-didnt-expect-it-to-be-so-difficult.mp3",
+      "bytes": 13824
+    },
+    {
+      "voice": "hyperion",
+      "index": 10,
+      "text": "Let me know if you need anything.",
+      "file": "hyperion/10-let-me-know-if-you-need-anything.mp3",
+      "bytes": 11088
+    },
+    {
+      "voice": "iris",
+      "index": 1,
+      "text": "What have you been up to lately?",
+      "file": "iris/01-what-have-you-been-up-to-lately.mp3",
+      "bytes": 11088
+    },
+    {
+      "voice": "iris",
+      "index": 2,
+      "text": "I’m a little tired, but I’m doing pretty well.",
+      "file": "iris/02-im-a-little-tired-but-im-doing-pretty-well.mp3",
+      "bytes": 17568
+    },
+    {
+      "voice": "iris",
+      "index": 3,
+      "text": "Do you mind if I join you?",
+      "file": "iris/03-do-you-mind-if-i-join-you.mp3",
+      "bytes": 10656
+    },
+    {
+      "voice": "iris",
+      "index": 4,
+      "text": "I’m not sure, but I’ll find out for you.",
+      "file": "iris/04-im-not-sure-but-ill-find-out-for-you.mp3",
+      "bytes": 17136
+    },
+    {
+      "voice": "iris",
+      "index": 5,
+      "text": "That sounds like a good idea.",
+      "file": "iris/05-that-sounds-like-a-good-idea.mp3",
+      "bytes": 11088
+    },
+    {
+      "voice": "iris",
+      "index": 6,
+      "text": "Could you give me a hand with this?",
+      "file": "iris/06-could-you-give-me-a-hand-with-this.mp3",
+      "bytes": 11376
+    },
+    {
+      "voice": "iris",
+      "index": 7,
+      "text": "I’ll get back to you later.",
+      "file": "iris/07-ill-get-back-to-you-later.mp3",
+      "bytes": 9216
+    },
+    {
+      "voice": "iris",
+      "index": 8,
+      "text": "It depends on what you’re looking for.",
+      "file": "iris/08-it-depends-on-what-youre-looking-for.mp3",
+      "bytes": 12816
+    },
+    {
+      "voice": "iris",
+      "index": 9,
+      "text": "I didn’t expect it to be so difficult.",
+      "file": "iris/09-i-didnt-expect-it-to-be-so-difficult.mp3",
+      "bytes": 14976
+    },
+    {
+      "voice": "iris",
+      "index": 10,
+      "text": "Let me know if you need anything.",
+      "file": "iris/10-let-me-know-if-you-need-anything.mp3",
+      "bytes": 11376
+    },
+    {
+      "voice": "janus",
+      "index": 1,
+      "text": "What have you been up to lately?",
+      "file": "janus/01-what-have-you-been-up-to-lately.mp3",
+      "bytes": 9648
+    },
+    {
+      "voice": "janus",
+      "index": 2,
+      "text": "I’m a little tired, but I’m doing pretty well.",
+      "file": "janus/02-im-a-little-tired-but-im-doing-pretty-well.mp3",
+      "bytes": 14688
+    },
+    {
+      "voice": "janus",
+      "index": 3,
+      "text": "Do you mind if I join you?",
+      "file": "janus/03-do-you-mind-if-i-join-you.mp3",
+      "bytes": 8784
+    },
+    {
+      "voice": "janus",
+      "index": 4,
+      "text": "I’m not sure, but I’ll find out for you.",
+      "file": "janus/04-im-not-sure-but-ill-find-out-for-you.mp3",
+      "bytes": 15696
+    },
+    {
+      "voice": "janus",
+      "index": 5,
+      "text": "That sounds like a good idea.",
+      "file": "janus/05-that-sounds-like-a-good-idea.mp3",
+      "bytes": 10368
+    },
+    {
+      "voice": "janus",
+      "index": 6,
+      "text": "Could you give me a hand with this?",
+      "file": "janus/06-could-you-give-me-a-hand-with-this.mp3",
+      "bytes": 11664
+    },
+    {
+      "voice": "janus",
+      "index": 7,
+      "text": "I’ll get back to you later.",
+      "file": "janus/07-ill-get-back-to-you-later.mp3",
+      "bytes": 8928
+    },
+    {
+      "voice": "janus",
+      "index": 8,
+      "text": "It depends on what you’re looking for.",
+      "file": "janus/08-it-depends-on-what-youre-looking-for.mp3",
+      "bytes": 11664
+    },
+    {
+      "voice": "janus",
+      "index": 9,
+      "text": "I didn’t expect it to be so difficult.",
+      "file": "janus/09-i-didnt-expect-it-to-be-so-difficult.mp3",
+      "bytes": 13824
+    },
+    {
+      "voice": "janus",
+      "index": 10,
+      "text": "Let me know if you need anything.",
+      "file": "janus/10-let-me-know-if-you-need-anything.mp3",
+      "bytes": 10368
+    },
+    {
+      "voice": "juno",
+      "index": 1,
+      "text": "What have you been up to lately?",
+      "file": "juno/01-what-have-you-been-up-to-lately.mp3",
+      "bytes": 9216
+    },
+    {
+      "voice": "juno",
+      "index": 2,
+      "text": "I’m a little tired, but I’m doing pretty well.",
+      "file": "juno/02-im-a-little-tired-but-im-doing-pretty-well.mp3",
+      "bytes": 17136
+    },
+    {
+      "voice": "juno",
+      "index": 3,
+      "text": "Do you mind if I join you?",
+      "file": "juno/03-do-you-mind-if-i-join-you.mp3",
+      "bytes": 8064
+    },
+    {
+      "voice": "juno",
+      "index": 4,
+      "text": "I’m not sure, but I’ll find out for you.",
+      "file": "juno/04-im-not-sure-but-ill-find-out-for-you.mp3",
+      "bytes": 13968
+    },
+    {
+      "voice": "juno",
+      "index": 5,
+      "text": "That sounds like a good idea.",
+      "file": "juno/05-that-sounds-like-a-good-idea.mp3",
+      "bytes": 12384
+    },
+    {
+      "voice": "juno",
+      "index": 6,
+      "text": "Could you give me a hand with this?",
+      "file": "juno/06-could-you-give-me-a-hand-with-this.mp3",
+      "bytes": 10224
+    },
+    {
+      "voice": "juno",
+      "index": 7,
+      "text": "I’ll get back to you later.",
+      "file": "juno/07-ill-get-back-to-you-later.mp3",
+      "bytes": 7488
+    },
+    {
+      "voice": "juno",
+      "index": 8,
+      "text": "It depends on what you’re looking for.",
+      "file": "juno/08-it-depends-on-what-youre-looking-for.mp3",
+      "bytes": 10944
+    },
+    {
+      "voice": "juno",
+      "index": 9,
+      "text": "I didn’t expect it to be so difficult.",
+      "file": "juno/09-i-didnt-expect-it-to-be-so-difficult.mp3",
+      "bytes": 16128
+    },
+    {
+      "voice": "juno",
+      "index": 10,
+      "text": "Let me know if you need anything.",
+      "file": "juno/10-let-me-know-if-you-need-anything.mp3",
+      "bytes": 11376
+    },
+    {
+      "voice": "jupiter",
+      "index": 1,
+      "text": "What have you been up to lately?",
+      "file": "jupiter/01-what-have-you-been-up-to-lately.mp3",
+      "bytes": 9504
+    },
+    {
+      "voice": "jupiter",
+      "index": 2,
+      "text": "I’m a little tired, but I’m doing pretty well.",
+      "file": "jupiter/02-im-a-little-tired-but-im-doing-pretty-well.mp3",
+      "bytes": 13968
+    },
+    {
+      "voice": "jupiter",
+      "index": 3,
+      "text": "Do you mind if I join you?",
+      "file": "jupiter/03-do-you-mind-if-i-join-you.mp3",
+      "bytes": 7344
+    },
+    {
+      "voice": "jupiter",
+      "index": 4,
+      "text": "I’m not sure, but I’ll find out for you.",
+      "file": "jupiter/04-im-not-sure-but-ill-find-out-for-you.mp3",
+      "bytes": 13824
+    },
+    {
+      "voice": "jupiter",
+      "index": 5,
+      "text": "That sounds like a good idea.",
+      "file": "jupiter/05-that-sounds-like-a-good-idea.mp3",
+      "bytes": 9936
+    },
+    {
+      "voice": "jupiter",
+      "index": 6,
+      "text": "Could you give me a hand with this?",
+      "file": "jupiter/06-could-you-give-me-a-hand-with-this.mp3",
+      "bytes": 9936
+    },
+    {
+      "voice": "jupiter",
+      "index": 7,
+      "text": "I’ll get back to you later.",
+      "file": "jupiter/07-ill-get-back-to-you-later.mp3",
+      "bytes": 9648
+    },
+    {
+      "voice": "jupiter",
+      "index": 8,
+      "text": "It depends on what you’re looking for.",
+      "file": "jupiter/08-it-depends-on-what-youre-looking-for.mp3",
+      "bytes": 9936
+    },
+    {
+      "voice": "jupiter",
+      "index": 9,
+      "text": "I didn’t expect it to be so difficult.",
+      "file": "jupiter/09-i-didnt-expect-it-to-be-so-difficult.mp3",
+      "bytes": 12816
+    },
+    {
+      "voice": "jupiter",
+      "index": 10,
+      "text": "Let me know if you need anything.",
+      "file": "jupiter/10-let-me-know-if-you-need-anything.mp3",
+      "bytes": 8784
+    },
+    {
+      "voice": "luna",
+      "index": 1,
+      "text": "What have you been up to lately?",
+      "file": "luna/01-what-have-you-been-up-to-lately.mp3",
+      "bytes": 10656
+    },
+    {
+      "voice": "luna",
+      "index": 2,
+      "text": "I’m a little tired, but I’m doing pretty well.",
+      "file": "luna/02-im-a-little-tired-but-im-doing-pretty-well.mp3",
+      "bytes": 14976
+    },
+    {
+      "voice": "luna",
+      "index": 3,
+      "text": "Do you mind if I join you?",
+      "file": "luna/03-do-you-mind-if-i-join-you.mp3",
+      "bytes": 10224
+    },
+    {
+      "voice": "luna",
+      "index": 4,
+      "text": "I’m not sure, but I’ll find out for you.",
+      "file": "luna/04-im-not-sure-but-ill-find-out-for-you.mp3",
+      "bytes": 13536
+    },
+    {
+      "voice": "luna",
+      "index": 5,
+      "text": "That sounds like a good idea.",
+      "file": "luna/05-that-sounds-like-a-good-idea.mp3",
+      "bytes": 10656
+    },
+    {
+      "voice": "luna",
+      "index": 6,
+      "text": "Could you give me a hand with this?",
+      "file": "luna/06-could-you-give-me-a-hand-with-this.mp3",
+      "bytes": 10944
+    },
+    {
+      "voice": "luna",
+      "index": 7,
+      "text": "I’ll get back to you later.",
+      "file": "luna/07-ill-get-back-to-you-later.mp3",
+      "bytes": 9216
+    },
+    {
+      "voice": "luna",
+      "index": 8,
+      "text": "It depends on what you’re looking for.",
+      "file": "luna/08-it-depends-on-what-youre-looking-for.mp3",
+      "bytes": 11808
+    },
+    {
+      "voice": "luna",
+      "index": 9,
+      "text": "I didn’t expect it to be so difficult.",
+      "file": "luna/09-i-didnt-expect-it-to-be-so-difficult.mp3",
+      "bytes": 13968
+    },
+    {
+      "voice": "luna",
+      "index": 10,
+      "text": "Let me know if you need anything.",
+      "file": "luna/10-let-me-know-if-you-need-anything.mp3",
+      "bytes": 10656
+    },
+    {
+      "voice": "mars",
+      "index": 1,
+      "text": "What have you been up to lately?",
+      "file": "mars/01-what-have-you-been-up-to-lately.mp3",
+      "bytes": 8496
+    },
+    {
+      "voice": "mars",
+      "index": 2,
+      "text": "I’m a little tired, but I’m doing pretty well.",
+      "file": "mars/02-im-a-little-tired-but-im-doing-pretty-well.mp3",
+      "bytes": 14976
+    },
+    {
+      "voice": "mars",
+      "index": 3,
+      "text": "Do you mind if I join you?",
+      "file": "mars/03-do-you-mind-if-i-join-you.mp3",
+      "bytes": 8064
+    },
+    {
+      "voice": "mars",
+      "index": 4,
+      "text": "I’m not sure, but I’ll find out for you.",
+      "file": "mars/04-im-not-sure-but-ill-find-out-for-you.mp3",
+      "bytes": 13968
+    },
+    {
+      "voice": "mars",
+      "index": 5,
+      "text": "That sounds like a good idea.",
+      "file": "mars/05-that-sounds-like-a-good-idea.mp3",
+      "bytes": 8784
+    },
+    {
+      "voice": "mars",
+      "index": 6,
+      "text": "Could you give me a hand with this?",
+      "file": "mars/06-could-you-give-me-a-hand-with-this.mp3",
+      "bytes": 9504
+    },
+    {
+      "voice": "mars",
+      "index": 7,
+      "text": "I’ll get back to you later.",
+      "file": "mars/07-ill-get-back-to-you-later.mp3",
+      "bytes": 7344
+    },
+    {
+      "voice": "mars",
+      "index": 8,
+      "text": "It depends on what you’re looking for.",
+      "file": "mars/08-it-depends-on-what-youre-looking-for.mp3",
+      "bytes": 10656
+    },
+    {
+      "voice": "mars",
+      "index": 9,
+      "text": "I didn’t expect it to be so difficult.",
+      "file": "mars/09-i-didnt-expect-it-to-be-so-difficult.mp3",
+      "bytes": 12816
+    },
+    {
+      "voice": "mars",
+      "index": 10,
+      "text": "Let me know if you need anything.",
+      "file": "mars/10-let-me-know-if-you-need-anything.mp3",
+      "bytes": 8496
+    },
+    {
+      "voice": "minerva",
+      "index": 1,
+      "text": "What have you been up to lately?",
+      "file": "minerva/01-what-have-you-been-up-to-lately.mp3",
+      "bytes": 10656
+    },
+    {
+      "voice": "minerva",
+      "index": 2,
+      "text": "I’m a little tired, but I’m doing pretty well.",
+      "file": "minerva/02-im-a-little-tired-but-im-doing-pretty-well.mp3",
+      "bytes": 14688
+    },
+    {
+      "voice": "minerva",
+      "index": 3,
+      "text": "Do you mind if I join you?",
+      "file": "minerva/03-do-you-mind-if-i-join-you.mp3",
+      "bytes": 10224
+    },
+    {
+      "voice": "minerva",
+      "index": 4,
+      "text": "I’m not sure, but I’ll find out for you.",
+      "file": "minerva/04-im-not-sure-but-ill-find-out-for-you.mp3",
+      "bytes": 15696
+    },
+    {
+      "voice": "minerva",
+      "index": 5,
+      "text": "That sounds like a good idea.",
+      "file": "minerva/05-that-sounds-like-a-good-idea.mp3",
+      "bytes": 10656
+    },
+    {
+      "voice": "minerva",
+      "index": 6,
+      "text": "Could you give me a hand with this?",
+      "file": "minerva/06-could-you-give-me-a-hand-with-this.mp3",
+      "bytes": 11376
+    },
+    {
+      "voice": "minerva",
+      "index": 7,
+      "text": "I’ll get back to you later.",
+      "file": "minerva/07-ill-get-back-to-you-later.mp3",
+      "bytes": 8928
+    },
+    {
+      "voice": "minerva",
+      "index": 8,
+      "text": "It depends on what you’re looking for.",
+      "file": "minerva/08-it-depends-on-what-youre-looking-for.mp3",
+      "bytes": 12384
+    },
+    {
+      "voice": "minerva",
+      "index": 9,
+      "text": "I didn’t expect it to be so difficult.",
+      "file": "minerva/09-i-didnt-expect-it-to-be-so-difficult.mp3",
+      "bytes": 14544
+    },
+    {
+      "voice": "minerva",
+      "index": 10,
+      "text": "Let me know if you need anything.",
+      "file": "minerva/10-let-me-know-if-you-need-anything.mp3",
+      "bytes": 11088
+    },
+    {
+      "voice": "neptune",
+      "index": 1,
+      "text": "What have you been up to lately?",
+      "file": "neptune/01-what-have-you-been-up-to-lately.mp3",
+      "bytes": 7488
+    },
+    {
+      "voice": "neptune",
+      "index": 2,
+      "text": "I’m a little tired, but I’m doing pretty well.",
+      "file": "neptune/02-im-a-little-tired-but-im-doing-pretty-well.mp3",
+      "bytes": 13248
+    },
+    {
+      "voice": "neptune",
+      "index": 3,
+      "text": "Do you mind if I join you?",
+      "file": "neptune/03-do-you-mind-if-i-join-you.mp3",
+      "bytes": 7776
+    },
+    {
+      "voice": "neptune",
+      "index": 4,
+      "text": "I’m not sure, but I’ll find out for you.",
+      "file": "neptune/04-im-not-sure-but-ill-find-out-for-you.mp3",
+      "bytes": 12384
+    },
+    {
+      "voice": "neptune",
+      "index": 5,
+      "text": "That sounds like a good idea.",
+      "file": "neptune/05-that-sounds-like-a-good-idea.mp3",
+      "bytes": 8928
+    },
+    {
+      "voice": "neptune",
+      "index": 6,
+      "text": "Could you give me a hand with this?",
+      "file": "neptune/06-could-you-give-me-a-hand-with-this.mp3",
+      "bytes": 9216
+    },
+    {
+      "voice": "neptune",
+      "index": 7,
+      "text": "I’ll get back to you later.",
+      "file": "neptune/07-ill-get-back-to-you-later.mp3",
+      "bytes": 7344
+    },
+    {
+      "voice": "neptune",
+      "index": 8,
+      "text": "It depends on what you’re looking for.",
+      "file": "neptune/08-it-depends-on-what-youre-looking-for.mp3",
+      "bytes": 10656
+    },
+    {
+      "voice": "neptune",
+      "index": 9,
+      "text": "I didn’t expect it to be so difficult.",
+      "file": "neptune/09-i-didnt-expect-it-to-be-so-difficult.mp3",
+      "bytes": 14256
+    },
+    {
+      "voice": "neptune",
+      "index": 10,
+      "text": "Let me know if you need anything.",
+      "file": "neptune/10-let-me-know-if-you-need-anything.mp3",
+      "bytes": 10224
+    },
+    {
+      "voice": "odysseus",
+      "index": 1,
+      "text": "What have you been up to lately?",
+      "file": "odysseus/01-what-have-you-been-up-to-lately.mp3",
+      "bytes": 10368
+    },
+    {
+      "voice": "odysseus",
+      "index": 2,
+      "text": "I’m a little tired, but I’m doing pretty well.",
+      "file": "odysseus/02-im-a-little-tired-but-im-doing-pretty-well.mp3",
+      "bytes": 17136
+    },
+    {
+      "voice": "odysseus",
+      "index": 3,
+      "text": "Do you mind if I join you?",
+      "file": "odysseus/03-do-you-mind-if-i-join-you.mp3",
+      "bytes": 6768
+    },
+    {
+      "voice": "odysseus",
+      "index": 4,
+      "text": "I’m not sure, but I’ll find out for you.",
+      "file": "odysseus/04-im-not-sure-but-ill-find-out-for-you.mp3",
+      "bytes": 16128
+    },
+    {
+      "voice": "odysseus",
+      "index": 5,
+      "text": "That sounds like a good idea.",
+      "file": "odysseus/05-that-sounds-like-a-good-idea.mp3",
+      "bytes": 9504
+    },
+    {
+      "voice": "odysseus",
+      "index": 6,
+      "text": "Could you give me a hand with this?",
+      "file": "odysseus/06-could-you-give-me-a-hand-with-this.mp3",
+      "bytes": 10944
+    },
+    {
+      "voice": "odysseus",
+      "index": 7,
+      "text": "I’ll get back to you later.",
+      "file": "odysseus/07-ill-get-back-to-you-later.mp3",
+      "bytes": 8784
+    },
+    {
+      "voice": "odysseus",
+      "index": 8,
+      "text": "It depends on what you’re looking for.",
+      "file": "odysseus/08-it-depends-on-what-youre-looking-for.mp3",
+      "bytes": 11808
+    },
+    {
+      "voice": "odysseus",
+      "index": 9,
+      "text": "I didn’t expect it to be so difficult.",
+      "file": "odysseus/09-i-didnt-expect-it-to-be-so-difficult.mp3",
+      "bytes": 12528
+    },
+    {
+      "voice": "odysseus",
+      "index": 10,
+      "text": "Let me know if you need anything.",
+      "file": "odysseus/10-let-me-know-if-you-need-anything.mp3",
+      "bytes": 10224
+    },
+    {
+      "voice": "ophelia",
+      "index": 1,
+      "text": "What have you been up to lately?",
+      "file": "ophelia/01-what-have-you-been-up-to-lately.mp3",
+      "bytes": 9504
+    },
+    {
+      "voice": "ophelia",
+      "index": 2,
+      "text": "I’m a little tired, but I’m doing pretty well.",
+      "file": "ophelia/02-im-a-little-tired-but-im-doing-pretty-well.mp3",
+      "bytes": 17856
+    },
+    {
+      "voice": "ophelia",
+      "index": 3,
+      "text": "Do you mind if I join you?",
+      "file": "ophelia/03-do-you-mind-if-i-join-you.mp3",
+      "bytes": 8784
+    },
+    {
+      "voice": "ophelia",
+      "index": 4,
+      "text": "I’m not sure, but I’ll find out for you.",
+      "file": "ophelia/04-im-not-sure-but-ill-find-out-for-you.mp3",
+      "bytes": 15264
+    },
+    {
+      "voice": "ophelia",
+      "index": 5,
+      "text": "That sounds like a good idea.",
+      "file": "ophelia/05-that-sounds-like-a-good-idea.mp3",
+      "bytes": 10944
+    },
+    {
+      "voice": "ophelia",
+      "index": 6,
+      "text": "Could you give me a hand with this?",
+      "file": "ophelia/06-could-you-give-me-a-hand-with-this.mp3",
+      "bytes": 11376
+    },
+    {
+      "voice": "ophelia",
+      "index": 7,
+      "text": "I’ll get back to you later.",
+      "file": "ophelia/07-ill-get-back-to-you-later.mp3",
+      "bytes": 9648
+    },
+    {
+      "voice": "ophelia",
+      "index": 8,
+      "text": "It depends on what you’re looking for.",
+      "file": "ophelia/08-it-depends-on-what-youre-looking-for.mp3",
+      "bytes": 12816
+    },
+    {
+      "voice": "ophelia",
+      "index": 9,
+      "text": "I didn’t expect it to be so difficult.",
+      "file": "ophelia/09-i-didnt-expect-it-to-be-so-difficult.mp3",
+      "bytes": 15264
+    },
+    {
+      "voice": "ophelia",
+      "index": 10,
+      "text": "Let me know if you need anything.",
+      "file": "ophelia/10-let-me-know-if-you-need-anything.mp3",
+      "bytes": 12528
+    },
+    {
+      "voice": "orion",
+      "index": 1,
+      "text": "What have you been up to lately?",
+      "file": "orion/01-what-have-you-been-up-to-lately.mp3",
+      "bytes": 9504
+    },
+    {
+      "voice": "orion",
+      "index": 2,
+      "text": "I’m a little tired, but I’m doing pretty well.",
+      "file": "orion/02-im-a-little-tired-but-im-doing-pretty-well.mp3",
+      "bytes": 20304
+    },
+    {
+      "voice": "orion",
+      "index": 3,
+      "text": "Do you mind if I join you?",
+      "file": "orion/03-do-you-mind-if-i-join-you.mp3",
+      "bytes": 8064
+    },
+    {
+      "voice": "orion",
+      "index": 4,
+      "text": "I’m not sure, but I’ll find out for you.",
+      "file": "orion/04-im-not-sure-but-ill-find-out-for-you.mp3",
+      "bytes": 15264
+    },
+    {
+      "voice": "orion",
+      "index": 5,
+      "text": "That sounds like a good idea.",
+      "file": "orion/05-that-sounds-like-a-good-idea.mp3",
+      "bytes": 10656
+    },
+    {
+      "voice": "orion",
+      "index": 6,
+      "text": "Could you give me a hand with this?",
+      "file": "orion/06-could-you-give-me-a-hand-with-this.mp3",
+      "bytes": 10944
+    },
+    {
+      "voice": "orion",
+      "index": 7,
+      "text": "I’ll get back to you later.",
+      "file": "orion/07-ill-get-back-to-you-later.mp3",
+      "bytes": 8496
+    },
+    {
+      "voice": "orion",
+      "index": 8,
+      "text": "It depends on what you’re looking for.",
+      "file": "orion/08-it-depends-on-what-youre-looking-for.mp3",
+      "bytes": 12096
+    },
+    {
+      "voice": "orion",
+      "index": 9,
+      "text": "I didn’t expect it to be so difficult.",
+      "file": "orion/09-i-didnt-expect-it-to-be-so-difficult.mp3",
+      "bytes": 15408
+    },
+    {
+      "voice": "orion",
+      "index": 10,
+      "text": "Let me know if you need anything.",
+      "file": "orion/10-let-me-know-if-you-need-anything.mp3",
+      "bytes": 9504
+    },
+    {
+      "voice": "orpheus",
+      "index": 1,
+      "text": "What have you been up to lately?",
+      "file": "orpheus/01-what-have-you-been-up-to-lately.mp3",
+      "bytes": 10656
+    },
+    {
+      "voice": "orpheus",
+      "index": 2,
+      "text": "I’m a little tired, but I’m doing pretty well.",
+      "file": "orpheus/02-im-a-little-tired-but-im-doing-pretty-well.mp3",
+      "bytes": 13824
+    },
+    {
+      "voice": "orpheus",
+      "index": 3,
+      "text": "Do you mind if I join you?",
+      "file": "orpheus/03-do-you-mind-if-i-join-you.mp3",
+      "bytes": 9936
+    },
+    {
+      "voice": "orpheus",
+      "index": 4,
+      "text": "I’m not sure, but I’ll find out for you.",
+      "file": "orpheus/04-im-not-sure-but-ill-find-out-for-you.mp3",
+      "bytes": 13104
+    },
+    {
+      "voice": "orpheus",
+      "index": 5,
+      "text": "That sounds like a good idea.",
+      "file": "orpheus/05-that-sounds-like-a-good-idea.mp3",
+      "bytes": 10368
+    },
+    {
+      "voice": "orpheus",
+      "index": 6,
+      "text": "Could you give me a hand with this?",
+      "file": "orpheus/06-could-you-give-me-a-hand-with-this.mp3",
+      "bytes": 11088
+    },
+    {
+      "voice": "orpheus",
+      "index": 7,
+      "text": "I’ll get back to you later.",
+      "file": "orpheus/07-ill-get-back-to-you-later.mp3",
+      "bytes": 8208
+    },
+    {
+      "voice": "orpheus",
+      "index": 8,
+      "text": "It depends on what you’re looking for.",
+      "file": "orpheus/08-it-depends-on-what-youre-looking-for.mp3",
+      "bytes": 10944
+    },
+    {
+      "voice": "orpheus",
+      "index": 9,
+      "text": "I didn’t expect it to be so difficult.",
+      "file": "orpheus/09-i-didnt-expect-it-to-be-so-difficult.mp3",
+      "bytes": 16416
+    },
+    {
+      "voice": "orpheus",
+      "index": 10,
+      "text": "Let me know if you need anything.",
+      "file": "orpheus/10-let-me-know-if-you-need-anything.mp3",
+      "bytes": 10944
+    },
+    {
+      "voice": "pandora",
+      "index": 1,
+      "text": "What have you been up to lately?",
+      "file": "pandora/01-what-have-you-been-up-to-lately.mp3",
+      "bytes": 9504
+    },
+    {
+      "voice": "pandora",
+      "index": 2,
+      "text": "I’m a little tired, but I’m doing pretty well.",
+      "file": "pandora/02-im-a-little-tired-but-im-doing-pretty-well.mp3",
+      "bytes": 15984
+    },
+    {
+      "voice": "pandora",
+      "index": 3,
+      "text": "Do you mind if I join you?",
+      "file": "pandora/03-do-you-mind-if-i-join-you.mp3",
+      "bytes": 9936
+    },
+    {
+      "voice": "pandora",
+      "index": 4,
+      "text": "I’m not sure, but I’ll find out for you.",
+      "file": "pandora/04-im-not-sure-but-ill-find-out-for-you.mp3",
+      "bytes": 14976
+    },
+    {
+      "voice": "pandora",
+      "index": 5,
+      "text": "That sounds like a good idea.",
+      "file": "pandora/05-that-sounds-like-a-good-idea.mp3",
+      "bytes": 9936
+    },
+    {
+      "voice": "pandora",
+      "index": 6,
+      "text": "Could you give me a hand with this?",
+      "file": "pandora/06-could-you-give-me-a-hand-with-this.mp3",
+      "bytes": 11808
+    },
+    {
+      "voice": "pandora",
+      "index": 7,
+      "text": "I’ll get back to you later.",
+      "file": "pandora/07-ill-get-back-to-you-later.mp3",
+      "bytes": 8208
+    },
+    {
+      "voice": "pandora",
+      "index": 8,
+      "text": "It depends on what you’re looking for.",
+      "file": "pandora/08-it-depends-on-what-youre-looking-for.mp3",
+      "bytes": 10944
+    },
+    {
+      "voice": "pandora",
+      "index": 9,
+      "text": "I didn’t expect it to be so difficult.",
+      "file": "pandora/09-i-didnt-expect-it-to-be-so-difficult.mp3",
+      "bytes": 13968
+    },
+    {
+      "voice": "pandora",
+      "index": 10,
+      "text": "Let me know if you need anything.",
+      "file": "pandora/10-let-me-know-if-you-need-anything.mp3",
+      "bytes": 10944
+    },
+    {
+      "voice": "phoebe",
+      "index": 1,
+      "text": "What have you been up to lately?",
+      "file": "phoebe/01-what-have-you-been-up-to-lately.mp3",
+      "bytes": 10944
+    },
+    {
+      "voice": "phoebe",
+      "index": 2,
+      "text": "I’m a little tired, but I’m doing pretty well.",
+      "file": "phoebe/02-im-a-little-tired-but-im-doing-pretty-well.mp3",
+      "bytes": 17424
+    },
+    {
+      "voice": "phoebe",
+      "index": 3,
+      "text": "Do you mind if I join you?",
+      "file": "phoebe/03-do-you-mind-if-i-join-you.mp3",
+      "bytes": 9504
+    },
+    {
+      "voice": "phoebe",
+      "index": 4,
+      "text": "I’m not sure, but I’ll find out for you.",
+      "file": "phoebe/04-im-not-sure-but-ill-find-out-for-you.mp3",
+      "bytes": 15984
+    },
+    {
+      "voice": "phoebe",
+      "index": 5,
+      "text": "That sounds like a good idea.",
+      "file": "phoebe/05-that-sounds-like-a-good-idea.mp3",
+      "bytes": 10224
+    },
+    {
+      "voice": "phoebe",
+      "index": 6,
+      "text": "Could you give me a hand with this?",
+      "file": "phoebe/06-could-you-give-me-a-hand-with-this.mp3",
+      "bytes": 10944
+    },
+    {
+      "voice": "phoebe",
+      "index": 7,
+      "text": "I’ll get back to you later.",
+      "file": "phoebe/07-ill-get-back-to-you-later.mp3",
+      "bytes": 7776
+    },
+    {
+      "voice": "phoebe",
+      "index": 8,
+      "text": "It depends on what you’re looking for.",
+      "file": "phoebe/08-it-depends-on-what-youre-looking-for.mp3",
+      "bytes": 12096
+    },
+    {
+      "voice": "phoebe",
+      "index": 9,
+      "text": "I didn’t expect it to be so difficult.",
+      "file": "phoebe/09-i-didnt-expect-it-to-be-so-difficult.mp3",
+      "bytes": 13968
+    },
+    {
+      "voice": "phoebe",
+      "index": 10,
+      "text": "Let me know if you need anything.",
+      "file": "phoebe/10-let-me-know-if-you-need-anything.mp3",
+      "bytes": 10368
+    },
+    {
+      "voice": "pluto",
+      "index": 1,
+      "text": "What have you been up to lately?",
+      "file": "pluto/01-what-have-you-been-up-to-lately.mp3",
+      "bytes": 8496
+    },
+    {
+      "voice": "pluto",
+      "index": 2,
+      "text": "I’m a little tired, but I’m doing pretty well.",
+      "file": "pluto/02-im-a-little-tired-but-im-doing-pretty-well.mp3",
+      "bytes": 14256
+    },
+    {
+      "voice": "pluto",
+      "index": 3,
+      "text": "Do you mind if I join you?",
+      "file": "pluto/03-do-you-mind-if-i-join-you.mp3",
+      "bytes": 8064
+    },
+    {
+      "voice": "pluto",
+      "index": 4,
+      "text": "I’m not sure, but I’ll find out for you.",
+      "file": "pluto/04-im-not-sure-but-ill-find-out-for-you.mp3",
+      "bytes": 14688
+    },
+    {
+      "voice": "pluto",
+      "index": 5,
+      "text": "That sounds like a good idea.",
+      "file": "pluto/05-that-sounds-like-a-good-idea.mp3",
+      "bytes": 10368
+    },
+    {
+      "voice": "pluto",
+      "index": 6,
+      "text": "Could you give me a hand with this?",
+      "file": "pluto/06-could-you-give-me-a-hand-with-this.mp3",
+      "bytes": 11376
+    },
+    {
+      "voice": "pluto",
+      "index": 7,
+      "text": "I’ll get back to you later.",
+      "file": "pluto/07-ill-get-back-to-you-later.mp3",
+      "bytes": 7488
+    },
+    {
+      "voice": "pluto",
+      "index": 8,
+      "text": "It depends on what you’re looking for.",
+      "file": "pluto/08-it-depends-on-what-youre-looking-for.mp3",
+      "bytes": 11808
+    },
+    {
+      "voice": "pluto",
+      "index": 9,
+      "text": "I didn’t expect it to be so difficult.",
+      "file": "pluto/09-i-didnt-expect-it-to-be-so-difficult.mp3",
+      "bytes": 13824
+    },
+    {
+      "voice": "pluto",
+      "index": 10,
+      "text": "Let me know if you need anything.",
+      "file": "pluto/10-let-me-know-if-you-need-anything.mp3",
+      "bytes": 10368
+    },
+    {
+      "voice": "saturn",
+      "index": 1,
+      "text": "What have you been up to lately?",
+      "file": "saturn/01-what-have-you-been-up-to-lately.mp3",
+      "bytes": 9936
+    },
+    {
+      "voice": "saturn",
+      "index": 2,
+      "text": "I’m a little tired, but I’m doing pretty well.",
+      "file": "saturn/02-im-a-little-tired-but-im-doing-pretty-well.mp3",
+      "bytes": 14688
+    },
+    {
+      "voice": "saturn",
+      "index": 3,
+      "text": "Do you mind if I join you?",
+      "file": "saturn/03-do-you-mind-if-i-join-you.mp3",
+      "bytes": 8928
+    },
+    {
+      "voice": "saturn",
+      "index": 4,
+      "text": "I’m not sure, but I’ll find out for you.",
+      "file": "saturn/04-im-not-sure-but-ill-find-out-for-you.mp3",
+      "bytes": 17856
+    },
+    {
+      "voice": "saturn",
+      "index": 5,
+      "text": "That sounds like a good idea.",
+      "file": "saturn/05-that-sounds-like-a-good-idea.mp3",
+      "bytes": 11088
+    },
+    {
+      "voice": "saturn",
+      "index": 6,
+      "text": "Could you give me a hand with this?",
+      "file": "saturn/06-could-you-give-me-a-hand-with-this.mp3",
+      "bytes": 10944
+    },
+    {
+      "voice": "saturn",
+      "index": 7,
+      "text": "I’ll get back to you later.",
+      "file": "saturn/07-ill-get-back-to-you-later.mp3",
+      "bytes": 8784
+    },
+    {
+      "voice": "saturn",
+      "index": 8,
+      "text": "It depends on what you’re looking for.",
+      "file": "saturn/08-it-depends-on-what-youre-looking-for.mp3",
+      "bytes": 12384
+    },
+    {
+      "voice": "saturn",
+      "index": 9,
+      "text": "I didn’t expect it to be so difficult.",
+      "file": "saturn/09-i-didnt-expect-it-to-be-so-difficult.mp3",
+      "bytes": 13824
+    },
+    {
+      "voice": "saturn",
+      "index": 10,
+      "text": "Let me know if you need anything.",
+      "file": "saturn/10-let-me-know-if-you-need-anything.mp3",
+      "bytes": 10944
+    },
+    {
+      "voice": "thalia",
+      "index": 1,
+      "text": "What have you been up to lately?",
+      "file": "thalia/01-what-have-you-been-up-to-lately.mp3",
+      "bytes": 10656
+    },
+    {
+      "voice": "thalia",
+      "index": 2,
+      "text": "I’m a little tired, but I’m doing pretty well.",
+      "file": "thalia/02-im-a-little-tired-but-im-doing-pretty-well.mp3",
+      "bytes": 15264
+    },
+    {
+      "voice": "thalia",
+      "index": 3,
+      "text": "Do you mind if I join you?",
+      "file": "thalia/03-do-you-mind-if-i-join-you.mp3",
+      "bytes": 9216
+    },
+    {
+      "voice": "thalia",
+      "index": 4,
+      "text": "I’m not sure, but I’ll find out for you.",
+      "file": "thalia/04-im-not-sure-but-ill-find-out-for-you.mp3",
+      "bytes": 15984
+    },
+    {
+      "voice": "thalia",
+      "index": 5,
+      "text": "That sounds like a good idea.",
+      "file": "thalia/05-that-sounds-like-a-good-idea.mp3",
+      "bytes": 10224
+    },
+    {
+      "voice": "thalia",
+      "index": 6,
+      "text": "Could you give me a hand with this?",
+      "file": "thalia/06-could-you-give-me-a-hand-with-this.mp3",
+      "bytes": 11088
+    },
+    {
+      "voice": "thalia",
+      "index": 7,
+      "text": "I’ll get back to you later.",
+      "file": "thalia/07-ill-get-back-to-you-later.mp3",
+      "bytes": 8784
+    },
+    {
+      "voice": "thalia",
+      "index": 8,
+      "text": "It depends on what you’re looking for.",
+      "file": "thalia/08-it-depends-on-what-youre-looking-for.mp3",
+      "bytes": 10656
+    },
+    {
+      "voice": "thalia",
+      "index": 9,
+      "text": "I didn’t expect it to be so difficult.",
+      "file": "thalia/09-i-didnt-expect-it-to-be-so-difficult.mp3",
+      "bytes": 14256
+    },
+    {
+      "voice": "thalia",
+      "index": 10,
+      "text": "Let me know if you need anything.",
+      "file": "thalia/10-let-me-know-if-you-need-anything.mp3",
+      "bytes": 10944
+    },
+    {
+      "voice": "theia",
+      "index": 1,
+      "text": "What have you been up to lately?",
+      "file": "theia/01-what-have-you-been-up-to-lately.mp3",
+      "bytes": 10944
+    },
+    {
+      "voice": "theia",
+      "index": 2,
+      "text": "I’m a little tired, but I’m doing pretty well.",
+      "file": "theia/02-im-a-little-tired-but-im-doing-pretty-well.mp3",
+      "bytes": 14544
+    },
+    {
+      "voice": "theia",
+      "index": 3,
+      "text": "Do you mind if I join you?",
+      "file": "theia/03-do-you-mind-if-i-join-you.mp3",
+      "bytes": 9936
+    },
+    {
+      "voice": "theia",
+      "index": 4,
+      "text": "I’m not sure, but I’ll find out for you.",
+      "file": "theia/04-im-not-sure-but-ill-find-out-for-you.mp3",
+      "bytes": 13968
+    },
+    {
+      "voice": "theia",
+      "index": 5,
+      "text": "That sounds like a good idea.",
+      "file": "theia/05-that-sounds-like-a-good-idea.mp3",
+      "bytes": 10656
+    },
+    {
+      "voice": "theia",
+      "index": 6,
+      "text": "Could you give me a hand with this?",
+      "file": "theia/06-could-you-give-me-a-hand-with-this.mp3",
+      "bytes": 10944
+    },
+    {
+      "voice": "theia",
+      "index": 7,
+      "text": "I’ll get back to you later.",
+      "file": "theia/07-ill-get-back-to-you-later.mp3",
+      "bytes": 9216
+    },
+    {
+      "voice": "theia",
+      "index": 8,
+      "text": "It depends on what you’re looking for.",
+      "file": "theia/08-it-depends-on-what-youre-looking-for.mp3",
+      "bytes": 12096
+    },
+    {
+      "voice": "theia",
+      "index": 9,
+      "text": "I didn’t expect it to be so difficult.",
+      "file": "theia/09-i-didnt-expect-it-to-be-so-difficult.mp3",
+      "bytes": 14256
+    },
+    {
+      "voice": "theia",
+      "index": 10,
+      "text": "Let me know if you need anything.",
+      "file": "theia/10-let-me-know-if-you-need-anything.mp3",
+      "bytes": 11088
+    },
+    {
+      "voice": "vesta",
+      "index": 1,
+      "text": "What have you been up to lately?",
+      "file": "vesta/01-what-have-you-been-up-to-lately.mp3",
+      "bytes": 11664
+    },
+    {
+      "voice": "vesta",
+      "index": 2,
+      "text": "I’m a little tired, but I’m doing pretty well.",
+      "file": "vesta/02-im-a-little-tired-but-im-doing-pretty-well.mp3",
+      "bytes": 21168
+    },
+    {
+      "voice": "vesta",
+      "index": 3,
+      "text": "Do you mind if I join you?",
+      "file": "vesta/03-do-you-mind-if-i-join-you.mp3",
+      "bytes": 9936
+    },
+    {
+      "voice": "vesta",
+      "index": 4,
+      "text": "I’m not sure, but I’ll find out for you.",
+      "file": "vesta/04-im-not-sure-but-ill-find-out-for-you.mp3",
+      "bytes": 17856
+    },
+    {
+      "voice": "vesta",
+      "index": 5,
+      "text": "That sounds like a good idea.",
+      "file": "vesta/05-that-sounds-like-a-good-idea.mp3",
+      "bytes": 10224
+    },
+    {
+      "voice": "vesta",
+      "index": 6,
+      "text": "Could you give me a hand with this?",
+      "file": "vesta/06-could-you-give-me-a-hand-with-this.mp3",
+      "bytes": 10944
+    },
+    {
+      "voice": "vesta",
+      "index": 7,
+      "text": "I’ll get back to you later.",
+      "file": "vesta/07-ill-get-back-to-you-later.mp3",
+      "bytes": 9216
+    },
+    {
+      "voice": "vesta",
+      "index": 8,
+      "text": "It depends on what you’re looking for.",
+      "file": "vesta/08-it-depends-on-what-youre-looking-for.mp3",
+      "bytes": 17424
+    },
+    {
+      "voice": "vesta",
+      "index": 9,
+      "text": "I didn’t expect it to be so difficult.",
+      "file": "vesta/09-i-didnt-expect-it-to-be-so-difficult.mp3",
+      "bytes": 13536
+    },
+    {
+      "voice": "vesta",
+      "index": 10,
+      "text": "Let me know if you need anything.",
+      "file": "vesta/10-let-me-know-if-you-need-anything.mp3",
+      "bytes": 10656
+    },
+    {
+      "voice": "zeus",
+      "index": 1,
+      "text": "What have you been up to lately?",
+      "file": "zeus/01-what-have-you-been-up-to-lately.mp3",
+      "bytes": 11376
+    },
+    {
+      "voice": "zeus",
+      "index": 2,
+      "text": "I’m a little tired, but I’m doing pretty well.",
+      "file": "zeus/02-im-a-little-tired-but-im-doing-pretty-well.mp3",
+      "bytes": 14256
+    },
+    {
+      "voice": "zeus",
+      "index": 3,
+      "text": "Do you mind if I join you?",
+      "file": "zeus/03-do-you-mind-if-i-join-you.mp3",
+      "bytes": 9936
+    },
+    {
+      "voice": "zeus",
+      "index": 4,
+      "text": "I’m not sure, but I’ll find out for you.",
+      "file": "zeus/04-im-not-sure-but-ill-find-out-for-you.mp3",
+      "bytes": 13248
+    },
+    {
+      "voice": "zeus",
+      "index": 5,
+      "text": "That sounds like a good idea.",
+      "file": "zeus/05-that-sounds-like-a-good-idea.mp3",
+      "bytes": 10656
+    },
+    {
+      "voice": "zeus",
+      "index": 6,
+      "text": "Could you give me a hand with this?",
+      "file": "zeus/06-could-you-give-me-a-hand-with-this.mp3",
+      "bytes": 10368
+    },
+    {
+      "voice": "zeus",
+      "index": 7,
+      "text": "I’ll get back to you later.",
+      "file": "zeus/07-ill-get-back-to-you-later.mp3",
+      "bytes": 8784
+    },
+    {
+      "voice": "zeus",
+      "index": 8,
+      "text": "It depends on what you’re looking for.",
+      "file": "zeus/08-it-depends-on-what-youre-looking-for.mp3",
+      "bytes": 12816
+    },
+    {
+      "voice": "zeus",
+      "index": 9,
+      "text": "I didn’t expect it to be so difficult.",
+      "file": "zeus/09-i-didnt-expect-it-to-be-so-difficult.mp3",
+      "bytes": 14688
+    },
+    {
+      "voice": "zeus",
+      "index": 10,
+      "text": "Let me know if you need anything.",
+      "file": "zeus/10-let-me-know-if-you-need-anything.mp3",
+      "bytes": 11088
+    }
+  ]
+}
