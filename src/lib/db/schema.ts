@@ -1,4 +1,14 @@
 export const managedStorageSchemaStatements = [
+  `CREATE TABLE IF NOT EXISTS app_records_archive_job (
+    id INTEGER PRIMARY KEY CHECK (id = 1),
+    batch_id TEXT NOT NULL,
+    bucket TEXT NOT NULL,
+    object_key TEXT NOT NULL,
+    body TEXT NOT NULL,
+    snapshot JSONB NOT NULL,
+    owner TEXT NOT NULL,
+    lease_until TIMESTAMPTZ NOT NULL
+  )`,
   `CREATE TABLE IF NOT EXISTS app_records (
     namespace TEXT NOT NULL,
     record_key TEXT NOT NULL,
@@ -21,6 +31,8 @@ export const managedStorageSchemaStatements = [
     ADD COLUMN IF NOT EXISTS value JSONB NOT NULL DEFAULT '{}'::jsonb`,
   `CREATE INDEX IF NOT EXISTS app_records_namespace_created_idx
     ON app_records (namespace, created_at DESC)`,
+  `CREATE INDEX IF NOT EXISTS app_records_archive_order_idx
+    ON app_records (created_at, namespace, record_key)`,
   `CREATE INDEX IF NOT EXISTS app_records_namespace_client_idx
     ON app_records (namespace, client_id, created_at DESC)`,
   `CREATE INDEX IF NOT EXISTS app_records_expires_idx

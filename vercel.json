@@ -2,6 +2,10 @@
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "crons": [
     {
+      "path": "/api/internal/app-records/archive",
+      "schedule": "*/5 * * * *"
+    },
+    {
       "path": "/api/internal/audio-sessions/cleanup",
       "schedule": "17 * * * *"
     }
