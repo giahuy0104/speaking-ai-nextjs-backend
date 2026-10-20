@@ -2,7 +2,7 @@ import { randomUUID } from "node:crypto";
 import { GetObjectCommand, PutObjectCommand } from "@aws-sdk/client-s3";
 import { isPostgresStorageEnabled, queryDatabase } from "@/lib/db";
 import { getR2Client, isR2PreconditionFailed } from "@/lib/storage/r2";
-import { exportVerifiedArchive, type ArchiveJob } from "./appRecordsArchiveCore";
+import { createArchiveObjectKey, exportVerifiedArchive, type ArchiveJob } from "./appRecordsArchiveCore";
 
 // The durable singleton retains the exact snapshot/key across failed runs.
 // A lease serializes workers; the owner token fences a worker whose lease expired.
@@ -12,7 +12,7 @@ export async function archiveAppRecords() {
   if (!bucket) throw new Error("APP_RECORDS_ARCHIVE_R2_BUCKET is required.");
   const owner = randomUUID();
   const batchId = randomUUID();
-  const key = `archives/app_records/${new Date().toISOString().slice(0, 10)}/${batchId}.json`;
+  const key = createArchiveObjectKey(new Date(), batchId);
   let jobs = await queryDatabase<ArchiveJob>(
     `UPDATE app_records_archive_job
        SET owner = $1, lease_until = NOW() + INTERVAL '10 minutes'

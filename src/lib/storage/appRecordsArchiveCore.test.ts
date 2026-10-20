@@ -1,6 +1,16 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { exportVerifiedArchive } from "./appRecordsArchiveCore";
+import { createArchiveObjectKey, exportVerifiedArchive } from "./appRecordsArchiveCore";
+
+test("archive filenames use Vietnam time regardless of the server timezone", () => {
+  assert.equal(createArchiveObjectKey(new Date("2026-10-20T04:10:00Z"), "abc-def"),
+    "archives/app_records/2026-10-20/20_10_2026_11h_10_abcdef.json");
+});
+
+test("archive filename and folder roll over together at Vietnam midnight", () => {
+  assert.equal(createArchiveObjectKey(new Date("2026-12-31T17:00:00Z"), "abc-def"),
+    "archives/app_records/2027-01-01/01_01_2027_00h_00_abcdef.json");
+});
 
 const job = { batch_id: "batch", bucket: "private", object_key: "archive.json",
   body: '{"records":[{"value":{"large":9007199254740993,"text":"Tiếng Việt"}}]}' };
