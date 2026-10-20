@@ -11,11 +11,6 @@ const metaResponsePatterns = [
   /\b(?:however|alternatively|another (?:option|translation)|this means)\b/i,
 ];
 
-function containsMultipleSentences(value: string) {
-  const prose = value.replace(/\b(?:Mr|Mrs|Ms|Dr)\./g, "");
-  return /[.!?]\s+[A-Z]/.test(prose) || /[;\n\r]/.test(prose);
-}
-
 export function normalizeTranslationOutput(text: string) {
   let value = text.trim();
 
@@ -32,7 +27,9 @@ export function normalizeTranslationOutput(text: string) {
   if (
     !value ||
     value.length > 240 ||
-    containsMultipleSentences(value) ||
+    // Sentence boundaries are valid in a translation of a multi-sentence
+    // utterance. Reject explicit alternatives/notes, not ordinary prose.
+    /(?:^|\n)\s*(?:[-*•]|\d+[.)])\s+/m.test(value) ||
     containsUnexpectedEastAsianScript(value) ||
     /^(vietnamese|source)\s*:/i.test(value) ||
     metaResponsePatterns.some((pattern) => pattern.test(value))

@@ -29,6 +29,7 @@ Hard requirements:
 - The child may use Northern, Central or Southern Vietnamese vocabulary. Interpret regional words from the complete sentence context. Never replace a valid homonym merely because it resembles a regional variant.
 - Preserve every explicit color, number, time and place. Never replace it with a related or more specific concept. For example, màu tím = purple and công viên = park, never kindergarten.
 - Return exactly one English translation. English only, without quotation marks, labels, notes or explanations.
+- The utterance may contain multiple sentences. Translate all of them, preserving every statement; one translation does not mean one sentence.
 
 Contrastive examples:
 Vietnamese: Mẹ ơi, con muốn mua cái này.

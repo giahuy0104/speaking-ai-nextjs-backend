@@ -242,6 +242,26 @@ test("translation output guard rejects explanations and multiple alternatives", 
   assert.equal(normalizeTranslationOutput("I want some water."), "I want some water.");
 });
 
+test("multi-sentence translation preserves the full reported utterance", () => {
+  const source = "Hôm nay con buồn. Con muốn về quê chơi 1 hôm";
+  const english = "Today I'm sad. I want to go back to the countryside and play for a day.";
+  assert.equal(normalizeTranslationOutput(english), english);
+  assert.deepEqual(findMissingTranslationRequirements(source, english), []);
+  assert.match(buildEnglishInstruction("home"), /Translate all of them/);
+  assert.equal(
+    normalizeTranslationOutput("Today I'm sad.\nI want to go home."),
+    "Today I'm sad.\nI want to go home.",
+  );
+  assert.equal(
+    normalizeTranslationOutput("1. Today I'm sad.\n2. I feel sad today."),
+    null,
+  );
+  assert.equal(
+    normalizeTranslationOutput("- Today I'm sad.\n- I feel sad today."),
+    null,
+  );
+});
+
 test("device manifest publishes reviewed rules as exact full-sentence samples", async () => {
   const manifest = await getOfflineIntentManifest(500);
   const exactRule = manifest.items.find((item) => item.id === "exact-V1-001");
