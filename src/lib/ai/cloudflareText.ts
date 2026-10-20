@@ -2,7 +2,9 @@
 // emits the translation. Llama 4 Scout returns the requested text directly,
 // which keeps the primary path both faster and less likely to fall back.
 const DEFAULT_TEXT_MODEL = "@cf/meta/llama-4-scout-17b-16e-instruct";
-const DEFAULT_TEXT_TIMEOUT_MS = 2_500;
+// Full sentences can take more than 2.5 seconds even on a healthy provider.
+// This is an upper bound; successful responses still return immediately.
+const DEFAULT_TEXT_TIMEOUT_MS = 6_000;
 
 type CloudflareChatEnvelope = {
   choices?: Array<{

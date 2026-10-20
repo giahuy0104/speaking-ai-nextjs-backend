@@ -6,6 +6,7 @@ import type {
 import { after } from "next/server";
 import { normalizeVietnamese } from "@/lib/normalize";
 import { logEvent } from "@/lib/observability";
+import { AppError } from "@/lib/appError";
 import { buildEnglishInstruction } from "./prompts";
 import { getPromotedRule } from "./promotedRules";
 import { getCachedAiEnglishText, saveAiEnglishText } from "./textCache";
@@ -259,19 +260,21 @@ export async function generateEnglishSentence(
               textFallbackReason: result.fallbackReason,
             },
           );
-        if (deferCacheWrite) {
-          after(async () => {
-            try {
-              await saveTextCache();
-            } catch (error) {
-              logEvent("error", "text_cache_write_failed", {
-                requestId,
-                error,
-              });
-            }
-          });
-        } else {
-          await saveTextCache();
+        const saveTextCacheSafely = async () => {
+          try {
+            await saveTextCache();
+          } catch (error) {
+            logEvent("error", "text_cache_write_failed", { requestId, error });
+          }
+        };
+        try {
+          if (deferCacheWrite) {
+            after(saveTextCacheSafely);
+          } else {
+            await saveTextCacheSafely();
+          }
+        } catch (error) {
+          logEvent("error", "text_cache_write_failed", { requestId, error });
         }
 
         return {
@@ -292,14 +295,14 @@ export async function generateEnglishSentence(
           error,
         });
 
-        return {
-          englishText: fallbackSentence,
-          mode: "fallback",
-          source: "fallback",
-          matchedRule: `providers_failed:${failureReason}`,
-          textFallbackUsed: false,
-          textFallbackReason: failureReason,
-        };
+        // A provider failure says nothing about whether the user spoke clearly.
+        // Reject before TTS rather than speaking an unrelated English sentence.
+        throw new AppError(
+          "LLM_FAILED",
+          "Dịch vụ dịch tạm thời gặp lỗi. Vui lòng thử lại.",
+          503,
+          { provider: "cloudflare", reason: failureReason },
+        );
       }
     },
   });

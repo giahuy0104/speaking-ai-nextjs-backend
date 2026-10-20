@@ -3,8 +3,26 @@ import test from "node:test";
 import {
   buildCloudflareTextTranslationBody,
   CloudflareTextProviderError,
+  getCloudflareTextConfig,
   translateVietnameseWithCloudflare,
 } from "./cloudflareText";
+
+test("translation timeout allows full sentences and honors explicit configuration", () => {
+  const original = { ...process.env };
+  try {
+    process.env.CLOUDFLARE_ACCOUNT_ID = "account-id";
+    process.env.CLOUDFLARE_WORKERS_AI_API_TOKEN = "test-token";
+    delete process.env.CLOUDFLARE_TEXT_TIMEOUT_MS;
+    assert.equal(getCloudflareTextConfig().timeoutMs, 6000);
+    process.env.CLOUDFLARE_TEXT_TIMEOUT_MS = "8000";
+    assert.equal(getCloudflareTextConfig().timeoutMs, 8000);
+  } finally {
+    for (const key of ["CLOUDFLARE_ACCOUNT_ID", "CLOUDFLARE_WORKERS_AI_API_TOKEN", "CLOUDFLARE_TEXT_TIMEOUT_MS"]) {
+      if (original[key] === undefined) delete process.env[key];
+      else process.env[key] = original[key];
+    }
+  }
+});
 
 test("builds a deterministic faithful-translation request for Cloudflare", () => {
   const body = buildCloudflareTextTranslationBody(
