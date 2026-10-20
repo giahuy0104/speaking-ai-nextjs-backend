@@ -1,7 +1,7 @@
 import {
   normalizeVietnameseForAsrRuleMatch,
   normalizeVietnameseForExactMatch,
-  reviewedExactRulesV1,
+  reviewedAllTranslationRulesV1,
   type ExactTranslationRule,
 } from "./exactRules";
 import {
@@ -55,7 +55,7 @@ const priorityRuleIds = new Set([
  * high-frequency sentences. Exact regional aliases are expanded separately
  * to the full 5,000-sentence corpus below.
  */
-export const regionalChildSpeechRulesV1 = reviewedExactRulesV1.filter((rule) =>
+export const regionalChildSpeechRulesV1 = reviewedAllTranslationRulesV1.filter((rule) =>
   priorityRuleIds.has(rule.id),
 );
 
@@ -65,7 +65,7 @@ if (regionalChildSpeechRulesV1.length !== 100) {
   );
 }
 
-export const regionalCorpusRulesV1 = reviewedExactRulesV1.filter((rule) =>
+export const regionalCorpusRulesV1 = reviewedAllTranslationRulesV1.filter((rule) =>
   rule.id.startsWith("AIV0-"),
 );
 
@@ -401,7 +401,7 @@ const reviewedObservedAsrCorrectionsV1 = [
 ] as const;
 
 const reviewedRuleByCanonicalVietnamese = new Map(
-  reviewedExactRulesV1.map((rule) => [
+  reviewedAllTranslationRulesV1.map((rule) => [
     normalizeVietnameseForExactMatch(rule.vietnamese),
     rule,
   ]),

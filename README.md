@@ -34,9 +34,15 @@ CLOUDFLARE_TTS_TIMEOUT_MS=20000
 The Flutter API contract does not change. `/api/conversation` applies this
 order:
 
-1. reviewed exact rule or V1 text cache;
-2. Cloudflare multilingual text model with the faithful V1 prompt;
-3. the audio cache, then Cloudflare Aura TTS.
+1. reviewed special exact rule;
+2. the indexed official 5,000-sentence corpus;
+3. a promoted rule or V1 text cache;
+4. Cloudflare multilingual text model with the faithful V1 prompt;
+5. the audio cache, then Cloudflare Aura TTS.
+
+The two static rule layers are indexed once when the server module loads. A
+conversation still uses one API request and performs O(1) in-memory lookups;
+the request never parses or scans the 5,000 JSON rows.
 
 ASR, generated text, and TTS never call another AI provider. When Cloudflare
 fails, the request returns the existing safe local fallback or a retryable API

@@ -13,6 +13,7 @@ const contexts: PracticeContext[] = ["home", "school", "outside"];
 const modes: Array<ProcessingMode | "old"> = ["rule", "ai", "fallback", "old"];
 const textSources: Array<TextSource | "old"> = [
   "phrase_rule",
+  "corpus_rule",
   "keyword_rule",
   "promoted_rule",
   "semantic_cache",
@@ -42,6 +43,7 @@ const minimumAsrBenchmarkSamples = 10;
 const minimumLatencyAlertSamples = 10;
 const fastPathTextSources = new Set<TextSource | "old">([
   "phrase_rule",
+  "corpus_rule",
   "keyword_rule",
   "promoted_rule",
   "semantic_cache",
@@ -358,7 +360,13 @@ export function buildLatencyReport(
         ]
       : [];
   const easyItems = measuredConversations.filter((entry) =>
-    ["phrase_rule", "keyword_rule", "promoted_rule", "semantic_cache"].includes(
+    [
+      "phrase_rule",
+      "corpus_rule",
+      "keyword_rule",
+      "promoted_rule",
+      "semantic_cache",
+    ].includes(
       getTextSource(entry),
     ),
   );

@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import {
+  findReviewedCorpusRule,
   findReviewedExactRule,
   normalizeVietnameseForExactMatch,
 } from "./exactRules";
@@ -48,7 +49,7 @@ test("accented sentences and original unaccented aliases use the same fast path"
 
 test("official corpus translations win over legacy phrase conflicts", () => {
   assert.equal(
-    findReviewedExactRule("Con muốn ăn cơm.")?.english,
+    findReviewedCorpusRule("Con muốn ăn cơm.")?.english,
     "I want to eat rice.",
   );
   assert.equal(
@@ -56,16 +57,19 @@ test("official corpus translations win over legacy phrase conflicts", () => {
     "I want to buy this.",
   );
   assert.equal(
-    findReviewedExactRule("Con muốn uống nước.")?.english,
+    findReviewedCorpusRule("Con muốn uống nước.")?.english,
     "I want some water.",
   );
 });
 
 test("new official corpus rows win over equal supplement entries", () => {
-  assert.equal(findReviewedExactRule("Con muốn đi tắm.")?.id, "AIV0-0511");
-  assert.equal(findReviewedExactRule("Con muốn đánh răng.")?.id, "AIV0-0505");
+  assert.equal(findReviewedCorpusRule("Con muốn đi tắm.")?.id, "AIV0-0511");
   assert.equal(
-    findReviewedExactRule("Con muốn chơi xích đu.")?.id,
+    findReviewedCorpusRule("Con muốn đánh răng.")?.id,
+    "AIV0-0505",
+  );
+  assert.equal(
+    findReviewedCorpusRule("Con muốn chơi xích đu.")?.id,
     "AIV0-0529",
   );
 });

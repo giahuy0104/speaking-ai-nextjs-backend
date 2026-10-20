@@ -11,7 +11,8 @@ import { getPromotedRule } from "./promotedRules";
 import { getCachedAiEnglishText, saveAiEnglishText } from "./textCache";
 import { containsUnexpectedEastAsianScript } from "./languageValidation";
 import {
-  findReviewedAsrRuleMatch,
+  findReviewedCorpusRuleMatch,
+  findReviewedExactAsrRuleMatch,
   normalizeVietnameseForExactMatch,
 } from "./exactRules";
 import { findMissingTranslationRequirements } from "./translationFidelity";
@@ -66,16 +67,26 @@ function getTextGenerationFlightKey(
 }
 
 function getFixedEnglishSentence(vietnameseText: string) {
-  const match = findReviewedAsrRuleMatch(vietnameseText);
+  const exactMatch = findReviewedExactAsrRuleMatch(vietnameseText);
 
-  if (!match) {
+  if (exactMatch) {
+    return {
+      englishText: exactMatch.rule.english,
+      matchedRule: `${exactMatch.matchType}:${exactMatch.rule.ruleVersion}:${exactMatch.rule.id}`,
+      source: "phrase_rule" as const,
+    };
+  }
+
+  const corpusMatch = findReviewedCorpusRuleMatch(vietnameseText);
+
+  if (!corpusMatch) {
     return null;
   }
 
   return {
-    englishText: match.rule.english,
-    matchedRule: `${match.matchType}:${match.rule.ruleVersion}:${match.rule.id}`,
-    source: "phrase_rule" as const,
+    englishText: corpusMatch.rule.english,
+    matchedRule: `${corpusMatch.matchType}:${corpusMatch.rule.ruleVersion}:${corpusMatch.rule.id}`,
+    source: "corpus_rule" as const,
   };
 }
 

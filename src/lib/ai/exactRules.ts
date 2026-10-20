@@ -112,7 +112,7 @@ const primaryTranslationByVietnamese = new Map(
   ]),
 );
 
-const reviewedRuleSources: ReviewedRuleSource[] = [
+const reviewedSpecialRuleSources: ReviewedRuleSource[] = [
   ...reviewedPrimaryRuleSources,
   ...reviewedPhraseSupplementRulesV1.filter((rule) => {
     const primaryEnglish = primaryTranslationByVietnamese.get(
@@ -120,10 +120,10 @@ const reviewedRuleSources: ReviewedRuleSource[] = [
     );
     return primaryEnglish === undefined || primaryEnglish === rule.english;
   }),
-];
+].filter((rule) => !rule.id.startsWith("AIV0-"));
 
-export const reviewedExactRulesV1: ExactTranslationRule[] =
-  reviewedRuleSources.map((testCase) => ({
+function toTranslationRule(testCase: ReviewedRuleSource): ExactTranslationRule {
+  return {
     id: testCase.id,
     vietnamese: testCase.vietnamese,
     english: testCase.english,
@@ -132,102 +132,155 @@ export const reviewedExactRulesV1: ExactTranslationRule[] =
       testCase.vietnamese,
     ),
     ruleVersion: RULE_VERSION,
-  }));
+  };
+}
 
-const exactRuleMatchByVietnamese = new Map<
-  string,
-  ExactTranslationRuleMatch
->();
+/**
+ * The combined registry remains available to offline manifests, transcript
+ * repair and audio warmup. Runtime translation uses the two indexed layers
+ * below so a hand-reviewed exception and the official 5,000-sentence bank are
+ * observable and independently prioritized.
+ */
+export const reviewedSpecialExactRulesV1 = reviewedSpecialRuleSources.map(
+  toTranslationRule,
+);
+export const reviewedCorpusTranslationRulesV1 = reviewedCorpusRulesV1.map(
+  toTranslationRule,
+);
+export const reviewedAllTranslationRulesV1 = [
+  ...reviewedSpecialExactRulesV1,
+  ...reviewedCorpusTranslationRulesV1,
+];
 
-function registerRuleMatch(
-  rule: ExactTranslationRule,
-  vietnamese: string,
-  matchType: ExactTranslationRuleMatch["matchType"],
-) {
-  const normalizedVietnamese = normalizeVietnameseForExactMatch(vietnamese);
+type RuleMatchIndexes = {
+  exact: Map<string, ExactTranslationRuleMatch>;
+  asrFolded: Map<string, ExactTranslationRuleMatch>;
+};
 
-  if (!normalizedVietnamese) {
-    throw new Error(`Empty reviewed rule phrase: ${rule.id}`);
+function buildRuleMatchIndexes(
+  rules: readonly ExactTranslationRule[],
+  layerName: string,
+): RuleMatchIndexes {
+  const exact = new Map<string, ExactTranslationRuleMatch>();
+
+  function registerRuleMatch(
+    rule: ExactTranslationRule,
+    vietnamese: string,
+    matchType: ExactTranslationRuleMatch["matchType"],
+  ) {
+    const normalizedVietnamese = normalizeVietnameseForExactMatch(vietnamese);
+
+    if (!normalizedVietnamese) {
+      throw new Error(`Empty reviewed ${layerName} phrase: ${rule.id}`);
+    }
+
+    const existing = exact.get(normalizedVietnamese);
+    if (existing && existing.rule.english !== rule.english) {
+      throw new Error(
+        `Conflicting reviewed ${layerName} rules: ${existing.rule.id} and ${rule.id}`,
+      );
+    }
+
+    // Canonical sentences always win over an alias that normalizes to the same
+    // text. Equal-output alias collisions stay deterministic.
+    if (!existing || (existing.matchType === "alias" && matchType === "exact")) {
+      exact.set(normalizedVietnamese, {
+        rule,
+        matchType,
+        matchedVietnamese: vietnamese,
+      });
+    }
   }
 
-  const existing = exactRuleMatchByVietnamese.get(normalizedVietnamese);
+  for (const rule of rules) {
+    registerRuleMatch(rule, rule.vietnamese, "exact");
+  }
+  for (const rule of rules) {
+    for (const alias of rule.aliases) {
+      registerRuleMatch(rule, alias, "alias");
+    }
+  }
 
-  if (existing && existing.rule.english !== rule.english) {
-    throw new Error(
-      `Conflicting reviewed exact rules: ${existing.rule.id} and ${rule.id}`,
+  const asrFolded = new Map<string, ExactTranslationRuleMatch>();
+  for (const match of exact.values()) {
+    const normalizedVietnamese = normalizeVietnameseForAsrRuleMatch(
+      match.matchedVietnamese,
     );
+    const existing = asrFolded.get(normalizedVietnamese);
+    if (existing && existing.rule.english !== match.rule.english) {
+      throw new Error(
+        `Conflicting reviewed ${layerName} ASR rules: ${existing.rule.id} and ${match.rule.id}`,
+      );
+    }
+    if (
+      !existing ||
+      (existing.matchType === "alias" && match.matchType === "exact")
+    ) {
+      asrFolded.set(normalizedVietnamese, match);
+    }
   }
 
-  // Canonical sentences always win over an alias that happens to normalize to
-  // the same text. Equal-output alias collisions are harmless and deterministic.
-  if (!existing || (existing.matchType === "alias" && matchType === "exact")) {
-    exactRuleMatchByVietnamese.set(normalizedVietnamese, {
-      rule,
-      matchType,
-      matchedVietnamese: vietnamese,
-    });
-  }
+  return { exact, asrFolded };
 }
 
-for (const rule of reviewedExactRulesV1) {
-  registerRuleMatch(rule, rule.vietnamese, "exact");
-}
-
-for (const rule of reviewedExactRulesV1) {
-  for (const alias of rule.aliases) {
-    registerRuleMatch(rule, alias, "alias");
-  }
-}
-
-const asrRuleMatchByVietnamese = new Map<string, ExactTranslationRuleMatch>();
-
-for (const match of exactRuleMatchByVietnamese.values()) {
-  const normalizedVietnamese = normalizeVietnameseForAsrRuleMatch(
-    match.matchedVietnamese,
-  );
-  const existing = asrRuleMatchByVietnamese.get(normalizedVietnamese);
-
-  if (existing && existing.rule.english !== match.rule.english) {
-    throw new Error(
-      `Conflicting reviewed ASR rules: ${existing.rule.id} and ${match.rule.id}`,
-    );
-  }
-
-  if (!existing || (existing.matchType === "alias" && match.matchType === "exact")) {
-    asrRuleMatchByVietnamese.set(normalizedVietnamese, match);
-  }
-}
+// Both indexes are built once when the server module loads. Per-turn lookup is
+// O(1); no request scans or parses the 5,000 JSON rows.
+const specialExactIndexes = buildRuleMatchIndexes(
+  reviewedSpecialExactRulesV1,
+  "special exact",
+);
+const corpusIndexes = buildRuleMatchIndexes(
+  reviewedCorpusTranslationRulesV1,
+  "5,000-sentence corpus",
+);
 
 export function findReviewedExactRuleMatch(vietnameseText: string) {
   const normalizedVietnamese = normalizeVietnameseForExactMatch(vietnameseText);
-  return exactRuleMatchByVietnamese.get(normalizedVietnamese) ?? null;
+  return specialExactIndexes.exact.get(normalizedVietnamese) ?? null;
 }
 
 export function findReviewedExactRule(vietnameseText: string) {
   return findReviewedExactRuleMatch(vietnameseText)?.rule ?? null;
 }
 
-export function findReviewedAsrRuleMatch(vietnameseText: string) {
-  const exactMatch = findReviewedExactRuleMatch(vietnameseText);
-  if (exactMatch) {
-    return exactMatch;
-  }
+function findAsrRuleMatch(
+  vietnameseText: string,
+  indexes: RuleMatchIndexes,
+) {
+  const normalizedExact = normalizeVietnameseForExactMatch(vietnameseText);
+  const exactMatch = indexes.exact.get(normalizedExact);
+  if (exactMatch) return exactMatch;
 
-  const normalizedVietnamese = normalizeVietnameseForAsrRuleMatch(
-    vietnameseText,
-  );
-  const foldedMatch = asrRuleMatchByVietnamese.get(normalizedVietnamese);
-  if (!foldedMatch) {
-    return null;
-  }
-
-  return {
-    ...foldedMatch,
-    matchType: "asr_folded" as const,
-  };
+  const normalizedFolded = normalizeVietnameseForAsrRuleMatch(vietnameseText);
+  const foldedMatch = indexes.asrFolded.get(normalizedFolded);
+  return foldedMatch
+    ? { ...foldedMatch, matchType: "asr_folded" as const }
+    : null;
 }
 
-export function getReviewedExactRuleAudioTexts(limit?: number) {
-  const texts = [...new Set(reviewedExactRulesV1.map((rule) => rule.english))];
+export function findReviewedExactAsrRuleMatch(vietnameseText: string) {
+  return findAsrRuleMatch(vietnameseText, specialExactIndexes);
+}
+
+export function findReviewedCorpusRuleMatch(vietnameseText: string) {
+  return findAsrRuleMatch(vietnameseText, corpusIndexes);
+}
+
+export function findReviewedCorpusRule(vietnameseText: string) {
+  return findReviewedCorpusRuleMatch(vietnameseText)?.rule ?? null;
+}
+
+/** Combined lookup retained for transcript repair, with special rules first. */
+export function findReviewedAsrRuleMatch(vietnameseText: string) {
+  return (
+    findReviewedExactAsrRuleMatch(vietnameseText) ??
+    findReviewedCorpusRuleMatch(vietnameseText)
+  );
+}
+
+export function getReviewedRuleAudioTexts(limit?: number) {
+  const texts = [
+    ...new Set(reviewedAllTranslationRulesV1.map((rule) => rule.english)),
+  ];
   return limit === undefined ? texts : texts.slice(0, Math.max(0, limit));
 }

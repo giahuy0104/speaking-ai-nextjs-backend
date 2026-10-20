@@ -20,6 +20,7 @@ const repeatPromotionThreshold = 3;
 const promotableTextSources = new Set(["cloudflare", "openai", "text_cache"]);
 const ruleTextSources = new Set([
   "phrase_rule",
+  "corpus_rule",
   "keyword_rule",
   "promoted_rule",
   "semantic_cache",
