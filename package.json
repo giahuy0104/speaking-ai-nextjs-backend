@@ -3,6 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
+    "storage:migrate-tts": "node --import tsx scripts/migrate-tts-to-cloudinary.ts",
     "test:archive": "node --import tsx --test src/lib/storage/appRecordsArchiveCore.test.ts src/lib/db/schema.test.ts",
     "dev": "next dev",
     "build": "next build",

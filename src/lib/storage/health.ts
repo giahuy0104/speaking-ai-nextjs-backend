@@ -8,8 +8,10 @@ import {
 } from "@/lib/storage/config";
 import { pingR2Bucket } from "@/lib/storage/r2";
 import { countRecords } from "@/lib/db/records";
+import { getCloudinaryTtsConfig } from "./cloudinaryTts";
 
 export async function getStorageHealth() {
+  if (getAudioStorageBackend() === "cloudinary") getCloudinaryTtsConfig();
   const configuration = getStorageConfiguration();
   const database = isPostgresStorageEnabled()
     ? await pingDatabase()

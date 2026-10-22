@@ -1,5 +1,5 @@
 import path from "node:path";
-import { readGeneratedAudioFile } from "@/lib/storage/audio";
+import { getGeneratedAudioRedirect, readGeneratedAudioFile } from "@/lib/storage/audio";
 
 export const runtime = "nodejs";
 
@@ -72,6 +72,13 @@ async function serveCachedAudio(
   includeBody: boolean,
 ) {
   const { fileName } = await context.params;
+  const redirectUrl = await getGeneratedAudioRedirect(fileName);
+  if (redirectUrl) {
+    return new Response(null, {
+      status: 307,
+      headers: { Location: redirectUrl, "Cache-Control": "no-store" },
+    });
+  }
   const audio = await readGeneratedAudioFile(fileName);
 
   if (!audio) {

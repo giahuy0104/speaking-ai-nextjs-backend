@@ -4,6 +4,7 @@ import type {
 } from "@/types/conversation";
 import { measureStep, nowMs } from "@/lib/latency";
 import { logEvent } from "@/lib/observability";
+import { getAudioStorageBackend } from "@/lib/storage/config";
 import { transcribeVietnamese } from "./asr";
 import { resolvePrefetchedTranscriptForPipeline } from "./prefetchedTranscriptPolicy";
 import {
@@ -146,7 +147,8 @@ export async function prepareConversationPipeline(
   // known text-cache entries still resolve to durable audio before returning.
   const usesFastStreamingTts =
     !prefetchedAudio &&
-    (options.streamAudioOnCacheMiss || llm.value.source === "cloudflare");
+    (options.streamAudioOnCacheMiss || llm.value.source === "cloudflare" ||
+      getAudioStorageBackend() === "cloudinary");
   const tts = prefetchedAudio
     ? { value: prefetchedAudio, latencyMs: 0 }
     : await measureStep<AudioSynthesisResult>(() =>

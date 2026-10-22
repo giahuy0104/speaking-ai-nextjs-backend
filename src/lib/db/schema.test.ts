@@ -37,6 +37,9 @@ const expectedColumns = {
     "created_at",
   ],
   generated_audio: [
+    "cloudinary_url",
+    "cloudinary_public_id",
+    "audio_sha256",
     "file_name",
     "content_base64",
     "content_type",

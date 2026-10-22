@@ -1,5 +1,5 @@
 export type PersistenceBackend = "local" | "postgres";
-export type AudioStorageBackend = "local" | "postgres" | "vercel-blob" | "r2";
+export type AudioStorageBackend = "local" | "postgres" | "vercel-blob" | "r2" | "cloudinary";
 export type AudioSessionChunkStorageBackend = "local" | "postgres" | "r2";
 
 function positiveInteger(name: string, fallback: number) {
@@ -38,7 +38,8 @@ export function getAudioStorageBackend(): AudioStorageBackend {
     configuredBackend === "local" ||
     configuredBackend === "postgres" ||
     configuredBackend === "vercel-blob" ||
-    configuredBackend === "r2"
+    configuredBackend === "r2" ||
+    configuredBackend === "cloudinary"
   ) {
     return configuredBackend;
   }

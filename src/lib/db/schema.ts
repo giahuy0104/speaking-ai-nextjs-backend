@@ -96,6 +96,9 @@ export const managedStorageSchemaStatements = [
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
   )`,
   `ALTER TABLE generated_audio
+    ADD COLUMN IF NOT EXISTS cloudinary_url TEXT,
+    ADD COLUMN IF NOT EXISTS cloudinary_public_id TEXT,
+    ADD COLUMN IF NOT EXISTS audio_sha256 TEXT,
     ADD COLUMN IF NOT EXISTS file_name TEXT,
     ADD COLUMN IF NOT EXISTS content_base64 TEXT,
     ADD COLUMN IF NOT EXISTS content_type TEXT NOT NULL DEFAULT 'audio/mpeg',

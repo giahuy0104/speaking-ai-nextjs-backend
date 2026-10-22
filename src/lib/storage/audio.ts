@@ -17,6 +17,7 @@ import {
   getR2StorageConfig,
 } from "@/lib/storage/config";
 import { queryDatabase } from "@/lib/db";
+import { getCloudinaryTtsUrl, saveCloudinaryTts } from "./cloudinaryTts";
 import {
   getR2Client,
   isR2NotFound,
@@ -284,6 +285,10 @@ export async function saveGeneratedAudio(
 ) {
   const fileName = `${conversationId}.${extension}`;
 
+  if (getAudioStorageBackend() === "cloudinary") {
+    return saveCloudinaryTts(fileName, new Uint8Array(audio));
+  }
+
   if (getAudioStorageBackend() === "vercel-blob") {
     return saveBlobAudio(fileName, audio);
   }
@@ -312,7 +317,7 @@ export async function readGeneratedAudioFile(fileName: string) {
     return null;
   }
 
-  if (getAudioStorageBackend() === "postgres") {
+  if (getAudioStorageBackend() === "postgres" || getAudioStorageBackend() === "cloudinary") {
     return readPostgresAudio(fileName);
   }
   if (getAudioStorageBackend() === "r2") {
@@ -342,6 +347,13 @@ export async function getReusableAudioUrl(
 ) {
   const fileName = getReusableAudioFileName(descriptor);
 
+  if (getAudioStorageBackend() === "cloudinary") {
+    const url = await getCloudinaryTtsUrl(fileName);
+    if (url) return url;
+    // Existing PostgreSQL bytes remain usable during a resumable migration.
+    return (await postgresAudioExists(fileName)) ? localAudioUrl(fileName) : null;
+  }
+
   if (getAudioStorageBackend() === "vercel-blob") {
     return getBlobUrl(fileName);
   }
@@ -370,6 +382,10 @@ export async function saveReusableAudio(
 ) {
   const fileName = getReusableAudioFileName(descriptor);
 
+  if (getAudioStorageBackend() === "cloudinary") {
+    return saveCloudinaryTts(fileName, new Uint8Array(audio));
+  }
+
   if (getAudioStorageBackend() === "vercel-blob") {
     return saveBlobAudio(fileName, audio);
   }
@@ -388,4 +404,10 @@ export async function saveReusableAudio(
   await writeAudioAtomically(outputPath, audio);
 
   return relativeUrl;
+}
+
+export async function getGeneratedAudioRedirect(fileName: string) {
+  if (!safeGeneratedAudioFileName.test(fileName) || !fileName.endsWith(".mp3")) return null;
+  if (getAudioStorageBackend() !== "cloudinary") return null;
+  return getCloudinaryTtsUrl(fileName);
 }
