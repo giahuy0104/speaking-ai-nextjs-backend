@@ -204,8 +204,10 @@ export async function appendConversationHistory(
     createdAt: new Date().toISOString(),
     inputMode,
     reviewStatus: "unreviewed",
-    learningStatus: initialLearningStatus(conversation.textSource),
-    learningUseCount: adaptiveTextSources.has(conversation.textSource)
+    learningStatus: conversation.targetLanguage && conversation.targetLanguage !== "en"
+      ? "not_eligible"
+      : initialLearningStatus(conversation.textSource),
+    learningUseCount: (!conversation.targetLanguage || conversation.targetLanguage === "en") && adaptiveTextSources.has(conversation.textSource)
       ? 1
       : undefined,
   };

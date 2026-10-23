@@ -1,7 +1,11 @@
 import type { ConversationRequest } from "@/types/conversation";
 import type { PracticeContext } from "@/types/conversation";
 import { AppError, toErrorResponse } from "@/lib/errors";
-import { runConversationPipeline } from "@/lib/ai/pipeline";
+import {
+  runConversationPipeline,
+  runTargetLanguageConversationPipeline,
+} from "@/lib/ai/pipeline";
+import { parseTargetLanguage } from "@/lib/ai/targetLanguage";
 import { getCloudflareAudioMaxBytes } from "@/lib/ai/cloudflareWorkersAi";
 import { scheduleConversationPostResponseTasks } from "@/lib/ai/postResponseTasks";
 import { requireInstallationAccess } from "@/lib/installationAuth";
@@ -33,7 +37,7 @@ function validateRequest(body: unknown): ConversationRequest {
         : undefined,
     context: input.context,
     childAge: input.childAge ?? 6,
-    targetLanguage: "en",
+    targetLanguage: parseTargetLanguage(input.targetLanguage),
     sessionId: input.sessionId,
     sourceText: input.sourceText,
     asrMode:
@@ -102,7 +106,7 @@ function validateFormData(formData: FormData): ConversationRequest {
     clientId: getFormValue(formData, "clientId"),
     context,
     childAge,
-    targetLanguage: "en",
+    targetLanguage: parseTargetLanguage(getFormValue(formData, "targetLanguage")),
     sessionId: getFormValue(formData, "sessionId"),
     sourceText,
     audioFile: audioFile instanceof File ? audioFile : undefined,
@@ -145,9 +149,8 @@ export async function POST(request: Request) {
       parsedInput.clientId,
     );
     const input = { ...parsedInput, clientId: access.clientId };
-    const result = await runConversationPipeline(
-      { ...input, requestId },
-      {
+    const result = input.targetLanguage === "en"
+      ? await runConversationPipeline({ ...input, requestId }, {
         deferTextCacheWrite: true,
         // Worker Prepare is the primary iOS Web fast path. If a valid Worker
         // transcript reaches this compatibility route instead, prime TTS while
@@ -155,9 +158,9 @@ export async function POST(request: Request) {
         // request only after receiving the conversation result. APK Batch
         // Chunks keeps its established behavior because it never uses
         // browser_streaming here.
-        eagerAudioOnCacheMiss: input.asrMode === "browser_streaming",
-      },
-    );
+          eagerAudioOnCacheMiss: input.asrMode === "browser_streaming",
+        })
+      : await runTargetLanguageConversationPipeline({ ...input, requestId });
     scheduleConversationPostResponseTasks(
       result,
       isMultipart ||

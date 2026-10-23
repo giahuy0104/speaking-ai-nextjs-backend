@@ -1,17 +1,22 @@
 import type {
   ConversationRequest,
   ConversationResponse,
+  TargetLanguage,
 } from "@/types/conversation";
 import { measureStep, nowMs } from "@/lib/latency";
 import { logEvent } from "@/lib/observability";
 import { getAudioStorageBackend } from "@/lib/storage/config";
+import { getReusableAudioUrl, saveReusableAudio } from "@/lib/storage/audio";
+import { AppError } from "@/lib/errors";
 import { transcribeVietnamese } from "./asr";
 import { resolvePrefetchedTranscriptForPipeline } from "./prefetchedTranscriptPolicy";
 import {
   generateEnglishSentence,
   type EnglishGenerationResult,
 } from "./llm";
-import { PROMPT_VERSION } from "./prompts";
+import { buildTargetLanguageInstruction, PROMPT_VERSION } from "./prompts";
+import { CloudflareTextProviderError, translateVietnameseWithCloudflare } from "./cloudflareText";
+import { getTargetTtsProfile, requestTargetSpeech } from "./aiProvider";
 import {
   prepareEnglishAudio,
   synthesizeEnglishAudio,
@@ -54,6 +59,107 @@ export type PreparedConversationPipeline = {
 
 function createId(prefix: string) {
   return `${prefix}_${crypto.randomUUID().slice(0, 8)}`;
+}
+
+function normalizeTargetTranslation(text: string) {
+  return text.trim().replace(/^[“「«]/u, "").replace(/[”」»]$/u, "").trim();
+}
+
+function invalidTargetTranslation(
+  text: string,
+  language: Exclude<TargetLanguage, "en">,
+) {
+  if (!text || text.length > 500 || /[\r\n]/u.test(text)) return true;
+  if (language === "zh") return !/[\u3400-\u9fff]/u.test(text);
+  if (language === "ja") return !/[\u3040-\u30ff\u3400-\u9fff]/u.test(text);
+  if (language === "ko") return !/[\uac00-\ud7af]/u.test(text);
+  return false;
+}
+
+export async function runTargetLanguageConversationPipeline(
+  input: ConversationRequest,
+): Promise<ConversationResponse> {
+  const language = input.targetLanguage;
+  if (language === "en") {
+    throw new AppError("BAD_REQUEST", "Ngôn ngữ dịch không hợp lệ.", 400);
+  }
+  const startedAt = nowMs();
+  const asr = await measureStep(() => transcribeVietnamese(input));
+  const translation = await measureStep(async () => {
+    try {
+      return await translateVietnameseWithCloudflare(
+        asr.value,
+        buildTargetLanguageInstruction(language, input.context, input.childAge),
+        128,
+      );
+    } catch (error) {
+      if (error instanceof CloudflareTextProviderError) {
+        throw new AppError(
+          "LLM_FAILED",
+          "Chưa dịch được câu này. Bạn thử lại nhé.",
+          error.reason === "not_configured" ? 503 : 502,
+        );
+      }
+      throw error;
+    }
+  });
+  const translatedText = normalizeTargetTranslation(translation.value.englishText);
+  if (invalidTargetTranslation(translatedText, language)) {
+    throw new AppError("LLM_FAILED", "Chưa dịch được câu này sang ngôn ngữ đã chọn.", 502);
+  }
+
+  const profile = getTargetTtsProfile(language);
+  const descriptor = {
+    text: translatedText.normalize("NFKC").replace(/\s+/g, " ").trim(),
+    model: profile.model,
+    voice: profile.voice,
+    speed: profile.speed,
+    extension: profile.extension,
+  };
+  const tts = await measureStep(async () => {
+    try {
+      const cachedUrl = await getReusableAudioUrl(descriptor);
+      if (cachedUrl) return { audioUrl: cachedUrl, source: "cache" as const };
+      const audio = await requestTargetSpeech(translatedText, language);
+      const audioUrl = await saveReusableAudio(descriptor, audio);
+      return { audioUrl, source: "cloudflare_tts" as const };
+    } catch (error) {
+      logEvent("warn", "target_translation_audio_unavailable", {
+        requestId: input.requestId,
+        language,
+        error,
+      });
+      return { audioUrl: null, source: "device_tts" as const };
+    }
+  });
+
+  const result: ConversationResponse = {
+    requestId: input.requestId,
+    clientId: input.clientId,
+    conversationId: createId("conv"),
+    sessionId: input.sessionId ?? createId("sess"),
+    context: input.context,
+    vietnameseText: asr.value,
+    englishText: "",
+    targetLanguage: language,
+    translatedText,
+    audioUrl: tts.value.audioUrl,
+    promptVersion: PROMPT_VERSION,
+    processingMode: "ai",
+    textSource: "cloudflare",
+    textProvider: "cloudflare",
+    textModel: translation.value.model,
+    audioSource: tts.value.source,
+    asrMode: input.asrMode ?? (input.audioFile ? "batch_chunks" : "text"),
+    benchmark: input.benchmark,
+    latency: {
+      asrMs: asr.latencyMs,
+      llmMs: translation.latencyMs,
+      ttsMs: tts.latencyMs,
+      timeToFirstAudioMs: Math.round(nowMs() - startedAt),
+    },
+  };
+  return result;
 }
 
 export async function prepareConversationPipeline(

@@ -6,6 +6,11 @@ import { AppError } from "@/lib/appError";
 const defaultCloudflareAsrModel = "@cf/openai/whisper-large-v3-turbo";
 const defaultCloudflareTextModel = "@cf/qwen/qwen3-30b-a3b-fp8";
 const defaultCloudflareTtsModel = "@cf/deepgram/aura-1";
+const multilingualCloudflareTtsModel = "xai/grok-tts";
+
+export type TargetSpeechLanguage = "zh" | "ja" | "ko" | "fr";
+
+const targetSpeechVoice = "ara";
 
 type ProviderErrorCode = Extract<
   ApiErrorCode,
@@ -303,6 +308,82 @@ export function getConfiguredTtsProfile(): TtsProfile {
     speed: 1,
     extension: "mp3",
   };
+}
+
+export function getTargetTtsProfile(language: TargetSpeechLanguage): TtsProfile {
+  return {
+    provider: "cloudflare",
+    model: multilingualCloudflareTtsModel,
+    voice: `${targetSpeechVoice}-${language}`,
+    speed: 1,
+    extension: "mp3",
+  };
+}
+
+export async function requestTargetSpeech(
+  text: string,
+  language: TargetSpeechLanguage,
+): Promise<ArrayBuffer> {
+  const config = requireCloudflareConfig("TTS_FAILED");
+  const response = await fetchProvider(
+    `https://api.cloudflare.com/client/v4/accounts/${encodeURIComponent(config.accountId)}/ai/run`,
+    {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${config.apiToken}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        model: multilingualCloudflareTtsModel,
+        input: { text, language, voice_id: targetSpeechVoice },
+      }),
+    },
+    "TTS_FAILED",
+    positiveInteger("CLOUDFLARE_MULTILINGUAL_TTS_TIMEOUT_MS", 30_000),
+  );
+
+  if (!response.ok) {
+    throw new AppError(
+      "TTS_FAILED",
+      providerMessage(response.status, "Cloudflare chưa tạo được giọng đọc bản dịch."),
+      providerStatus(response.status),
+    );
+  }
+
+  const payload = (await response.json().catch(() => null)) as
+    | CloudflareEnvelope<{ audio?: unknown }>
+    | null;
+  const audioUrl = payload?.result?.audio;
+  if (payload?.success === false || typeof audioUrl !== "string") {
+    throw new AppError("TTS_FAILED", "Cloudflare chưa trả về URL âm thanh.", 502);
+  }
+  let url: URL;
+  try {
+    url = new URL(audioUrl);
+  } catch {
+    throw new AppError("TTS_FAILED", "Cloudflare trả về URL âm thanh không hợp lệ.", 502);
+  }
+  const host = url.hostname.toLowerCase();
+  if (url.protocol !== "https:" || url.username || url.password ||
+      !(host.endsWith(".cloudflare.com") || host.endsWith(".r2.dev") ||
+        host.endsWith(".cloudflarestorage.com"))) {
+    throw new AppError("TTS_FAILED", "Cloudflare trả về URL âm thanh không hợp lệ.", 502);
+  }
+  const audioResponse = await fetchProvider(
+    url.toString(),
+    { method: "GET", redirect: "error" },
+    "TTS_FAILED",
+    positiveInteger("CLOUDFLARE_MULTILINGUAL_TTS_DOWNLOAD_TIMEOUT_MS", 20_000),
+  );
+  if (!audioResponse.ok ||
+      !audioResponse.headers.get("content-type")?.includes("audio/mpeg")) {
+    throw new AppError("TTS_FAILED", "Không tải được MP3 bản dịch từ Cloudflare.", 502);
+  }
+  const audio = await audioResponse.arrayBuffer();
+  if (audio.byteLength === 0 || audio.byteLength > 10 * 1024 * 1024) {
+    throw new AppError("TTS_FAILED", "Cloudflare trả về MP3 bản dịch không hợp lệ.", 502);
+  }
+  return audio;
 }
 
 export async function generateAiText(options: {

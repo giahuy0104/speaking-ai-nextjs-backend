@@ -18,7 +18,9 @@ import { normalizeVietnameseForExactMatch } from "@/lib/ai/exactRules";
 import {
   completePreparedConversationPipeline,
   runConversationPipeline,
+  runTargetLanguageConversationPipeline,
 } from "@/lib/ai/pipeline";
+import { parseTargetLanguage } from "@/lib/ai/targetLanguage";
 import { scheduleConversationPostResponseTasks } from "@/lib/ai/postResponseTasks";
 import { AppError, toErrorResponse } from "@/lib/errors";
 import {
@@ -42,6 +44,7 @@ import type {
   ConversationRequest,
   ConversationResponse,
   PracticeContext,
+  TargetLanguage,
 } from "@/types/conversation";
 import { getRequestId, logEvent, withRequestId } from "@/lib/observability";
 
@@ -55,6 +58,7 @@ type FinalizeRequest = {
   clientId?: string;
   context?: PracticeContext;
   childAge?: number;
+  targetLanguage?: TargetLanguage;
   sessionId?: string;
   sourceText?: string;
   asrMode?: AsrMode;
@@ -125,6 +129,7 @@ export async function POST(request: Request, context: RouteContext) {
     const rawBody = await request.text();
     requestHash = createHash("sha256").update(rawBody).digest("hex");
     const body = JSON.parse(rawBody) as FinalizeRequest;
+    const targetLanguage = parseTargetLanguage(body.targetLanguage);
     const claimedClientId = body.clientId?.trim() || undefined;
     const uploadClaims = authorizeAudioSessionRequest(
       request,
@@ -203,6 +208,30 @@ export async function POST(request: Request, context: RouteContext) {
         ? "browser_streaming"
         : "batch_chunks";
     let audioFile: File | undefined;
+    const finishTargetTranslation = async (recordedAudio?: File) => {
+      const result = await runTargetLanguageConversationPipeline({
+        requestId,
+        clientId: uploadClaims?.clientId ?? claimedClientId,
+        context: practiceContext,
+        childAge: body.childAge ?? 6,
+        targetLanguage,
+        sessionId: body.sessionId,
+        sourceText: asrMode === "browser_streaming" ? body.sourceText?.trim() : undefined,
+        audioFile: recordedAudio,
+        asrMode,
+        benchmark: body.benchmark,
+      });
+      const responsePayload = { ...result, learning: null };
+      await completeAudioSessionFinalize(audioSessionId, requestHash, responsePayload);
+      finalizeClaimed = false;
+      scheduleConversationPostResponseTasks(result, "audio", {
+        userAudio: recordedAudio,
+      });
+      return withRequestId(Response.json(responsePayload), requestId);
+    };
+    if (targetLanguage !== "en" && asrMode === "browser_streaming") {
+      return await finishTargetTranslation();
+    }
     let assemblySource: AudioAssemblySource | undefined;
     let prefetchedSourceText: string | undefined;
     let batchPrefetchUsed = false;
@@ -280,6 +309,9 @@ export async function POST(request: Request, context: RouteContext) {
           "Thiếu metadata PCM khi finalize Batch Chunks.",
           400,
         );
+      }
+      if (targetLanguage !== "en") {
+        return await finishTargetTranslation(audioFile);
       }
       hedgedAsrPromise = transcribeAudioSessionOnce({
         audioSessionId,

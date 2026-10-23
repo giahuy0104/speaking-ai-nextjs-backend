@@ -68,6 +68,7 @@ export function buildCloudflareTextTranslationBody(
   model: string,
   instructions: string,
   vietnameseText: string,
+  maxCompletionTokens = 48,
 ) {
   return {
     model,
@@ -79,7 +80,7 @@ export function buildCloudflareTextTranslationBody(
     // One short child-facing sentence is the entire product output. A tighter
     // budget prevents the model from appending alternatives or explanations,
     // and reduces both text latency and the downstream TTS duration.
-    max_completion_tokens: 48,
+    max_completion_tokens: maxCompletionTokens,
     stream: false,
   } as const;
 }
@@ -107,6 +108,7 @@ function extractTextContent(content: unknown) {
 export async function translateVietnameseWithCloudflare(
   vietnameseText: string,
   instructions: string,
+  maxCompletionTokens = 48,
 ) {
   const config = getCloudflareTextConfig();
   let response: Response;
@@ -125,6 +127,7 @@ export async function translateVietnameseWithCloudflare(
             config.model,
             instructions,
             vietnameseText,
+            maxCompletionTokens,
           ),
         ),
         signal: AbortSignal.timeout(config.timeoutMs),

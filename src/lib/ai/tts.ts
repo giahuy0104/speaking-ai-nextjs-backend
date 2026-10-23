@@ -9,7 +9,7 @@ import {
 
 export type AudioSynthesisResult = {
   audioUrl: string;
-  source: AudioSource;
+  source: Exclude<AudioSource, "device_tts">;
   /// True when audioUrl points at durable reusable storage, including a
   /// provider miss that has just been synthesized and saved.
   cacheReady: boolean;
