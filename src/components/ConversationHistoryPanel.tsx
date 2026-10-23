@@ -63,7 +63,7 @@ export function ConversationHistoryPanel({
                 <th className="py-2 pr-3 font-semibold">{pick("Thời gian", "时间")}</th>
                 <th className="py-2 pr-3 font-semibold">{pick("Ngữ cảnh", "场景")}</th>
                 <th className="py-2 pr-3 font-semibold">{pick("Trẻ nói", "孩子说")}</th>
-                <th className="py-2 pr-3 font-semibold">{pick("Tiếng Anh", "英文")}</th>
+                <th className="py-2 pr-3 font-semibold">{pick("Bản dịch", "译文")}</th>
                 <th className="py-2 pr-3 font-semibold">{pick("Audio đầu", "首个音频")}</th>
                 <th className="py-2 pr-3 font-semibold">{pick("Chi tiết", "详情")}</th>
                 <th className="py-2 pr-3 font-semibold">{pick("Đánh giá", "审核")}</th>
@@ -100,7 +100,10 @@ export function ConversationHistoryPanel({
                     {item.vietnameseText}
                   </td>
                   <td className="py-3 pr-3 text-blue-700">
-                    {item.englishText}
+                    <span className="mr-1 text-xs uppercase text-slate-500">
+                      {item.targetLanguage ?? "en"}
+                    </span>
+                    {item.translatedText ?? item.englishText}
                   </td>
                   <td className="py-3 pr-3 font-semibold text-slate-950">
                     {item.latency
@@ -139,7 +142,8 @@ export function ConversationHistoryPanel({
                       >
                         {pick("Sai ý", "意思错误")}
                       </button>
-                      {["openai", "cloudflare", "text_cache"].includes(
+                      {(item.targetLanguage ?? "en") === "en" &&
+                      ["openai", "cloudflare", "text_cache"].includes(
                         item.textSource,
                       ) ? (
                         <button

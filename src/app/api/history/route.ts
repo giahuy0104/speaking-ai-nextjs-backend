@@ -194,7 +194,8 @@ export async function PATCH(request: Request) {
 
     let learning = null;
 
-    if (typeof body.qualityApproved === "boolean") {
+    if (typeof body.qualityApproved === "boolean" &&
+        (!conversation.targetLanguage || conversation.targetLanguage === "en")) {
       try {
         learning = body.qualityApproved
           ? await learnFromPositiveFeedback(conversation)

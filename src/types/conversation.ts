@@ -1,6 +1,6 @@
 export type PracticeContext = "home" | "school" | "outside";
 
-export type TargetLanguage = "en";
+export type TargetLanguage = "en" | "zh" | "ja" | "ko" | "fr";
 
 export type AsrMode =
   | "text"
@@ -193,7 +193,7 @@ export type TextSource =
   | "cloudflare"
   | "fallback";
 
-export type AudioSource = "cache" | "openai_tts" | "cloudflare_tts";
+export type AudioSource = "cache" | "openai_tts" | "cloudflare_tts" | "device_tts";
 
 export type ConversationReviewStatus =
   "unreviewed" | "approved" | "rejected" | "needs_review";
@@ -217,6 +217,8 @@ export type ConversationResponse = {
   context: PracticeContext;
   vietnameseText: string;
   englishText: string;
+  targetLanguage?: TargetLanguage;
+  translatedText?: string;
   audioUrl: string | null;
   promptVersion: string;
   processingMode: ProcessingMode;

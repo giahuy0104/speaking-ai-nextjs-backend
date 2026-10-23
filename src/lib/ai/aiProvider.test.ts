@@ -4,10 +4,14 @@ import { AppError } from "@/lib/appError";
 import {
   generateAiText,
   getConfiguredTtsProfile,
+  getTargetTtsProfile,
   getTextAiProfile,
   requestEnglishSpeech,
+  requestTargetSpeech,
   transcribeVietnameseAudio,
 } from "./aiProvider";
+import { parseTargetLanguage } from "./targetLanguage";
+import { buildTargetLanguageInstruction } from "./prompts";
 
 const originalFetch = globalThis.fetch;
 const environmentKeys = [
@@ -158,6 +162,67 @@ test("requests MP3 speech from Cloudflare", async () => {
     new Uint8Array(await speech.response.arrayBuffer()),
     new Uint8Array([1, 2, 3]),
   );
+});
+
+test("accepts old English requests and validates target languages", () => {
+  assert.equal(parseTargetLanguage(undefined), "en");
+  for (const language of ["en", "zh", "ja", "ko", "fr"] as const) {
+    assert.equal(parseTargetLanguage(language), language);
+  }
+  assert.throws(() => parseTargetLanguage("de"), (error: unknown) =>
+    error instanceof AppError && error.code === "BAD_REQUEST" && error.status === 400,
+  );
+  assert.match(buildTargetLanguageInstruction("ja", "home", 6), /Japanese/);
+  assert.match(buildTargetLanguageInstruction("ja", "home", 6), /without romaji/);
+});
+
+test("downloads Cloudflare multilingual MP3 for each new output language", async () => {
+  configureCloudflare();
+  for (const language of ["zh", "ja", "ko", "fr"] as const) {
+    let requests = 0;
+    globalThis.fetch = async (input, init) => {
+      requests++;
+      if (requests === 1) {
+        assert.equal(
+          String(input),
+          "https://api.cloudflare.com/client/v4/accounts/test-account/ai/run",
+        );
+        assert.deepEqual(JSON.parse(String(init?.body)), {
+          model: "xai/grok-tts",
+          input: { text: "Translated sentence.", language, voice_id: "ara" },
+        });
+        return Response.json({
+          state: "Completed",
+          result: { audio: "https://audio.r2.dev/result.mp3" },
+        });
+      }
+      assert.equal(String(input), "https://audio.r2.dev/result.mp3");
+      assert.equal(init?.method, "GET");
+      return new Response(new Uint8Array([1, 2, 3]), {
+        headers: { "Content-Type": "audio/mpeg" },
+      });
+    };
+    assert.equal(getTargetTtsProfile(language).voice, `ara-${language}`);
+    assert.deepEqual(
+      new Uint8Array(await requestTargetSpeech("Translated sentence.", language)),
+      new Uint8Array([1, 2, 3]),
+    );
+    assert.equal(requests, 2);
+  }
+});
+
+test("rejects a non-Cloudflare audio URL before downloading it", async () => {
+  configureCloudflare();
+  let requests = 0;
+  globalThis.fetch = async () => {
+    requests++;
+    return Response.json({ result: { audio: "https://example.com/audio.mp3" } });
+  };
+  await assert.rejects(
+    () => requestTargetSpeech("Bonjour.", "fr"),
+    (error: unknown) => error instanceof AppError && error.code === "TTS_FAILED",
+  );
+  assert.equal(requests, 1);
 });
 
 test("does not call another provider when Cloudflare TTS fails", async () => {

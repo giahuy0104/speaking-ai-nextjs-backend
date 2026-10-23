@@ -1,4 +1,4 @@
-import type { PracticeContext } from "@/types/conversation";
+import type { PracticeContext, TargetLanguage } from "@/types/conversation";
 
 export { PROMPT_VERSION } from "./translationPolicy";
 
@@ -13,6 +13,25 @@ export const sampleVietnameseByContext: Record<PracticeContext, string[]> = {
   school: ["Con quen sach roi", "Con can but chi", "Con khong hieu bai"],
   outside: ["Con muon mua cai nay", "Con bi lac", "Con can giup do"],
 };
+
+export function buildTargetLanguageInstruction(
+  language: Exclude<TargetLanguage, "en">,
+  context: PracticeContext,
+  childAge = 6,
+) {
+  const target = {
+    zh: "natural Simplified Chinese written in Chinese characters, without pinyin",
+    ja: "natural Japanese written in Japanese script, without romaji",
+    ko: "natural Korean written in Hangul",
+    fr: "natural French",
+  }[language];
+  return `Translate the child's Vietnamese utterance directly into ${target}.
+Preserve the speaker, addressee, kinship terms, negation, action, object, ownership, quantity, time, place, and whether it is a statement, question or request.
+Translate every sentence, including incomplete ones, without completing the child's thought.
+Do not answer the child, add information, change the meaning, or translate through English.
+Return only the translation, without a label, quotation marks, romanization or explanation.
+Context for resolving genuine ambiguity only: ${contextLabels[context]}; child_age=${childAge}.`;
+}
 
 export function buildEnglishInstruction(context: PracticeContext, childAge = 6) {
   return `You translate a child's Vietnamese utterance into faithful, natural, grammatically correct English.

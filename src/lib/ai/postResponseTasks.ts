@@ -60,18 +60,21 @@ export function scheduleConversationPostResponseTasks(
     const startedAt = Date.now();
     try {
       await appendConversationHistory(result, inputMode);
-      const tasks: Promise<unknown>[] = [maybeLearnFromRepeatedUse(result)];
+      const tasks: Array<{ name: string; work: Promise<unknown> }> = [];
+      if (!result.targetLanguage || result.targetLanguage === "en") {
+        tasks.push({ name: "adaptive_learning", work: maybeLearnFromRepeatedUse(result) });
+      }
       if (inputMode === "audio" && options.userAudio?.size) {
-        tasks.push(persistUserAudio(result, options.userAudio));
+        tasks.push({ name: "user_audio_upload", work: persistUserAudio(result, options.userAudio) });
       }
 
-      const taskResults = await Promise.allSettled(tasks);
+      const taskResults = await Promise.allSettled(tasks.map((task) => task.work));
       taskResults.forEach((taskResult, index) => {
         if (taskResult.status === "rejected") {
           logEvent("error", "conversation_post_response_subtask_failed", {
             requestId: result.requestId,
             conversationId: result.conversationId,
-            subtask: index === 0 ? "adaptive_learning" : "user_audio_upload",
+            subtask: tasks[index].name,
             error: taskResult.reason,
           });
         }
