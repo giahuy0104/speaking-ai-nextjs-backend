@@ -7,6 +7,7 @@ import { deleteR2Objects, getR2Client, isR2PreconditionFailed, readR2Object } fr
 
 export type JobAudio = { key: string; sha256: string; name: string; mime: string; bytes: number; backend: "local" | "r2" };
 const validKey = /^[a-f0-9]{64}-[a-f0-9]{64}\.bin$/;
+const r2TimeoutMs = 5000;
 function root() {
   const configured = process.env.AUDIO_TRANSLATION_JOB_SHARED_DIRECTORY;
   if (process.env.NODE_ENV === "production" && !configured) throw new Error("job_audio_requires_shared_storage");
@@ -29,7 +30,7 @@ export async function storeJobAudio(jobId: string, audio: File): Promise<JobAudi
     try {
       await getR2Client().send(new PutObjectCommand({ Bucket: config.bucket, Key: `audio-translation-jobs/${key}`,
         Body: bytes, ContentType: "application/octet-stream", CacheControl: "private, no-store", IfNoneMatch: "*" }),
-      { abortSignal: AbortSignal.timeout(5000) });
+      { abortSignal: AbortSignal.timeout(r2TimeoutMs) });
     } catch (error) { if (!isR2PreconditionFailed(error)) throw new Error("job_audio_unavailable"); }
   } else {
     const target = localPath(key);
@@ -46,13 +47,15 @@ export async function storeJobAudio(jobId: string, audio: File): Promise<JobAudi
 }
 export async function loadJobAudio(audio: JobAudio) {
   if (!validKey.test(audio.key)) throw new Error("invalid_job_audio_key");
-  const bytes = audio.backend === "r2" ? await readR2Object(`audio-translation-jobs/${audio.key}`) : await readFile(localPath(audio.key));
+  const bytes = audio.backend === "r2"
+    ? await readR2Object(`audio-translation-jobs/${audio.key}`, AbortSignal.timeout(r2TimeoutMs))
+    : await readFile(localPath(audio.key));
   if (bytes.length !== audio.bytes || createHash("sha256").update(bytes).digest("hex") !== audio.sha256) throw new Error("job_audio_integrity");
   return new File([new Uint8Array(bytes)], audio.name, { type: audio.mime });
 }
 export async function removeJobAudio(audio: JobAudio) {
   if (!validKey.test(audio.key)) throw new Error("invalid_job_audio_key");
-  if (audio.backend === "r2") await deleteR2Objects([`audio-translation-jobs/${audio.key}`]);
+  if (audio.backend === "r2") await deleteR2Objects([`audio-translation-jobs/${audio.key}`], AbortSignal.timeout(r2TimeoutMs));
   else await unlink(localPath(audio.key)).catch(error => { if (error.code !== "ENOENT") throw error; });
 }
 export async function cleanExpiredLocalJobAudio(maxAgeMs = 3_600_000) {

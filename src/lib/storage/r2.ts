@@ -44,10 +44,11 @@ export function isR2PreconditionFailed(error: unknown) {
   return status === 409 || status === 412;
 }
 
-export async function readR2Object(key: string) {
+export async function readR2Object(key: string, abortSignal?: AbortSignal) {
   const config = getR2CredentialsConfig();
   const response = await getR2Client().send(
     new GetObjectCommand({ Bucket: config.bucket, Key: key }),
+    { abortSignal },
   );
   if (!response.Body) {
     throw new Error(`R2 object không có nội dung: ${key}`);
@@ -55,7 +56,7 @@ export async function readR2Object(key: string) {
   return Buffer.from(await response.Body.transformToByteArray());
 }
 
-export async function deleteR2Objects(keys: string[]) {
+export async function deleteR2Objects(keys: string[], abortSignal?: AbortSignal) {
   const uniqueKeys = [...new Set(keys.filter(Boolean))];
   if (uniqueKeys.length === 0) return;
   const config = getR2CredentialsConfig();
@@ -71,6 +72,7 @@ export async function deleteR2Objects(keys: string[]) {
             .map((Key) => ({ Key })),
         },
       }),
+      { abortSignal },
     );
   }
 }
