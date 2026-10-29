@@ -16,7 +16,7 @@ type RuntimeOptions = {
   telemetry?: TelemetrySink;
   clock?: () => number;
 };
-type ExecutionInput = { requestId: string; signal?: AbortSignal; telemetry?: TelemetrySink;
+type ExecutionInput = { requestId: string; parentRequestId?: string; signal?: AbortSignal; telemetry?: TelemetrySink;
   timing?: ReturnType<typeof createDeadline> };
 
 async function defaultStore(config: PoolConfig): Promise<AdmissionStore> {
@@ -61,6 +61,7 @@ export function createPoolRuntime(options: RuntimeOptions = {}) {
       dispatcher ??= new AccountDispatcher(config!, lazyStore, options.telemetry ?? input.telemetry, clock);
       const execution: CloudflareExecutionContext = Object.freeze({
         requestId: input.requestId, workload, ...timing,
+        ...(input.parentRequestId ? { parentRequestId: input.parentRequestId } : {}),
         // Legacy requests remain pinned and never gain automatic inference retry.
         attempts: { used: 0, max: workload === "audio-translate" ? config!.maxAttemptsPerRequest : 1 }, dispatcher,
         admissionWait: { usedMs: slot.waitedMs },
@@ -104,7 +105,8 @@ export function createPoolRuntime(options: RuntimeOptions = {}) {
       const timing = createDeadline(input.timeoutMs, input.signal, clock());
       const workload = `legacy-${input.task}` as const;
       const sink = options.telemetry ?? input.telemetry;
-      const base = { requestId: input.requestId, workload, stage: "request", configVersion: current.configVersion };
+      const base = { requestId: input.requestId, workload, stage: "request", configVersion: current.configVersion,
+        ...(input.parentRequestId ? { parentRequestId: input.parentRequestId } : {}) };
       try {
         const slot = await queue!.acquire(timing.signal, current.maxWaitMs, queueDepth =>
           emitTelemetry(sink, "cloudflare_pool_queued", { ...base, queueDepth }));

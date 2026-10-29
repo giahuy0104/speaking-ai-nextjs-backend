@@ -15,11 +15,28 @@ const DEFAULT_TEXT_TIMEOUT_MS = 6_000;
 type CloudflareChatEnvelope = {
   success?: boolean;
   choices?: Array<{
+    finish_reason?: unknown;
     message?: {
       content?: unknown;
     };
   }>;
+  usage?: { completion_tokens?: unknown };
   errors?: Array<{ code?: number; message?: string }>;
+};
+
+export type CloudflareTextCompletionMetadata = Readonly<{
+  model: string;
+  upstreamStatus: number;
+  finishReason: "stop" | "length" | "content_filter" | "tool_calls" | "other" | "unknown";
+  completionTokens?: number;
+}>;
+
+type TextTranslationOptions = {
+  signal?: AbortSignal;
+  execution?: CloudflareExecutionContext;
+  beforeProviderCall?: () => Promise<void>;
+  onCompletion?: (metadata: CloudflareTextCompletionMetadata) => void;
+  parentRequestId?: string;
 };
 
 export class CloudflareTextProviderError extends Error {
@@ -112,18 +129,44 @@ function extractTextContent(content: unknown) {
     .trim();
 }
 
+function readCompletion(
+  payload: CloudflareChatEnvelope | null,
+  model: string,
+  upstreamStatus: number,
+  onCompletion?: TextTranslationOptions["onCompletion"],
+) {
+  const reason = payload?.choices?.[0]?.finish_reason;
+  const finishReason = reason === undefined || reason === null ? "unknown"
+    : reason === "stop" || reason === "length" || reason === "content_filter" || reason === "tool_calls"
+      ? reason : "other";
+  const tokens = payload?.usage?.completion_tokens;
+  const metadata: CloudflareTextCompletionMetadata = Object.freeze({
+    model, upstreamStatus, finishReason,
+    ...(typeof tokens === "number" && Number.isSafeInteger(tokens) && tokens >= 0
+      ? { completionTokens: tokens } : {}),
+  });
+  // Diagnostic hooks must never turn a successful provider call into a failure.
+  try { onCompletion?.(metadata); } catch { /* best-effort telemetry */ }
+  const englishText = extractTextContent(payload?.choices?.[0]?.message?.content);
+  if (!englishText) {
+    throw attachFailureDiagnostics(new CloudflareTextProviderError("empty_response"),
+      { failureSource: "cloudflare", upstreamStatus });
+  }
+  return { englishText, model };
+}
+
 export async function translateVietnameseWithCloudflare(
   vietnameseText: string,
   instructions: string,
   maxCompletionTokens = 48,
-  options: { signal?: AbortSignal; execution?: CloudflareExecutionContext; beforeProviderCall?: () => Promise<void> } = {},
+  options: TextTranslationOptions = {},
 ) {
   if (options.execution) {
     const model = process.env.CLOUDFLARE_TEXT_MODEL?.trim() || DEFAULT_TEXT_MODEL;
     if (!/^@cf\/[a-z0-9._-]+\/[a-z0-9._-]+$/i.test(model)) {
       throw new CloudflareTextProviderError("invalid_model");
     }
-    const payload = await options.execution.dispatcher.execute(
+    const completion = await options.execution.dispatcher.execute(
       {
         context: options.execution,
         operation: "audio_translation_text",
@@ -162,13 +205,11 @@ export async function translateVietnameseWithCloudflare(
         if (!response.ok || payload === null || payload.success === false) {
           throw providerFaultFromResponse(response, payload);
         }
-        return payload;
+        return { payload, upstreamStatus: response.status };
       },
     );
     // Content validation belongs to the wrapper, outside provider retry.
-    const englishText = extractTextContent(payload.choices?.[0]?.message?.content);
-    if (!englishText) throw new CloudflareTextProviderError("empty_response");
-    return { englishText, model };
+    return readCompletion(completion.payload, model, completion.upstreamStatus, options.onCompletion);
   }
 
   const config = getCloudflareTextConfig();
@@ -199,7 +240,7 @@ export async function translateVietnameseWithCloudflare(
         signal,
         cache: "no-store",
       },
-      { task: "text", model: config.model, timeoutMs: config.timeoutMs },
+      { task: "text", model: config.model, timeoutMs: config.timeoutMs, parentRequestId: options.parentRequestId },
     );
     const raw = await response.text();
     try { payload = JSON.parse(raw) as CloudflareChatEnvelope | null; }
@@ -218,20 +259,13 @@ export async function translateVietnameseWithCloudflare(
     throw attachFailureDiagnostics(new CloudflareTextProviderError(
       response.status === 429 ? "rate_limited" : `http_${response.status}`,
       response.status,
-    ), { failureSource: "cloudflare", upstreamStatus: response.status });
+    ), getFailureDiagnostics(providerFaultFromResponse(response, payload)));
   }
 
-  const englishText = extractTextContent(
-    payload?.choices?.[0]?.message?.content,
-  );
-
-  if (!englishText) {
-    throw attachFailureDiagnostics(new CloudflareTextProviderError("empty_response"),
-      { failureSource: "cloudflare", upstreamStatus: response.status });
+  if (!payload || payload.success === false) {
+    throw attachFailureDiagnostics(new CloudflareTextProviderError("invalid_response"),
+      getFailureDiagnostics(providerFaultFromResponse(response, payload)));
   }
 
-  return {
-    englishText,
-    model: config.model,
-  };
+  return readCompletion(payload, config.model, response.status, options.onCompletion);
 }
