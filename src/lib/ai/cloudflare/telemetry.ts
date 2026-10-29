@@ -1,5 +1,5 @@
 export type TelemetrySink = (event: string, fields: Record<string, string | number | boolean>) => void;
-const fields = new Set(["requestId", "workload", "stage", "accountAlias", "model", "attempt",
+const fields = new Set(["requestId", "parentRequestId", "workload", "stage", "accountAlias", "model", "attempt",
   "admissionWaitMs", "queueDepth", "providerElapsedMs", "remainingBudgetMs", "status", "safeReason", "upstreamCodes", "configVersion",
   "failureSource", "abortCause", "upstreamStatus"]);
 const events = new Set(["cloudflare_pool_admission", "cloudflare_pool_attempt_completed",
@@ -11,6 +11,7 @@ export function emitTelemetry(sink: TelemetrySink | undefined, event: string, in
   const safe: Record<string, string | number | boolean> = {};
   for (const [key, value] of Object.entries(input)) {
     if (!fields.has(key)) continue;
+    if (key === "parentRequestId" && (typeof value !== "string" || !/^[a-zA-Z0-9._:-]{8,100}$/.test(value))) continue;
     if (typeof value === "string") safe[key] = value.slice(0, 150);
     else if (typeof value === "number" && Number.isFinite(value) || typeof value === "boolean") safe[key] = value;
   }

@@ -8,9 +8,10 @@ import { parsePoolConfig } from "./accountConfig";
 import { ASR_MODEL, poolEnv } from "./poolTestFixtures";
 import { quotaRules } from "./quotaPolicy";
 import { getFailureDiagnostics } from "./providerError";
+import type { TelemetrySink } from "./telemetry";
 
 const tts = "@cf/deepgram/aura-1";
-function setup(overrides: Record<string, string> = {}) {
+function setup(overrides: Record<string, string> = {}, telemetry: TelemetrySink | null = () => {}) {
   const env: NodeJS.ProcessEnv = { ...poolEnv(), CLOUDFLARE_POOL_SHARE_LEGACY_ACCOUNT: "true", CLOUDFLARE_ACCOUNT_ID: "a".repeat(32),
     CLOUDFLARE_POOL_MAX_WAIT_MS: "50", CLOUDFLARE_POOL_MIN_ATTEMPT_MS: "1", ...overrides };
   const accounts = JSON.parse(env.CLOUDFLARE_ACCOUNTS_JSON!);
@@ -20,7 +21,7 @@ function setup(overrides: Record<string, string> = {}) {
   accounts[0].limits.accountMaxConcurrent = 1;
   env.CLOUDFLARE_ACCOUNTS_JSON = JSON.stringify(accounts);
   const store = new MemoryAdmissionStore();
-  const runtime = createPoolRuntime({ env, storeFactory: () => store, telemetry: () => {} });
+  const runtime = createPoolRuntime({ env, storeFactory: () => store, ...(telemetry ? { telemetry } : {}) });
   const config = parsePoolConfig(env);
   const active = async (task: "asr" | "tts" = "tts") => (await store.snapshot(config.accounts[0].identity,
     quotaRules(config.accounts[0], task === "asr" ? "legacy_asr" : "legacy_tts", task === "asr" ? ASR_MODEL : tts))).active;
@@ -35,6 +36,29 @@ test("legacy off ignores invalid pool config and preserves the original fetch", 
   globalThis.fetch = async () => response;
   assert.equal(await createLegacyCloudflareFetch(runtime)(url(), {}, { task: "tts", model: tts, timeoutMs: 1000 }), response);
   await runtime.close();
+});
+
+test("legacy telemetry links the parent request without changing admission IDs or accepting unsafe IDs", async t => {
+  const originalFetch = globalThis.fetch;
+  const originalInfo = console.info;
+  t.after(() => { globalThis.fetch = originalFetch; console.info = originalInfo; });
+  const logs: Array<Record<string, unknown>> = [];
+  console.info = value => { logs.push(JSON.parse(value)); };
+  globalThis.fetch = async () => Response.json({ result: { text: "hello" } });
+  // Cover both a custom sink and the production sink cached by the dispatcher.
+  for (const sink of [null, (event: string, fields: Record<string, unknown>) => { logs.push({ event, ...fields }); }]) {
+    const s = setup({}, sink);
+    t.after(() => s.runtime.close());
+    for (const parentRequestId of ["multilingual-parent-request", "multilingual-second-request", "unsafe\nrequest"]) {
+      const first = logs.length;
+      await s.fetch(url(), {}, { task: "tts", model: tts, timeoutMs: 1000, parentRequestId });
+      const events = logs.slice(first);
+      assert.ok(events.length >= 2);
+      assert.ok(events.every(event => String(event.requestId).startsWith("legacy-")));
+      assert.ok(events.every(event => event.parentRequestId === (parentRequestId.includes("\n") ? undefined : parentRequestId)));
+      assert.ok(events.some(event => event.event === "cloudflare_pool_attempt_completed"));
+    }
+  }
 });
 
 test("pooled ASR and pinned legacy TTS share account concurrency without switching legacy accounts", async t => {

@@ -77,6 +77,7 @@ export type AttemptBudget = { used: number; max: number };
 
 export type CloudflareExecutionContext = Readonly<{
   requestId: string;
+  parentRequestId?: string;
   workload: "audio-translate" | "legacy-asr" | "legacy-text" | "legacy-tts";
   deadlineAt: number;
   signal: AbortSignal;

@@ -3,16 +3,18 @@ import { acquireLegacyExecution } from "./runtime";
 import { isPoolFailure, networkFault, PoolError, ProviderFault, providerFaultFromResponse, publicPoolError } from "./providerError";
 import type { CloudflareTask } from "./types";
 
-type Metadata = { task: CloudflareTask; model: string; timeoutMs: number; stream?: boolean };
+type Metadata = { task: CloudflareTask; model: string; timeoutMs: number; stream?: boolean; parentRequestId?: string };
 type Runtime = { acquireLegacyExecution: typeof acquireLegacyExecution };
 
 /** Only inference calls use this transport. Storage downloads do not consume AI quota. */
 export function createLegacyCloudflareFetch(runtime: Runtime = { acquireLegacyExecution }) {
   return async (url: string, init: RequestInit, metadata: Metadata): Promise<Response> => {
     const stage = metadata.task === "text" ? "text_translation" : metadata.task;
+    const parentRequestId = metadata.parentRequestId && /^[a-zA-Z0-9._:-]{8,100}$/.test(metadata.parentRequestId)
+      ? metadata.parentRequestId : undefined;
     let handle: Awaited<ReturnType<typeof acquireLegacyExecution>>;
     try {
-      handle = await runtime.acquireLegacyExecution({ requestId: `legacy-${randomUUID()}`, task: metadata.task,
+      handle = await runtime.acquireLegacyExecution({ requestId: `legacy-${randomUUID()}`, parentRequestId, task: metadata.task,
         timeoutMs: metadata.timeoutMs, signal: init.signal ?? undefined,
         telemetry: (event, fields) => console.info(JSON.stringify({ timestamp: new Date().toISOString(), level: "info", event, ...fields })) });
     } catch (error) { throw publicPoolError(error, stage); }

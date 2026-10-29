@@ -3,6 +3,7 @@ import { AppError } from "@/lib/appError";
 import { fetchLegacyCloudflare } from "./cloudflare/legacyAdmission";
 import { clientAbortSignal, combineAbortSignals, timeoutSignal } from "./cloudflare/abortDiagnostics";
 import type { CloudflareTask } from "./cloudflare/types";
+import { attachFailureDiagnostics } from "./cloudflare/providerError";
 
 // `@cf/openai/...` is a model namespace in Cloudflare's catalog. Requests are
 // still sent only to api.cloudflare.com; this does not use an OpenAI account.
@@ -139,7 +140,7 @@ async function fetchProvider(
   init: RequestInit,
   errorCode: ProviderErrorCode,
   timeoutMs: number,
-  inference?: { task: CloudflareTask; model: string; stream?: boolean },
+  inference?: { task: CloudflareTask; model: string; stream?: boolean; parentRequestId?: string },
 ) {
   try {
     const options = {
@@ -332,6 +333,7 @@ export function getTargetTtsProfile(language: TargetSpeechLanguage): TtsProfile 
 export async function requestTargetSpeech(
   text: string,
   language: TargetSpeechLanguage,
+  options: { parentRequestId?: string } = {},
 ): Promise<ArrayBuffer> {
   const config = requireCloudflareConfig("TTS_FAILED");
   const response = await fetchProvider(
@@ -349,15 +351,16 @@ export async function requestTargetSpeech(
     },
     "TTS_FAILED",
     positiveInteger("CLOUDFLARE_MULTILINGUAL_TTS_TIMEOUT_MS", 30_000),
-    { task: "tts", model: multilingualCloudflareTtsModel },
+    { task: "tts", model: multilingualCloudflareTtsModel, parentRequestId: options.parentRequestId },
   );
 
   if (!response.ok) {
-    throw new AppError(
+    throw attachFailureDiagnostics(new AppError(
       "TTS_FAILED",
       providerMessage(response.status, "Cloudflare chưa tạo được giọng đọc bản dịch."),
       providerStatus(response.status),
-    );
+      { provider: "cloudflare", stage: "tts", reason: "provider_http_error" },
+    ), { failureSource: "cloudflare", upstreamStatus: response.status });
   }
 
   const payload = (await response.json().catch(() => null)) as

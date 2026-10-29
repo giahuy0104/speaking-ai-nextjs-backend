@@ -140,7 +140,8 @@ export class AccountDispatcher implements CloudflareDispatcher {
     const { context, operation, model } = input;
     const task = operationTask(operation);
     const base = { requestId: context.requestId, workload: context.workload, stage: operation,
-      model, configVersion: this.config.configVersion };
+      model, configVersion: this.config.configVersion,
+      ...(context.parentRequestId ? { parentRequestId: context.parentRequestId } : {}) };
     const eligible = this.config.accounts.filter(a => a.enabled && a.capabilities[task]?.includes(model) &&
       (!input.accountIdentity || a.identity === input.accountIdentity) &&
       (a.identity !== this.config.legacyAccountIdentity || this.config.routeLegacyAccount || input.accountIdentity === a.identity));
