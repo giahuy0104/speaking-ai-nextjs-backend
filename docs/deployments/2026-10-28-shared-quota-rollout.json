@@ -1,0 +1,234 @@
+{
+  "startedAt": "2026-10-28T09:15:47.852Z",
+  "status": "completed",
+  "rollback": {
+    "image": "speaking-ai-backend:before-shared-quota-20261028t091547753z",
+    "envBackupPath": "C:\\Users\\DELL\\AppData\\Local\\Temp\\speaking-ai-before-shared-quota-20261028t091547753z.env.local"
+  },
+  "previous": [
+    {
+      "name": "speaking-ai-cloudflare-backend-3000-1",
+      "image": "sha256:51463226c3b7cd10afb34a01fe6099dea1bc458f854ad19f6c6d9100487b4cf2",
+      "id": "9d3b75c8de6d749871d22f537499f9115107d074187c7afdee40c6952eea5184",
+      "health": "healthy"
+    },
+    {
+      "name": "speaking-ai-cloudflare-backend-3001-1",
+      "image": "sha256:51463226c3b7cd10afb34a01fe6099dea1bc458f854ad19f6c6d9100487b4cf2",
+      "id": "f4634863ed0a7ad968f65ee33f43ad794f03e1233286f49964cc8c8a77dcaa62",
+      "health": "healthy"
+    }
+  ],
+  "preflight": {
+    "event": "preflight_result",
+    "valid": 200,
+    "clientCancel": 499,
+    "backendDeadline": 504,
+    "mockedProviderCalls": [
+      {
+        "alias": "audio-b",
+        "stage": "asr"
+      },
+      {
+        "alias": "audio-b",
+        "stage": "text"
+      }
+    ],
+    "externalInferenceCalls": 0
+  },
+  "image": "sha256:2e4bd720d33a442e3c3b0f562313717c594a2bffddbe29214da745a546719981",
+  "stage1": {
+    "checkedAt": "2026-10-28T09:19:56.910Z",
+    "instances": [
+      {
+        "name": "speaking-ai-cloudflare-backend-3000-1",
+        "id": "36e58d2ce8cc",
+        "image": "sha256:2e4bd720d33a442e3c3b0f562313717c594a2bffddbe29214da745a546719981",
+        "health": "healthy"
+      },
+      {
+        "name": "speaking-ai-cloudflare-backend-3001-1",
+        "id": "9c6df5e32d32",
+        "image": "sha256:2e4bd720d33a442e3c3b0f562313717c594a2bffddbe29214da745a546719981",
+        "health": "healthy"
+      }
+    ],
+    "legacyAsr": {
+      "status": 200,
+      "transcriptPresent": true,
+      "elapsedMs": 2673
+    },
+    "legacyTts": {
+      "status": 200,
+      "contentType": "audio/mpeg",
+      "bytes": 18808,
+      "elapsedMs": 1438
+    },
+    "legacyEvents": [
+      {
+        "instance": "speaking-ai-cloudflare-backend-3000-1",
+        "event": "cloudflare_pool_request_admitted",
+        "workload": "legacy-tts",
+        "stage": "request",
+        "configVersion": "1d104cf39c8579e4"
+      },
+      {
+        "instance": "speaking-ai-cloudflare-backend-3000-1",
+        "event": "cloudflare_pool_admission",
+        "workload": "legacy-tts",
+        "accountAlias": "audio-a",
+        "stage": "legacy_tts",
+        "configVersion": "1d104cf39c8579e4"
+      },
+      {
+        "instance": "speaking-ai-cloudflare-backend-3000-1",
+        "event": "cloudflare_pool_attempt_completed",
+        "workload": "legacy-tts",
+        "accountAlias": "audio-a",
+        "stage": "legacy_tts",
+        "status": "success",
+        "configVersion": "1d104cf39c8579e4"
+      },
+      {
+        "instance": "speaking-ai-cloudflare-backend-3001-1",
+        "event": "cloudflare_pool_request_admitted",
+        "workload": "legacy-asr",
+        "stage": "request",
+        "configVersion": "1d104cf39c8579e4"
+      },
+      {
+        "instance": "speaking-ai-cloudflare-backend-3001-1",
+        "event": "cloudflare_pool_admission",
+        "workload": "legacy-asr",
+        "accountAlias": "audio-a",
+        "stage": "legacy_asr",
+        "configVersion": "1d104cf39c8579e4"
+      },
+      {
+        "instance": "speaking-ai-cloudflare-backend-3001-1",
+        "event": "cloudflare_pool_attempt_completed",
+        "workload": "legacy-asr",
+        "accountAlias": "audio-a",
+        "stage": "legacy_asr",
+        "status": "success",
+        "configVersion": "1d104cf39c8579e4"
+      }
+    ]
+  },
+  "stage2": {
+    "checkedAt": "2026-10-28T09:21:23.373Z",
+    "instances": [
+      {
+        "name": "speaking-ai-cloudflare-backend-3000-1",
+        "id": "b2e456d6d49b",
+        "image": "sha256:2e4bd720d33a442e3c3b0f562313717c594a2bffddbe29214da745a546719981",
+        "health": "healthy",
+        "legacyRouting": true,
+        "accounts": [
+          "audio-a",
+          "audio-b"
+        ]
+      },
+      {
+        "name": "speaking-ai-cloudflare-backend-3001-1",
+        "id": "39ca5872331a",
+        "image": "sha256:2e4bd720d33a442e3c3b0f562313717c594a2bffddbe29214da745a546719981",
+        "health": "healthy",
+        "legacyRouting": true,
+        "accounts": [
+          "audio-a",
+          "audio-b"
+        ]
+      }
+    ]
+  },
+  "completedAt": "2026-10-28T09:28:14.719Z",
+  "configVersion": "73bc70475416078e",
+  "finalInstances": [
+    {
+      "name": "speaking-ai-cloudflare-backend-3000-1",
+      "id": "b2e456d6d49b",
+      "image": "sha256:2e4bd720d33a442e3c3b0f562313717c594a2bffddbe29214da745a546719981",
+      "health": "healthy"
+    },
+    {
+      "name": "speaking-ai-cloudflare-backend-3001-1",
+      "id": "39ca5872331a",
+      "image": "sha256:2e4bd720d33a442e3c3b0f562313717c594a2bffddbe29214da745a546719981",
+      "health": "healthy"
+    }
+  ],
+  "validation": {
+    "poolTestsPassed": 87,
+    "legacyAdmissionTestsPassed": 9,
+    "translationTestsPassed": 45,
+    "providerTestsPassed": 9,
+    "ttsTestsPassed": 7,
+    "cloudflareTestsPassed": 18,
+    "cloudflareTextTestsPassed": 4,
+    "redisIntegrationPassed": 10,
+    "redisOptionalScriptFlushSkipped": 1,
+    "typescript": "passed",
+    "lint": "passed",
+    "productionBuild": "passed",
+    "legacyTextLiveSmoke": {
+      "success": true,
+      "model": "@cf/qwen/qwen3-30b-a3b-fp8",
+      "elapsedMs": 1695
+    },
+    "mixedSmoke": "docs/postman/reports/2026-10-28-shared-quota-mixed-smoke.json",
+    "idleAccountPermits": {
+      "audio-a": 0,
+      "audio-b": 0
+    }
+  },
+  "loadTest": {
+    "report": "docs/postman/reports/2026-10-28-shared-quota-20users-60s.json",
+    "analysis": "docs/postman/reports/2026-10-28-shared-quota-20users-60s-analysis.json",
+    "statusCounts": {
+      "200": 455,
+      "502": 1,
+      "504": 2
+    },
+    "p95SuccessMs": 4760,
+    "accountAdmissions": {
+      "audio-b": 462,
+      "audio-a": 451
+    },
+    "cancelled": 0,
+    "configVersions": {
+      "73bc70475416078e": 913
+    },
+    "allRequestsHaveBackendTerminal": true
+  },
+  "remainingObservedFailures": [
+    {
+      "requestId": "opt-shared-quota-c81462c5-c81e-4545-897b-668678dc0de3-73",
+      "httpStatus": 504,
+      "failureSource": "backend",
+      "abortCause": "attempt_timeout",
+      "reason": "timeout"
+    },
+    {
+      "requestId": "opt-shared-quota-c81462c5-c81e-4545-897b-668678dc0de3-429",
+      "httpStatus": 502,
+      "failureSource": "cloudflare",
+      "upstreamStatus": 500,
+      "reason": "provider_error"
+    },
+    {
+      "requestId": "opt-shared-quota-c81462c5-c81e-4545-897b-668678dc0de3-426",
+      "httpStatus": 504,
+      "failureSource": "backend",
+      "abortCause": "attempt_timeout",
+      "reason": "timeout"
+    }
+  ],
+  "limitations": [
+    "No manual semantic quality evaluation.",
+    "Two ASR response deadlines remain; no upstream HTTP response observed for these requests, so Cloudflare compute vs network delay is not established.",
+    "One ASR upstream HTTP 500 (code 3043) remains; no automatic retry was added.",
+    "Optional multilingual TTS was tested with stubs; live English TTS, ASR and text succeeded.",
+    "Workers are disabled and none were running; only the two active backends required restart."
+  ]
+}

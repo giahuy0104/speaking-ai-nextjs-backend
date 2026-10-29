@@ -15,6 +15,7 @@ import { TranscriptPanel } from "@/components/TranscriptPanel";
 import { useUiLocale } from "@/components/UiLocaleProvider";
 import { useConversationRecorder } from "@/hooks/useConversationRecorder";
 import { useDeviceReadiness } from "@/hooks/useDeviceReadiness";
+import { browserInstallationFetch } from "@/lib/client/installationFetch";
 import type {
   AsrMode,
   ConversationHistoryEntry,
@@ -65,7 +66,7 @@ async function fetchWithTimeout(
   const timeoutId = window.setTimeout(() => controller.abort(), timeoutMs);
 
   try {
-    return await fetch(input, {
+    return await browserInstallationFetch(input, {
       ...init,
       signal: controller.signal,
     });
@@ -99,7 +100,7 @@ export default function PracticePage() {
 
   async function refreshTestData() {
     const [historyResponse, reportResponse] = await Promise.all([
-      fetch("/api/history", { cache: "no-store" }),
+      browserInstallationFetch("/api/history", { cache: "no-store" }),
       fetch("/api/reports", { cache: "no-store" }),
     ]);
 
@@ -250,7 +251,7 @@ export default function PracticePage() {
     setErrorMessage(null);
 
     try {
-      const response = await fetch("/api/history", { method: "DELETE" });
+      const response = await browserInstallationFetch("/api/history", { method: "DELETE" });
 
       if (!response.ok) {
         throw new Error(await getResponseError(response));
@@ -298,7 +299,7 @@ export default function PracticePage() {
         ? { ...current, latency: { ...current.latency, ...latency } }
         : current,
     );
-    await fetch("/api/history", {
+    await browserInstallationFetch("/api/history", {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -351,7 +352,7 @@ export default function PracticePage() {
     conversationId: string,
     qualityApproved: boolean,
   ) {
-    await fetch("/api/history", {
+    await browserInstallationFetch("/api/history", {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ conversationId, qualityApproved }),

@@ -9,6 +9,8 @@ import {
 } from "react";
 import { LanguageToggle } from "@/components/LanguageToggle";
 import { useUiLocale } from "@/components/UiLocaleProvider";
+import { browserInstallationFetch } from "@/lib/client/installationFetch";
+import { audioSessionChunkHeaders } from "@/lib/client/audioSessionUploader";
 import {
   downloadAudioCheckWorkbook,
   type AudioCheckWorkbookRow,
@@ -28,6 +30,7 @@ type ProgressReporter = (value: number) => void;
 
 type AudioSessionResponse = {
   audioSessionId: string;
+  uploadToken?: string;
   capabilities?: {
     maxChunkBytes?: number;
     maxSessionBytes?: number;
@@ -353,7 +356,7 @@ export function AdminAudioCheck() {
     );
     reportProgress(20);
 
-    const response = await fetch("/api/conversation", {
+    const response = await browserInstallationFetch("/api/conversation", {
       method: "POST",
       body: formData,
     });
@@ -375,10 +378,14 @@ export function AdminAudioCheck() {
     reportProgress: ProgressReporter,
   ) {
     let audioSessionId = "";
+    let uploadToken: string | undefined;
 
     try {
-      const sessionResponse = await fetch("/api/audio-sessions", {
+      const sessionResponse = await browserInstallationFetch("/api/audio-sessions", {
         method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ protocolVersion: 2, audio: { encoding: "encoded_audio",
+          requestedSampleRate: 48_000, sourceChunkDurationMs: 500, maxDurationMs: 60_000 } }),
       });
       if (!sessionResponse.ok) {
         throw new Error(await getResponseError(sessionResponse));
@@ -386,6 +393,7 @@ export function AdminAudioCheck() {
 
       const session = (await sessionResponse.json()) as AudioSessionResponse;
       audioSessionId = session.audioSessionId;
+      uploadToken = session.uploadToken;
       const serverChunkLimit = session.capabilities?.maxChunkBytes;
       const chunkBytes =
         typeof serverChunkLimit === "number" && serverChunkLimit > 0
@@ -439,7 +447,7 @@ export function AdminAudioCheck() {
           "/api/audio-sessions/" +
             encodeURIComponent(audioSessionId) +
             "/chunks",
-          { method: "POST", body: formData },
+          { method: "POST", headers: await audioSessionChunkHeaders(session, sequence, chunk), body: formData },
         );
         if (!uploadResponse.ok) {
           throw new Error(await getResponseError(uploadResponse));
@@ -456,7 +464,7 @@ export function AdminAudioCheck() {
           "/finalize",
         {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: { "Content-Type": "application/json", ...(uploadToken ? { Authorization: `Bearer ${uploadToken}` } : {}) },
           body: JSON.stringify({
             context: selectedContext,
             childAge: 6,
@@ -489,7 +497,7 @@ export function AdminAudioCheck() {
           "/api/audio-sessions/" +
             encodeURIComponent(audioSessionId) +
             "/chunks",
-          { method: "DELETE" },
+          { method: "DELETE", headers: uploadToken ? { Authorization: `Bearer ${uploadToken}` } : {} },
         ).catch(() => undefined);
       }
       throw batchError;

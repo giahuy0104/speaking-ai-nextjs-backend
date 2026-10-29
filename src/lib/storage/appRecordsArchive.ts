@@ -2,7 +2,14 @@ import { randomUUID } from "node:crypto";
 import { GetObjectCommand, PutObjectCommand } from "@aws-sdk/client-s3";
 import { isPostgresStorageEnabled, queryDatabase } from "@/lib/db";
 import { getR2Client, isR2PreconditionFailed } from "@/lib/storage/r2";
-import { createArchiveObjectKey, exportVerifiedArchive, type ArchiveJob } from "./appRecordsArchiveCore";
+import {
+  ARCHIVABLE_RECORD_NAMESPACES,
+  ARCHIVE_POLICY_VERSION,
+  createArchiveObjectKey,
+  exportVerifiedArchive,
+  isSafeArchiveJob,
+  type ArchiveJob,
+} from "./appRecordsArchiveCore";
 
 // The durable singleton retains the exact snapshot/key across failed runs.
 // A lease serializes workers; the owner token fences a worker whose lease expired.
@@ -17,35 +24,47 @@ export async function archiveAppRecords() {
     `UPDATE app_records_archive_job
        SET owner = $1, lease_until = NOW() + INTERVAL '10 minutes'
      WHERE id = 1 AND lease_until <= NOW()
-     RETURNING batch_id, bucket, object_key, body`, [owner],
+     RETURNING batch_id, bucket, object_key, body, jsonb_array_length(snapshot) AS record_count`, [owner],
   );
   if (!jobs.length) {
     jobs = await queryDatabase<ArchiveJob>(
       `WITH oldest AS MATERIALIZED (
          SELECT to_jsonb(r) AS row, r.xmin::text AS version
          FROM app_records r
+         WHERE namespace = ANY($5::text[]) AND expires_at <= NOW()
          ORDER BY created_at, namespace, record_key LIMIT 50
        ), batch AS (
          SELECT jsonb_agg(row ORDER BY row->>'created_at', row->>'namespace', row->>'record_key') AS records,
-                jsonb_agg(jsonb_build_object('row', row, 'version', version)) AS snapshot
-         FROM oldest HAVING COUNT(*) = 50
+                jsonb_agg(jsonb_build_object('row', row, 'version', version)) AS snapshot,
+                COUNT(*)::integer AS record_count
+         FROM oldest HAVING COUNT(*) > 0
        )
        INSERT INTO app_records_archive_job
          (id, batch_id, bucket, object_key, body, snapshot, owner, lease_until)
        SELECT 1, $1, $2, $3,
-         jsonb_build_object('export_version', 1, 'batch_id', $1::text,
+         jsonb_build_object('export_version', 2, 'archive_policy', $6::text, 'batch_id', $1::text,
            'exported_at', NOW(), 'source_table', 'app_records',
-           'record_count', 50, 'records', records)::text,
+           'record_count', record_count, 'records', records)::text,
          snapshot, $4, NOW() + INTERVAL '10 minutes'
        FROM batch ON CONFLICT (id) DO NOTHING
-       RETURNING batch_id, bucket, object_key, body`,
-      [batchId, bucket, key, owner],
+       RETURNING batch_id, bucket, object_key, body, jsonb_array_length(snapshot) AS record_count`,
+      [batchId, bucket, key, owner, ARCHIVABLE_RECORD_NAMESPACES, ARCHIVE_POLICY_VERSION],
     );
   }
   const job = jobs[0];
-  if (!job) return { status: "skipped" as const, reason: "busy_or_fewer_than_50" };
+  if (!job) return { status: "skipped" as const, reason: "busy_or_no_expired_records" };
 
   try {
+    if (!isSafeArchiveJob(job)) {
+      // Old snapshots can contain active installation credentials or history.
+      // Retire only their queue entry, without uploading or deleting records.
+      const cancelled = await queryDatabase<{ batch_id: string }>(
+        `DELETE FROM app_records_archive_job
+         WHERE id = 1 AND owner = $1 AND lease_until > NOW() RETURNING batch_id`, [owner],
+      );
+      return { status: "skipped" as const,
+        reason: cancelled.length ? "unsafe_pending_archive_cancelled" : "archive_lease_lost" };
+    }
     const client = getR2Client();
     const result = await exportVerifiedArchive(job, {
       upload: async (body, sha256) => {
@@ -70,10 +89,12 @@ export async function archiveAppRecords() {
         const results = await queryDatabase<{ deleted: number }>(
           `WITH owned AS MATERIALIZED (
              SELECT * FROM app_records_archive_job
-             WHERE id = 1 AND owner = $1 AND lease_until > NOW() FOR UPDATE
+             WHERE id = 1 AND owner = $1 AND lease_until > NOW()
+               AND body::jsonb->>'archive_policy' = $3 FOR UPDATE
            ), deleted AS (
              DELETE FROM app_records r USING owned j, jsonb_array_elements(j.snapshot) s
              WHERE r.namespace = s->'row'->>'namespace'
+               AND r.namespace = ANY($2::text[]) AND r.expires_at <= NOW()
                AND r.record_key = s->'row'->>'record_key'
                AND r.xmin::text = s->>'version'
                AND to_jsonb(r) = s->'row'
@@ -83,7 +104,7 @@ export async function archiveAppRecords() {
              WHERE j.id = owned.id RETURNING j.id
            )
            SELECT (SELECT COUNT(*)::integer FROM deleted) AS deleted FROM finished`,
-          [owner],
+          [owner, ARCHIVABLE_RECORD_NAMESPACES, ARCHIVE_POLICY_VERSION],
         );
         if (!results.length) throw new Error("Archive lease lost; deletion not authorized.");
         return results[0].deleted;

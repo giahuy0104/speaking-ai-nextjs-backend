@@ -1,0 +1,152 @@
+{
+  "runId": "fifo-smoke-c780cc04-a171-4b36-8691-c3525b2dcf2a",
+  "startedAt": "2026-10-27T08:24:46.481Z",
+  "completedAt": "2026-10-27T08:24:54.609Z",
+  "endpoint": "http://localhost:3000/api/audio/translate",
+  "mode": "one simultaneous burst; 20 requests; no client retries",
+  "usesRealProvider": true,
+  "semanticQualityEvaluated": false,
+  "total": 20,
+  "successful": 20,
+  "statusCounts": {
+    "200": 20
+  },
+  "latencyMs": {
+    "p50": 5009,
+    "p95": 6818,
+    "max": 8098
+  },
+  "results": [
+    {
+      "requestId": "fifo-smoke-c780cc04-a171-4b36-8691-c3525b2dcf2a-0",
+      "status": 200,
+      "elapsedMs": 6008,
+      "validTranslationShape": true
+    },
+    {
+      "requestId": "fifo-smoke-c780cc04-a171-4b36-8691-c3525b2dcf2a-1",
+      "status": 200,
+      "elapsedMs": 3187,
+      "validTranslationShape": true
+    },
+    {
+      "requestId": "fifo-smoke-c780cc04-a171-4b36-8691-c3525b2dcf2a-2",
+      "status": 200,
+      "elapsedMs": 5982,
+      "validTranslationShape": true
+    },
+    {
+      "requestId": "fifo-smoke-c780cc04-a171-4b36-8691-c3525b2dcf2a-3",
+      "status": 200,
+      "elapsedMs": 5586,
+      "validTranslationShape": true
+    },
+    {
+      "requestId": "fifo-smoke-c780cc04-a171-4b36-8691-c3525b2dcf2a-4",
+      "status": 200,
+      "elapsedMs": 8098,
+      "validTranslationShape": true
+    },
+    {
+      "requestId": "fifo-smoke-c780cc04-a171-4b36-8691-c3525b2dcf2a-5",
+      "status": 200,
+      "elapsedMs": 5976,
+      "validTranslationShape": true
+    },
+    {
+      "requestId": "fifo-smoke-c780cc04-a171-4b36-8691-c3525b2dcf2a-6",
+      "status": 200,
+      "elapsedMs": 3857,
+      "validTranslationShape": true
+    },
+    {
+      "requestId": "fifo-smoke-c780cc04-a171-4b36-8691-c3525b2dcf2a-7",
+      "status": 200,
+      "elapsedMs": 3190,
+      "validTranslationShape": true
+    },
+    {
+      "requestId": "fifo-smoke-c780cc04-a171-4b36-8691-c3525b2dcf2a-8",
+      "status": 200,
+      "elapsedMs": 6818,
+      "validTranslationShape": true
+    },
+    {
+      "requestId": "fifo-smoke-c780cc04-a171-4b36-8691-c3525b2dcf2a-9",
+      "status": 200,
+      "elapsedMs": 3182,
+      "validTranslationShape": true
+    },
+    {
+      "requestId": "fifo-smoke-c780cc04-a171-4b36-8691-c3525b2dcf2a-10",
+      "status": 200,
+      "elapsedMs": 3877,
+      "validTranslationShape": true
+    },
+    {
+      "requestId": "fifo-smoke-c780cc04-a171-4b36-8691-c3525b2dcf2a-11",
+      "status": 200,
+      "elapsedMs": 3179,
+      "validTranslationShape": true
+    },
+    {
+      "requestId": "fifo-smoke-c780cc04-a171-4b36-8691-c3525b2dcf2a-12",
+      "status": 200,
+      "elapsedMs": 4534,
+      "validTranslationShape": true
+    },
+    {
+      "requestId": "fifo-smoke-c780cc04-a171-4b36-8691-c3525b2dcf2a-13",
+      "status": 200,
+      "elapsedMs": 3224,
+      "validTranslationShape": true
+    },
+    {
+      "requestId": "fifo-smoke-c780cc04-a171-4b36-8691-c3525b2dcf2a-14",
+      "status": 200,
+      "elapsedMs": 5009,
+      "validTranslationShape": true
+    },
+    {
+      "requestId": "fifo-smoke-c780cc04-a171-4b36-8691-c3525b2dcf2a-15",
+      "status": 200,
+      "elapsedMs": 6532,
+      "validTranslationShape": true
+    },
+    {
+      "requestId": "fifo-smoke-c780cc04-a171-4b36-8691-c3525b2dcf2a-16",
+      "status": 200,
+      "elapsedMs": 6502,
+      "validTranslationShape": true
+    },
+    {
+      "requestId": "fifo-smoke-c780cc04-a171-4b36-8691-c3525b2dcf2a-17",
+      "status": 200,
+      "elapsedMs": 3851,
+      "validTranslationShape": true
+    },
+    {
+      "requestId": "fifo-smoke-c780cc04-a171-4b36-8691-c3525b2dcf2a-18",
+      "status": 200,
+      "elapsedMs": 5976,
+      "validTranslationShape": true
+    },
+    {
+      "requestId": "fifo-smoke-c780cc04-a171-4b36-8691-c3525b2dcf2a-19",
+      "status": 200,
+      "elapsedMs": 5993,
+      "validTranslationShape": true
+    }
+  ],
+  "telemetry": {
+    "accounts": [
+      "audio-b",
+      "audio-a"
+    ],
+    "asrAttempts": 20,
+    "textAttempts": 20,
+    "queuedStages": 32,
+    "maxStageAdmissionWaitMs": 1262,
+    "stageFailures": 0
+  }
+}

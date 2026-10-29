@@ -1,3 +1,5 @@
+import { createHmac } from "node:crypto";
+
 export type PersistenceBackend = "local" | "postgres";
 export type AudioStorageBackend = "local" | "postgres" | "vercel-blob" | "r2" | "cloudinary";
 export type AudioSessionChunkStorageBackend = "local" | "postgres" | "r2";
@@ -147,8 +149,13 @@ export function getR2StorageConfig() {
 }
 
 export function getAudioUploadSecurityConfig() {
+  const production = process.env.NODE_ENV === "production";
+  const installationSecret = process.env.INSTALLATION_AUTH_SECRET?.trim();
   const configuredTokenSecret =
-    process.env.AUDIO_UPLOAD_TOKEN_SECRET?.trim() || null;
+    process.env.AUDIO_UPLOAD_TOKEN_SECRET?.trim() ||
+    (production && installationSecret && installationSecret.length >= 32
+      ? createHmac("sha256", installationSecret).update("speaking-ai:audio-upload:v1").digest("hex")
+      : null);
   const tokenSecret =
     configuredTokenSecret && configuredTokenSecret.length >= 32
       ? configuredTokenSecret
@@ -157,7 +164,7 @@ export function getAudioUploadSecurityConfig() {
     tokenSecret,
     invalidTokenSecret: Boolean(configuredTokenSecret && !tokenSecret),
     scopedTokensEnabled: Boolean(tokenSecret),
-    requireScopedToken: enabled("AUDIO_UPLOAD_REQUIRE_SCOPED_TOKEN"),
+    requireScopedToken: production || enabled("AUDIO_UPLOAD_REQUIRE_SCOPED_TOKEN"),
     createRequestsPerMinute: positiveInteger(
       "AUDIO_UPLOAD_CREATE_REQUESTS_PER_MINUTE",
       30,

@@ -1,0 +1,41 @@
+{
+  "startedAt": "2026-10-28T10:02:47.918Z",
+  "status": "completed",
+  "secretCreated": true,
+  "envBackupPath": "C:\\Users\\DELL\\AppData\\Local\\Temp\\speaking-ai-before-local-auth-20261028t100247857z.env.local",
+  "authRequired": false,
+  "cacheEnabled": true,
+  "previous": [
+    {
+      "name": "speaking-ai-cloudflare-backend-3000-1",
+      "id": "b2e456d6d49b",
+      "image": "sha256:2e4bd720d33a442e3c3b0f562313717c594a2bffddbe29214da745a546719981",
+      "health": "healthy"
+    },
+    {
+      "name": "speaking-ai-cloudflare-backend-3001-1",
+      "id": "39ca5872331a",
+      "image": "sha256:2e4bd720d33a442e3c3b0f562313717c594a2bffddbe29214da745a546719981",
+      "health": "healthy"
+    }
+  ],
+  "completedAt": "2026-10-28T10:05:51.227Z",
+  "instances": [
+    {
+      "name": "speaking-ai-cloudflare-backend-3000-1",
+      "id": "7df6c6da1257",
+      "health": "healthy",
+      "image": "sha256:2e4bd720d33a442e3c3b0f562313717c594a2bffddbe29214da745a546719981"
+    },
+    {
+      "name": "speaking-ai-cloudflare-backend-3001-1",
+      "id": "dbcfdc74a030",
+      "health": "healthy",
+      "image": "sha256:2e4bd720d33a442e3c3b0f562313717c594a2bffddbe29214da745a546719981"
+    }
+  ],
+  "verificationReport": "docs/postman/reports/2026-10-28-local-cache-auth-smoke.json",
+  "crossBackendCacheVerified": true,
+  "credentialsExportedToGitignoredEnvironmentOnly": true,
+  "buildRequired": false
+}

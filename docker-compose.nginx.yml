@@ -1,0 +1,101 @@
+# Merge with docker-compose.redis.yml; npm run lb:up does this automatically.
+x-app: &app
+  restart: unless-stopped
+  init: true
+  secrets:
+    - app_env
+  environment: &app-environment
+    APP_RUNTIME: compose
+    APP_ENV_FILE: /run/secrets/app_env
+    PERSISTENCE_BACKEND: postgres
+    CLOUDFLARE_POOL_STORE: redis
+    AUDIO_TRANSLATION_JOB_SHARED_DIRECTORY: /app/data/audio-translation-jobs
+    AUDIO_TRANSLATION_JOB_STORAGE: local
+  volumes:
+    - audio-job-files:/app/data/audio-translation-jobs
+  depends_on:
+    redis:
+      condition: service_healthy
+    redis-cache:
+      condition: service_healthy
+    redis-jobs:
+      condition: service_healthy
+  stop_grace_period: 75s
+  mem_limit: 1g
+  cpus: 1.0
+  logging:
+    driver: json-file
+    options: { max-size: "10m", max-file: "3" }
+
+x-backend: &backend
+  <<: *app
+  image: speaking-ai-backend:${BACKEND_IMAGE_TAG:-local}
+  healthcheck:
+    test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:' + process.env.PORT + '/api/health', { signal: AbortSignal.timeout(3000) }).then(r => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))"]
+    interval: 10s
+    timeout: 5s
+    retries: 6
+    start_period: 20s
+
+services:
+  backend-3000:
+    <<: *backend
+    build:
+      context: .
+      target: web
+    environment:
+      <<: *app-environment
+      PORT: "3000"
+    expose:
+      - "3000"
+
+  backend-3001:
+    <<: *backend
+    # Reuse the image built by backend-3000; never pull a private local tag.
+    pull_policy: never
+    environment:
+      <<: *app-environment
+      PORT: "3001"
+    expose:
+      - "3001"
+
+  nginx:
+    image: nginx:1.30-alpine
+    restart: unless-stopped
+    ports:
+      - "${NGINX_BIND_ADDRESS:-127.0.0.1}:${NGINX_HTTP_PORT:-8080}:80"
+    volumes:
+      - ./infra/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      backend-3000:
+        condition: service_healthy
+      backend-3001:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1/healthz"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+    stop_signal: SIGQUIT
+    stop_grace_period: 75s
+    mem_limit: 128m
+    cpus: 0.5
+    logging:
+      driver: json-file
+      options: { max-size: "10m", max-file: "3" }
+
+  audio-worker:
+    <<: *app
+    image: speaking-ai-audio-worker:${BACKEND_IMAGE_TAG:-local}
+    build:
+      context: .
+      target: worker
+    profiles: [jobs]
+
+secrets:
+  app_env:
+    file: ./.env.local
+
+volumes:
+  audio-job-files:
+

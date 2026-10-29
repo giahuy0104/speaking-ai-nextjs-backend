@@ -18,6 +18,7 @@ import {
   type AudioSessionUploadStats,
 } from "@/lib/client/audioSessionUploader";
 import { uploadConversationUserAudioAfterResponse } from "@/lib/client/userAudioUploader";
+import { browserInstallationFetch } from "@/lib/client/installationFetch";
 
 type SpeechRecognitionConstructor = new () => SpeechRecognitionLike;
 
@@ -492,7 +493,7 @@ export function useConversationRecorder({
       let response: Response;
 
       if (canTrustStreamingTranscript) {
-        response = await fetch("/api/conversation", {
+        response = await browserInstallationFetch("/api/conversation", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -532,7 +533,7 @@ export function useConversationRecorder({
           uploadAudio,
           getAudioFileName(uploadAudio.type || mimeType),
         );
-        response = await fetch("/api/conversation", {
+        response = await browserInstallationFetch("/api/conversation", {
           method: "POST",
           body: formData,
         });
@@ -592,7 +593,7 @@ export function useConversationRecorder({
       }
       // Latency reporting is useful for tuning, but it must never delay the
       // result callback that starts audio playback.
-      void fetch("/api/history", {
+      void browserInstallationFetch("/api/history", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         keepalive: true,

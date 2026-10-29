@@ -1,0 +1,609 @@
+{
+  "run": {
+    "runId": "opt-nginx-messages-ba76cad4-da23-4be5-8cfd-f576ba8d842a",
+    "startedAt": "2026-10-28T07:47:45.718Z",
+    "completedAt": "2026-10-28T07:48:50.426Z",
+    "clients": 20,
+    "sendWindowSeconds": 60,
+    "elapsedSeconds": 64.7066018,
+    "mode": "sustained",
+    "workload": "unchanged Postman raw multipart; identical recording",
+    "drain": "in-flight requests finish after send window; no end-of-test cancellation",
+    "attempted": 256,
+    "successful": 252,
+    "successRate": 0.984375,
+    "successfulPerSecond": 3.894502152638156,
+    "statusCounts": {
+      "200": 252,
+      "429": 2,
+      "502": 1,
+      "504": 1
+    },
+    "cacheCounts": {
+      "disabled": 252,
+      "not_instrumented": 4
+    },
+    "successLatencyMs": {
+      "p50": 4610,
+      "p95": 7538,
+      "p99": 8582,
+      "max": 10397
+    },
+    "allLatencyMs": {
+      "p50": 4630,
+      "p95": 7569,
+      "p99": 9472,
+      "max": 20011
+    },
+    "semanticQualityEvaluated": false,
+    "maxRequests": 10000,
+    "requestLimitReached": false,
+    "loadControl": {
+      "admitted": 256,
+      "stopReason": "duration",
+      "peakUsedMemoryPercent": 83.96,
+      "minimumFreeMemoryMB": 2584
+    },
+    "generatorMemory": {
+      "rssMB": 67,
+      "maxUsedMemoryPercent": 90,
+      "minFreeMemoryMB": 1024
+    }
+  },
+  "backendEventCounts": {
+    "cloudflare_pool_request_admitted": 256,
+    "cloudflare_pool_admission": 506,
+    "cloudflare_pool_queued": 338,
+    "cloudflare_pool_attempt_completed": 506,
+    "cloudflare_audio_translation_completed": 252,
+    "cloudflare_pool_unavailable": 2,
+    "cloudflare_audio_translation_failed": 4
+  },
+  "backendCompleted": 252,
+  "failures": [
+    {
+      "service": "backend-3001",
+      "timestamp": "2026-10-28T07:47:50.907Z",
+      "level": "warn",
+      "event": "cloudflare_audio_translation_failed",
+      "requestId": "opt-nginx-messages-ba76cad4-da23-4be5-8cfd-f576ba8d842a-16",
+      "failureSource": "backend",
+      "requestStage": "asr_admission",
+      "clientAborted": false,
+      "providerCallStarted": false,
+      "providerAttempts": 0,
+      "elapsedMs": 5007,
+      "httpStatus": 429,
+      "error": {
+        "name": "AppError",
+        "message": "Yêu cầu đã chờ quá lâu trong hàng đợi xử lý audio. Vui lòng thử lại sau."
+      },
+      "details": {
+        "provider": "cloudflare",
+        "stage": "asr",
+        "reason": "queue_timeout"
+      },
+      "clientMeasurement": {
+        "requestId": "opt-nginx-messages-ba76cad4-da23-4be5-8cfd-f576ba8d842a-16",
+        "status": 429,
+        "elapsedMs": 5162,
+        "cache": null,
+        "reason": "queue_timeout",
+        "stage": "asr"
+      },
+      "nginx": {
+        "timestamp": "2026-10-28T07:47:50+00:00",
+        "requestId": "opt-nginx-messages-ba76cad4-da23-4be5-8cfd-f576ba8d842a-16",
+        "method": "POST",
+        "uri": "/api/audio/translate",
+        "status": 429,
+        "requestTime": "5.101",
+        "upstream": "172.21.0.2:3001",
+        "upstreamStatus": "429",
+        "upstreamTime": "5.100"
+      },
+      "trace": [
+        {
+          "service": "backend-3001",
+          "timestamp": "2026-10-28T07:47:45.903Z",
+          "level": "info",
+          "event": "cloudflare_pool_request_admitted",
+          "requestId": "opt-nginx-messages-ba76cad4-da23-4be5-8cfd-f576ba8d842a-16",
+          "workload": "audio-translate",
+          "stage": "request",
+          "admissionWaitMs": 0,
+          "configVersion": "328fd901a89133ca"
+        },
+        {
+          "service": "backend-3001",
+          "timestamp": "2026-10-28T07:47:45.904Z",
+          "level": "info",
+          "event": "cloudflare_pool_queued",
+          "requestId": "opt-nginx-messages-ba76cad4-da23-4be5-8cfd-f576ba8d842a-16",
+          "workload": "audio-translate",
+          "stage": "audio_translation_asr",
+          "model": "@cf/openai/whisper-large-v3-turbo",
+          "queueDepth": 7,
+          "configVersion": "328fd901a89133ca"
+        },
+        {
+          "service": "backend-3001",
+          "timestamp": "2026-10-28T07:47:50.905Z",
+          "level": "info",
+          "event": "cloudflare_pool_unavailable",
+          "requestId": "opt-nginx-messages-ba76cad4-da23-4be5-8cfd-f576ba8d842a-16",
+          "workload": "audio-translate",
+          "stage": "audio_translation_asr",
+          "model": "@cf/openai/whisper-large-v3-turbo",
+          "safeReason": "queue_timeout",
+          "configVersion": "328fd901a89133ca"
+        },
+        {
+          "service": "backend-3001",
+          "timestamp": "2026-10-28T07:47:50.907Z",
+          "level": "warn",
+          "event": "cloudflare_audio_translation_failed",
+          "requestId": "opt-nginx-messages-ba76cad4-da23-4be5-8cfd-f576ba8d842a-16",
+          "failureSource": "backend",
+          "requestStage": "asr_admission",
+          "clientAborted": false,
+          "providerCallStarted": false,
+          "providerAttempts": 0,
+          "elapsedMs": 5007,
+          "httpStatus": 429,
+          "error": {
+            "name": "AppError",
+            "message": "Yêu cầu đã chờ quá lâu trong hàng đợi xử lý audio. Vui lòng thử lại sau."
+          },
+          "details": {
+            "provider": "cloudflare",
+            "stage": "asr",
+            "reason": "queue_timeout"
+          }
+        }
+      ]
+    },
+    {
+      "service": "backend-3001",
+      "timestamp": "2026-10-28T07:47:50.941Z",
+      "level": "warn",
+      "event": "cloudflare_audio_translation_failed",
+      "requestId": "opt-nginx-messages-ba76cad4-da23-4be5-8cfd-f576ba8d842a-18",
+      "failureSource": "backend",
+      "requestStage": "asr_admission",
+      "clientAborted": false,
+      "providerCallStarted": false,
+      "providerAttempts": 0,
+      "elapsedMs": 5032,
+      "httpStatus": 429,
+      "error": {
+        "name": "AppError",
+        "message": "Yêu cầu đã chờ quá lâu trong hàng đợi xử lý audio. Vui lòng thử lại sau."
+      },
+      "details": {
+        "provider": "cloudflare",
+        "stage": "asr",
+        "reason": "queue_timeout"
+      },
+      "clientMeasurement": {
+        "requestId": "opt-nginx-messages-ba76cad4-da23-4be5-8cfd-f576ba8d842a-18",
+        "status": 429,
+        "elapsedMs": 5195,
+        "cache": null,
+        "reason": "queue_timeout",
+        "stage": "asr"
+      },
+      "nginx": {
+        "timestamp": "2026-10-28T07:47:50+00:00",
+        "requestId": "opt-nginx-messages-ba76cad4-da23-4be5-8cfd-f576ba8d842a-18",
+        "method": "POST",
+        "uri": "/api/audio/translate",
+        "status": 429,
+        "requestTime": "5.133",
+        "upstream": "172.21.0.2:3001",
+        "upstreamStatus": "429",
+        "upstreamTime": "5.132"
+      },
+      "trace": [
+        {
+          "service": "backend-3001",
+          "timestamp": "2026-10-28T07:47:45.938Z",
+          "level": "info",
+          "event": "cloudflare_pool_request_admitted",
+          "requestId": "opt-nginx-messages-ba76cad4-da23-4be5-8cfd-f576ba8d842a-18",
+          "workload": "audio-translate",
+          "stage": "request",
+          "admissionWaitMs": 0,
+          "configVersion": "328fd901a89133ca"
+        },
+        {
+          "service": "backend-3001",
+          "timestamp": "2026-10-28T07:47:45.939Z",
+          "level": "info",
+          "event": "cloudflare_pool_queued",
+          "requestId": "opt-nginx-messages-ba76cad4-da23-4be5-8cfd-f576ba8d842a-18",
+          "workload": "audio-translate",
+          "stage": "audio_translation_asr",
+          "model": "@cf/openai/whisper-large-v3-turbo",
+          "queueDepth": 8,
+          "configVersion": "328fd901a89133ca"
+        },
+        {
+          "service": "backend-3001",
+          "timestamp": "2026-10-28T07:47:50.940Z",
+          "level": "info",
+          "event": "cloudflare_pool_unavailable",
+          "requestId": "opt-nginx-messages-ba76cad4-da23-4be5-8cfd-f576ba8d842a-18",
+          "workload": "audio-translate",
+          "stage": "audio_translation_asr",
+          "model": "@cf/openai/whisper-large-v3-turbo",
+          "safeReason": "queue_timeout",
+          "configVersion": "328fd901a89133ca"
+        },
+        {
+          "service": "backend-3001",
+          "timestamp": "2026-10-28T07:47:50.941Z",
+          "level": "warn",
+          "event": "cloudflare_audio_translation_failed",
+          "requestId": "opt-nginx-messages-ba76cad4-da23-4be5-8cfd-f576ba8d842a-18",
+          "failureSource": "backend",
+          "requestStage": "asr_admission",
+          "clientAborted": false,
+          "providerCallStarted": false,
+          "providerAttempts": 0,
+          "elapsedMs": 5032,
+          "httpStatus": 429,
+          "error": {
+            "name": "AppError",
+            "message": "Yêu cầu đã chờ quá lâu trong hàng đợi xử lý audio. Vui lòng thử lại sau."
+          },
+          "details": {
+            "provider": "cloudflare",
+            "stage": "asr",
+            "reason": "queue_timeout"
+          }
+        }
+      ]
+    },
+    {
+      "service": "backend-3000",
+      "timestamp": "2026-10-28T07:47:56.650Z",
+      "level": "warn",
+      "event": "cloudflare_audio_translation_failed",
+      "requestId": "opt-nginx-messages-ba76cad4-da23-4be5-8cfd-f576ba8d842a-50",
+      "upstreamStatus": 500,
+      "upstreamCodes": [
+        3043
+      ],
+      "failureSource": "cloudflare",
+      "requestStage": "asr",
+      "clientAborted": false,
+      "providerCallStarted": true,
+      "providerAttempts": 1,
+      "elapsedMs": 2226,
+      "httpStatus": 502,
+      "error": {
+        "name": "AppError",
+        "message": "Cloudflare trả về lỗi HTTP 500 ở bước nhận diện giọng nói. Vui lòng thử lại sau."
+      },
+      "details": {
+        "provider": "cloudflare",
+        "stage": "asr",
+        "reason": "provider_error"
+      },
+      "clientMeasurement": {
+        "requestId": "opt-nginx-messages-ba76cad4-da23-4be5-8cfd-f576ba8d842a-50",
+        "status": 502,
+        "elapsedMs": 2232,
+        "cache": null,
+        "reason": "provider_error",
+        "stage": "asr"
+      },
+      "nginx": {
+        "timestamp": "2026-10-28T07:47:56+00:00",
+        "requestId": "opt-nginx-messages-ba76cad4-da23-4be5-8cfd-f576ba8d842a-50",
+        "method": "POST",
+        "uri": "/api/audio/translate",
+        "status": 502,
+        "requestTime": "2.230",
+        "upstream": "172.21.0.5:3000",
+        "upstreamStatus": "502",
+        "upstreamTime": "2.229"
+      },
+      "trace": [
+        {
+          "service": "backend-3000",
+          "timestamp": "2026-10-28T07:47:54.425Z",
+          "level": "info",
+          "event": "cloudflare_pool_request_admitted",
+          "requestId": "opt-nginx-messages-ba76cad4-da23-4be5-8cfd-f576ba8d842a-50",
+          "workload": "audio-translate",
+          "stage": "request",
+          "admissionWaitMs": 0,
+          "configVersion": "328fd901a89133ca"
+        },
+        {
+          "service": "backend-3000",
+          "timestamp": "2026-10-28T07:47:54.425Z",
+          "level": "info",
+          "event": "cloudflare_pool_queued",
+          "requestId": "opt-nginx-messages-ba76cad4-da23-4be5-8cfd-f576ba8d842a-50",
+          "workload": "audio-translate",
+          "stage": "audio_translation_asr",
+          "model": "@cf/openai/whisper-large-v3-turbo",
+          "queueDepth": 2,
+          "configVersion": "328fd901a89133ca"
+        },
+        {
+          "service": "backend-3000",
+          "timestamp": "2026-10-28T07:47:55.078Z",
+          "level": "info",
+          "event": "cloudflare_pool_admission",
+          "requestId": "opt-nginx-messages-ba76cad4-da23-4be5-8cfd-f576ba8d842a-50",
+          "workload": "audio-translate",
+          "stage": "audio_translation_asr",
+          "accountAlias": "audio-b",
+          "model": "@cf/openai/whisper-large-v3-turbo",
+          "attempt": 1,
+          "admissionWaitMs": 652,
+          "remainingBudgetMs": 19346,
+          "configVersion": "328fd901a89133ca"
+        },
+        {
+          "service": "backend-3000",
+          "timestamp": "2026-10-28T07:47:56.648Z",
+          "level": "info",
+          "event": "cloudflare_pool_attempt_completed",
+          "requestId": "opt-nginx-messages-ba76cad4-da23-4be5-8cfd-f576ba8d842a-50",
+          "workload": "audio-translate",
+          "stage": "audio_translation_asr",
+          "accountAlias": "audio-b",
+          "model": "@cf/openai/whisper-large-v3-turbo",
+          "attempt": 1,
+          "providerElapsedMs": 1570,
+          "status": 500,
+          "safeReason": "provider_error",
+          "upstreamStatus": 500,
+          "upstreamCodes": "3043",
+          "configVersion": "328fd901a89133ca",
+          "failureSource": "cloudflare"
+        },
+        {
+          "service": "backend-3000",
+          "timestamp": "2026-10-28T07:47:56.650Z",
+          "level": "warn",
+          "event": "cloudflare_audio_translation_failed",
+          "requestId": "opt-nginx-messages-ba76cad4-da23-4be5-8cfd-f576ba8d842a-50",
+          "upstreamStatus": 500,
+          "upstreamCodes": [
+            3043
+          ],
+          "failureSource": "cloudflare",
+          "requestStage": "asr",
+          "clientAborted": false,
+          "providerCallStarted": true,
+          "providerAttempts": 1,
+          "elapsedMs": 2226,
+          "httpStatus": 502,
+          "error": {
+            "name": "AppError",
+            "message": "Cloudflare trả về lỗi HTTP 500 ở bước nhận diện giọng nói. Vui lòng thử lại sau."
+          },
+          "details": {
+            "provider": "cloudflare",
+            "stage": "asr",
+            "reason": "provider_error"
+          }
+        }
+      ]
+    },
+    {
+      "service": "backend-3001",
+      "timestamp": "2026-10-28T07:48:43.270Z",
+      "level": "warn",
+      "event": "cloudflare_audio_translation_failed",
+      "requestId": "opt-nginx-messages-ba76cad4-da23-4be5-8cfd-f576ba8d842a-167",
+      "failureSource": "backend",
+      "abortCause": "attempt_timeout",
+      "requestStage": "asr",
+      "clientAborted": false,
+      "providerCallStarted": true,
+      "providerAttempts": 1,
+      "elapsedMs": 20005,
+      "httpStatus": 504,
+      "error": {
+        "name": "AppError",
+        "message": "Đã hết thời gian chờ Cloudflare phản hồi ở bước nhận diện giọng nói. Vui lòng thử lại."
+      },
+      "details": {
+        "provider": "cloudflare",
+        "stage": "asr",
+        "reason": "timeout"
+      },
+      "clientMeasurement": {
+        "requestId": "opt-nginx-messages-ba76cad4-da23-4be5-8cfd-f576ba8d842a-167",
+        "status": 504,
+        "elapsedMs": 20011,
+        "cache": null,
+        "reason": "timeout",
+        "stage": "asr"
+      },
+      "nginx": {
+        "timestamp": "2026-10-28T07:48:43+00:00",
+        "requestId": "opt-nginx-messages-ba76cad4-da23-4be5-8cfd-f576ba8d842a-167",
+        "method": "POST",
+        "uri": "/api/audio/translate",
+        "status": 504,
+        "requestTime": "20.007",
+        "upstream": "172.21.0.2:3001",
+        "upstreamStatus": "504",
+        "upstreamTime": "20.009"
+      },
+      "trace": [
+        {
+          "service": "backend-3001",
+          "timestamp": "2026-10-28T07:48:23.268Z",
+          "level": "info",
+          "event": "cloudflare_pool_request_admitted",
+          "requestId": "opt-nginx-messages-ba76cad4-da23-4be5-8cfd-f576ba8d842a-167",
+          "workload": "audio-translate",
+          "stage": "request",
+          "admissionWaitMs": 0,
+          "configVersion": "328fd901a89133ca"
+        },
+        {
+          "service": "backend-3001",
+          "timestamp": "2026-10-28T07:48:23.269Z",
+          "level": "info",
+          "event": "cloudflare_pool_admission",
+          "requestId": "opt-nginx-messages-ba76cad4-da23-4be5-8cfd-f576ba8d842a-167",
+          "workload": "audio-translate",
+          "stage": "audio_translation_asr",
+          "accountAlias": "audio-b",
+          "model": "@cf/openai/whisper-large-v3-turbo",
+          "attempt": 1,
+          "admissionWaitMs": 0,
+          "remainingBudgetMs": 19998,
+          "configVersion": "328fd901a89133ca"
+        },
+        {
+          "service": "backend-3001",
+          "timestamp": "2026-10-28T07:48:43.266Z",
+          "level": "info",
+          "event": "cloudflare_pool_attempt_completed",
+          "requestId": "opt-nginx-messages-ba76cad4-da23-4be5-8cfd-f576ba8d842a-167",
+          "workload": "audio-translate",
+          "stage": "audio_translation_asr",
+          "accountAlias": "audio-b",
+          "model": "@cf/openai/whisper-large-v3-turbo",
+          "attempt": 1,
+          "providerElapsedMs": 19997,
+          "safeReason": "timeout",
+          "configVersion": "328fd901a89133ca",
+          "failureSource": "backend",
+          "abortCause": "attempt_timeout"
+        },
+        {
+          "service": "backend-3001",
+          "timestamp": "2026-10-28T07:48:43.270Z",
+          "level": "warn",
+          "event": "cloudflare_audio_translation_failed",
+          "requestId": "opt-nginx-messages-ba76cad4-da23-4be5-8cfd-f576ba8d842a-167",
+          "failureSource": "backend",
+          "abortCause": "attempt_timeout",
+          "requestStage": "asr",
+          "clientAborted": false,
+          "providerCallStarted": true,
+          "providerAttempts": 1,
+          "elapsedMs": 20005,
+          "httpStatus": 504,
+          "error": {
+            "name": "AppError",
+            "message": "Đã hết thời gian chờ Cloudflare phản hồi ở bước nhận diện giọng nói. Vui lòng thử lại."
+          },
+          "details": {
+            "provider": "cloudflare",
+            "stage": "asr",
+            "reason": "timeout"
+          }
+        }
+      ]
+    }
+  ],
+  "cancelledEvents": 0,
+  "failureReasons": {
+    "backend:queue_timeout": 2,
+    "cloudflare:provider_error": 1,
+    "backend:timeout": 1
+  },
+  "attempts": {
+    "total": 506,
+    "byStageAndStatus": {
+      "audio_translation_asr:success": 252,
+      "audio_translation_text:success": 252,
+      "audio_translation_asr:provider_error": 1,
+      "audio_translation_asr:timeout": 1
+    },
+    "byAccount": {
+      "audio-b": 506
+    }
+  },
+  "latencyMs": {
+    "asrProvider": {
+      "count": 252,
+      "avg": 2166,
+      "p50": 1932,
+      "p95": 4603,
+      "p99": 5919,
+      "max": 6686
+    },
+    "textProvider": {
+      "count": 252,
+      "avg": 623,
+      "p50": 569,
+      "p95": 919,
+      "p99": 2049,
+      "max": 2716
+    },
+    "asrAdmission": {
+      "count": 254,
+      "avg": 665,
+      "p50": 119,
+      "p95": 3048,
+      "p99": 4068,
+      "max": 4627
+    },
+    "textAdmission": {
+      "count": 252,
+      "avg": 1327,
+      "p50": 1097,
+      "p95": 3774,
+      "p99": 4840,
+      "max": 4988
+    }
+  },
+  "perBackend": {
+    "backend-3000": {
+      "completed": 129,
+      "failed": 1,
+      "queued": 168
+    },
+    "backend-3001": {
+      "completed": 123,
+      "failed": 3,
+      "queued": 170
+    }
+  },
+  "nginx": {
+    "requests": 256,
+    "statusCounts": {
+      "200": 252,
+      "429": 2,
+      "502": 1,
+      "504": 1
+    },
+    "upstreams": {
+      "172.21.0.5:3000": 130,
+      "172.21.0.2:3001": 126
+    },
+    "unexpectedStatusMismatches": 0
+  },
+  "allRequestsHaveBackendTerminal": true,
+  "deployedImages": [
+    {
+      "service": "backend-3000",
+      "imageId": "sha256:51463226c3b7cd10afb34a01fe6099dea1bc458f854ad19f6c6d9100487b4cf2",
+      "health": "healthy"
+    },
+    {
+      "service": "backend-3001",
+      "imageId": "sha256:51463226c3b7cd10afb34a01fe6099dea1bc458f854ad19f6c6d9100487b4cf2",
+      "health": "healthy"
+    }
+  ],
+  "limitations": [
+    "Same audio is repeated; cache was disabled for this production legacy-client workload.",
+    "Translation meaning was not semantically scored.",
+    "No timeout, retry, concurrency, account or cache configuration was changed during the run."
+  ]
+}

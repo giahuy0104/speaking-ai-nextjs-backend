@@ -1,0 +1,67 @@
+{
+  "configuredAt": "2026-10-28T10:04:32.961Z",
+  "baseUrl": "http://localhost:8080",
+  "registrationStatus": 201,
+  "clientId": "web_postman_cache_7262521f-d215-4d15-9085-e4e992b9a7d9",
+  "accessTokenExpiresAt": "2026-10-28T11:04:32.000Z",
+  "environmentFile": "docs\\postman\\.env.local-cache.postman_environment.json",
+  "collectionFile": "docs\\postman\\Audio-Translation-Local-Cache.postman_collection.json",
+  "startedAt": "2026-10-28T10:04:32.961Z",
+  "requests": [
+    {
+      "requestId": "local-cache-verify-030ea73e-b0c9-472e-bf99-31d44b4602ca",
+      "status": 200,
+      "cacheStatus": "miss",
+      "elapsedMs": 3070,
+      "resultMatchesFirst": true
+    },
+    {
+      "requestId": "local-cache-verify-78fa7788-8ee7-4e1d-8fc2-8ebf7130d0bb",
+      "status": 200,
+      "cacheStatus": "hit",
+      "elapsedMs": 205,
+      "resultMatchesFirst": true
+    },
+    {
+      "requestId": "local-cache-verify-8ad4fb0a-b97a-486a-b4b8-31ed21a74764",
+      "status": 200,
+      "cacheStatus": "hit",
+      "elapsedMs": 68,
+      "resultMatchesFirst": true
+    }
+  ],
+  "completedAt": "2026-10-28T10:04:36.304Z",
+  "cacheVerified": true,
+  "backendEvidence": [
+    {
+      "requestId": "local-cache-verify-030ea73e-b0c9-472e-bf99-31d44b4602ca",
+      "cacheStatus": "miss",
+      "instance": "speaking-ai-cloudflare-backend-3001-1",
+      "cloudflareAttempts": [
+        {
+          "stage": "audio_translation_asr",
+          "accountAlias": "audio-a",
+          "status": "success"
+        },
+        {
+          "stage": "audio_translation_text",
+          "accountAlias": "audio-b",
+          "status": "success"
+        }
+      ]
+    },
+    {
+      "requestId": "local-cache-verify-78fa7788-8ee7-4e1d-8fc2-8ebf7130d0bb",
+      "cacheStatus": "hit",
+      "instance": "speaking-ai-cloudflare-backend-3000-1",
+      "cloudflareAttempts": []
+    },
+    {
+      "requestId": "local-cache-verify-8ad4fb0a-b97a-486a-b4b8-31ed21a74764",
+      "cacheStatus": "hit",
+      "instance": "speaking-ai-cloudflare-backend-3001-1",
+      "cloudflareAttempts": []
+    }
+  ],
+  "crossBackendCacheVerified": true
+}

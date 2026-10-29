@@ -1,4 +1,20 @@
-import { AppError } from "@/lib/errors";
+import { AppError } from "@/lib/appError";
+import { translateVietnameseWithCloudflare, CloudflareTextProviderError } from "./cloudflareText";
+import { isEnglishAudioTranslation, isSuspiciousAudioTranscript } from "./audioTranslationQuality";
+import { assertVietnameseTranscriptIsUsable } from "./vietnameseTranscriptValidation";
+import type { CloudflareExecutionContext } from "./cloudflare/types";
+import { audioTranslationCache, audioTranslationInstructions, cacheEnabled, translationCacheKey } from "./audioTranslationCache";
+import { trimPcmWav } from "../audio/trimPcmWav";
+import { timeoutSignal } from "./cloudflare/abortDiagnostics";
+import { fetchLegacyCloudflare } from "./cloudflare/legacyAdmission";
+import {
+  attachFailureDiagnostics,
+  getFailureDiagnostics,
+  isPoolFailure,
+  networkFault,
+  providerFaultFromResponse,
+  publicPoolError,
+} from "./cloudflare/providerError";
 import {
   buildCloudflareAudioTranslationBody,
   buildCloudflareAudioTranscriptionBody,
@@ -15,6 +31,21 @@ export type AudioTranslationResult = {
   segments?: unknown[];
   vtt?: string;
   model: string;
+  sourceText?: string;
+  textModel?: string;
+  timings?: { asrMs: number; translationMs: number };
+};
+
+export type AudioTranslationCheckpoint = {
+  sourceText: string; sourceLanguage: string; model: string; asrMs: number; policyKey: string; providerAttempts?: number;
+};
+export type AudioTranslationOptions = {
+  execution?: CloudflareExecutionContext;
+  preparedAudio?: ArrayBuffer;
+  cacheScope?: string;
+  checkpoint?: AudioTranslationCheckpoint;
+  onCheckpoint?: (checkpoint: AudioTranslationCheckpoint) => void | Promise<void>;
+  beforeProviderCall?: (stage: "asr" | "text") => Promise<void>;
 };
 
 export type AudioTranscriptionResult = {
@@ -86,62 +117,208 @@ export function getCloudflareAudioMaxBytes() {
 export async function translateAudioToEnglish(
   audio: File,
   sourceLanguage: string,
+  options: AudioTranslationOptions = {},
 ): Promise<AudioTranslationResult> {
-  const config = getCloudflareAudioTranslationConfig();
+  if (options.checkpoint) {
+    if (options.checkpoint.sourceLanguage !== sourceLanguage ||
+        options.checkpoint.policyKey !== translationCacheKey("checkpoint", sourceLanguage, "text", "")) {
+      throw new AppError("BAD_REQUEST", "Cấu hình dịch đã thay đổi; vui lòng gửi lại audio.", 409);
+    }
+    return translateAudioTranscript(options.checkpoint, options);
+  }
+  const execution = options.execution;
+  // Pooled requests resolve the same model without requiring legacy secrets.
+  const legacyConfig = execution ? undefined : getCloudflareAudioTranslationConfig();
+  const model = legacyConfig?.model || process.env.CLOUDFLARE_WORKERS_AI_MODEL?.trim() || DEFAULT_MODEL;
+  if (!/^@cf\/[a-z0-9._-]+\/[a-z0-9._-]+$/i.test(model)) {
+    throw new AppError("ASR_FAILED", "Model Cloudflare Workers AI không hợp lệ.", 500);
+  }
+  // Batch translation must tolerate provider queueing under load. Keep the
+  // interactive ASR budget independent, and stay below the route's 35s limit.
+  const timeoutMs = Math.min(
+    30_000,
+    positiveInteger("CLOUDFLARE_AUDIO_TRANSLATION_TIMEOUT_MS", 20_000),
+  );
+  const signal = execution?.signal ?? timeoutSignal(timeoutMs, "request_deadline");
+  const startedAt = performance.now();
+  const originalAudio = options.preparedAudio ?? await audio.arrayBuffer();
+  const providerAudio = process.env.AUDIO_TRANSLATION_TRIM_WAV === "true" ? trimPcmWav(originalAudio).bytes : originalAudio;
   const body = buildCloudflareAudioTranslationBody(
-    await audio.arrayBuffer(),
+    providerAudio,
     sourceLanguage,
   );
 
-  let response: Response;
+  let response: Response | undefined;
+  let payload: CloudflareWorkersAiEnvelope | null;
 
-  try {
-    response = await fetch(
-      `https://api.cloudflare.com/client/v4/accounts/${encodeURIComponent(config.accountId)}/ai/run/${config.model}`,
-      {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${config.apiToken}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(body),
-        signal: AbortSignal.timeout(config.timeoutMs),
-        cache: "no-store",
+  if (execution) {
+    payload = await execution.dispatcher.execute(
+      { context: execution, operation: "audio_translation_asr", model },
+      async ({ account, signal }) => {
+        await options.beforeProviderCall?.("asr");
+        let response: Response | undefined;
+        let payload: CloudflareWorkersAiEnvelope | null;
+        try {
+          response = await fetch(
+            `https://api.cloudflare.com/client/v4/accounts/${encodeURIComponent(account.accountId)}/ai/run/${model}`,
+            {
+              method: "POST",
+              headers: {
+                Authorization: `Bearer ${account.apiToken}`,
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify(body),
+              signal,
+              cache: "no-store",
+            },
+          );
+          const raw = await response.text();
+          try { payload = JSON.parse(raw) as CloudflareWorkersAiEnvelope | null; }
+          catch { payload = null; }
+        } catch (error) {
+          throw networkFault(error, signal, response?.status);
+        }
+        if (!response.ok || payload?.success === false || payload === null) {
+          throw providerFaultFromResponse(response, payload);
+        }
+        return payload;
       },
     );
-  } catch {
-    throw new AppError(
-      "ASR_FAILED",
-      "Không kết nối được Cloudflare Workers AI. Vui lòng thử lại.",
-      502,
-    );
+  } else {
+    await options.beforeProviderCall?.("asr");
+    try {
+      response = await fetchLegacyCloudflare(
+        `https://api.cloudflare.com/client/v4/accounts/${encodeURIComponent(legacyConfig!.accountId)}/ai/run/${model}`,
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${legacyConfig!.apiToken}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(body),
+          signal,
+          cache: "no-store",
+        },
+        { task: "asr", model, timeoutMs },
+      );
+      // Reading the response body is covered by the same deadline as fetch.
+      const raw = await response.text();
+      try {
+        payload = JSON.parse(raw) as CloudflareWorkersAiEnvelope | null;
+      } catch {
+        payload = null;
+      }
+    } catch (error) {
+      if (error instanceof AppError) throw error;
+      const timedOut = signal.aborted;
+      throw attachFailureDiagnostics(new AppError(
+        "ASR_FAILED",
+        timedOut
+          ? "Cloudflare Workers AI phản hồi quá thời gian chờ. Vui lòng thử lại."
+          : "Không kết nối được Cloudflare Workers AI. Vui lòng thử lại.",
+        timedOut ? 504 : 502,
+        {
+          provider: "cloudflare",
+          reason: timedOut ? "timeout" : "network_error",
+          timeoutMs,
+          elapsedMs: Math.round(performance.now() - startedAt),
+          errorName: error instanceof Error ? error.name : "unknown",
+        },
+      ), getFailureDiagnostics(networkFault(error, signal, response?.status)));
+    }
   }
 
-  const payload = (await response
-    .json()
-    .catch(() => null)) as CloudflareWorkersAiEnvelope | null;
   const result = payload?.result;
-  const englishText =
+  const sourceText =
     typeof result?.text === "string" ? result.text.trim() : "";
 
-  if (!response.ok || payload?.success === false || !englishText) {
+  if (response && (!response.ok || payload?.success === false || payload === null)) {
     throw new AppError(
       "ASR_FAILED",
       response.status === 429
         ? "Cloudflare Workers AI đang quá tải. Vui lòng thử lại sau."
         : "Cloudflare Workers AI không dịch được đoạn ghi âm này.",
       response.status === 429 ? 429 : 502,
+      {
+        provider: "cloudflare",
+        reason: !response.ok || payload?.success === false
+          ? "provider_error"
+          : payload === null ? "invalid_response" : "empty_translation",
+        upstreamStatus: response.status,
+        upstreamCodes: Array.isArray(payload?.errors)
+          ? payload.errors.map((entry) => entry.code).filter((code) => typeof code === "number")
+          : [],
+        elapsedMs: Math.round(performance.now() - startedAt),
+      },
     );
   }
 
-  return {
+  if (!sourceText) {
+    throw new AppError("ASR_LOW_CONFIDENCE", "Không nghe rõ lời nói trong audio. Vui lòng ghi âm lại.", 422,
+      { provider: "cloudflare", reason: "empty_transcript" });
+  }
+  if (sourceLanguage === "vi") {
+    assertVietnameseTranscriptIsUsable(sourceText, Array.isArray(result?.segments) ? result.segments : []);
+  }
+  if (isSuspiciousAudioTranscript(sourceText)) {
+    throw new AppError("ASR_LOW_CONFIDENCE", "Không nghe rõ nội dung audio. Vui lòng ghi âm lại.", 422,
+      { provider: "cloudflare", reason: "suspicious_transcript" });
+  }
+  const asrMs = Math.round(performance.now() - startedAt);
+  const checkpoint: AudioTranslationCheckpoint = { sourceText, sourceLanguage, model, asrMs,
+    policyKey: translationCacheKey("checkpoint", sourceLanguage, "text", ""), providerAttempts: execution?.attempts.used ?? 1 };
+  await options.onCheckpoint?.(checkpoint);
+  return translateAudioTranscript(checkpoint, options, signal);
+}
+
+async function translateAudioTranscript(checkpoint: AudioTranslationCheckpoint, options: AudioTranslationOptions, inheritedSignal?: AbortSignal): Promise<AudioTranslationResult> {
+  const { sourceText, sourceLanguage, model, asrMs } = checkpoint;
+  const execution = options.execution;
+  const signal = execution?.signal ?? inheritedSignal ?? timeoutSignal(20_000, "request_deadline");
+  const startedAt = performance.now();
+  const textCacheKey = options.cacheScope && cacheEnabled()
+    ? translationCacheKey(options.cacheScope, sourceLanguage, "text", sourceText) : undefined;
+  const cachedText = textCacheKey && sourceLanguage !== "en" ? await audioTranslationCache.get(textCacheKey) : null;
+  let englishText = cachedText?.englishText ?? sourceText;
+  const translationStartedAt = performance.now();
+  let textModel: string | undefined = cachedText?.textModel;
+  if (sourceLanguage !== "en" && !cachedText) {
+    try {
+      const translated = await translateVietnameseWithCloudflare(
+        sourceText,
+        audioTranslationInstructions(sourceLanguage),
+        256,
+        { signal, execution, beforeProviderCall: options.beforeProviderCall ? () => options.beforeProviderCall!("text") : undefined },
+      );
+      englishText = translated.englishText.trim();
+      textModel = translated.model;
+    } catch (error) {
+      if (error instanceof AppError) throw error;
+      if (execution && isPoolFailure(error)) {
+        throw publicPoolError(error, "text_translation");
+      }
+      const reason = error instanceof CloudflareTextProviderError ? error.reason : "unknown_error";
+      throw attachFailureDiagnostics(new AppError("LLM_FAILED", "Dịch vụ dịch văn bản tạm thời gặp lỗi. Vui lòng thử lại.",
+        reason === "timeout" || signal.aborted ? 504 : error instanceof CloudflareTextProviderError && error.status === 429 ? 429 : 502,
+        { provider: "cloudflare", stage: "text_translation", reason, elapsedMs: Math.round(performance.now() - startedAt) }),
+      getFailureDiagnostics(error));
+    }
+  }
+  if (!isEnglishAudioTranslation(englishText)) {
+    throw new AppError("LLM_FAILED", "Dịch vụ chưa trả về bản dịch tiếng Anh hợp lệ.", 502,
+      { provider: "cloudflare", reason: "invalid_translation_language" });
+  }
+  const translated: AudioTranslationResult = {
     englishText,
-    wordCount:
-      typeof result?.word_count === "number" ? result.word_count : undefined,
-    segments: Array.isArray(result?.segments) ? result.segments : undefined,
-    vtt: typeof result?.vtt === "string" ? result.vtt : undefined,
-    model: config.model,
+    sourceText,
+    textModel,
+    timings: { asrMs, translationMs: Math.round(performance.now() - translationStartedAt) },
+    // Source-language timestamps/subtitles are not English subtitles.
+    wordCount: englishText.split(/\s+/).length,
+    model,
   };
+  if (textCacheKey && !cachedText && sourceLanguage !== "en") await audioTranslationCache.set(textCacheKey, translated);
+  return translated;
 }
 
 async function transcribeAudio(
@@ -169,7 +346,7 @@ async function transcribeAudio(
   let response: Response;
 
   try {
-    response = await fetch(
+    response = await fetchLegacyCloudflare(
       `https://api.cloudflare.com/client/v4/accounts/${encodeURIComponent(config.accountId)}/ai/run/${config.model}`,
       {
         method: "POST",
@@ -178,11 +355,13 @@ async function transcribeAudio(
           "Content-Type": "application/json",
         },
         body: JSON.stringify(body),
-        signal: AbortSignal.timeout(timeoutMs),
+        signal: timeoutSignal(timeoutMs, "request_deadline"),
         cache: "no-store",
       },
+      { task: "asr", model: config.model, timeoutMs },
     );
-  } catch {
+  } catch (error) {
+    if (error instanceof AppError) throw error;
     throw new AppError(
       "ASR_FAILED",
       "Không kết nối được Cloudflare Workers AI. Vui lòng thử lại.",

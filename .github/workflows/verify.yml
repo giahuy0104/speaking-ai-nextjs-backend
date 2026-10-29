@@ -1,0 +1,26 @@
+name: Verify deployment
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci --no-audit --no-fund
+      - run: npm run lint
+      # Isolated Redis/PostgreSQL containers; no project/production credentials.
+      - run: npm run test:integration
+      - run: docker build --target web -t speaking-ai-railway-web:check .
+      - run: docker build -f Dockerfile.worker -t speaking-ai-railway-worker:check .
+      - run: npm run smoke:railway

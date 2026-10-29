@@ -1,0 +1,249 @@
+{
+  "prefix": "logging-live-abort-fixed-1495dee8-7634-498a-b2b9-e590f755859c",
+  "method": "Controlled caller cancellation after 100ms, after fixing detached upload/body parser races.",
+  "prime": {
+    "status": 200,
+    "cache": "miss"
+  },
+  "outcomes": [
+    {
+      "requestId": "logging-live-abort-fixed-1495dee8-7634-498a-b2b9-e590f755859c-0",
+      "outcome": "client_cancelled"
+    },
+    {
+      "requestId": "logging-live-abort-fixed-1495dee8-7634-498a-b2b9-e590f755859c-1",
+      "outcome": "client_cancelled"
+    },
+    {
+      "requestId": "logging-live-abort-fixed-1495dee8-7634-498a-b2b9-e590f755859c-2",
+      "outcome": "client_cancelled"
+    },
+    {
+      "requestId": "logging-live-abort-fixed-1495dee8-7634-498a-b2b9-e590f755859c-3",
+      "outcome": "client_cancelled"
+    },
+    {
+      "requestId": "logging-live-abort-fixed-1495dee8-7634-498a-b2b9-e590f755859c-4",
+      "outcome": "client_cancelled"
+    },
+    {
+      "requestId": "logging-live-abort-fixed-1495dee8-7634-498a-b2b9-e590f755859c-5",
+      "outcome": "client_cancelled"
+    },
+    {
+      "requestId": "logging-live-abort-fixed-1495dee8-7634-498a-b2b9-e590f755859c-6",
+      "outcome": "client_cancelled"
+    },
+    {
+      "requestId": "logging-live-abort-fixed-1495dee8-7634-498a-b2b9-e590f755859c-7",
+      "outcome": "client_cancelled"
+    },
+    {
+      "requestId": "logging-live-abort-fixed-1495dee8-7634-498a-b2b9-e590f755859c-8",
+      "outcome": "client_cancelled"
+    },
+    {
+      "requestId": "logging-live-abort-fixed-1495dee8-7634-498a-b2b9-e590f755859c-9",
+      "outcome": "client_cancelled"
+    },
+    {
+      "requestId": "logging-live-abort-fixed-1495dee8-7634-498a-b2b9-e590f755859c-10",
+      "outcome": "client_cancelled"
+    },
+    {
+      "requestId": "logging-live-abort-fixed-1495dee8-7634-498a-b2b9-e590f755859c-11",
+      "outcome": "client_cancelled"
+    },
+    {
+      "requestId": "logging-live-abort-fixed-1495dee8-7634-498a-b2b9-e590f755859c-12",
+      "outcome": "client_cancelled"
+    },
+    {
+      "requestId": "logging-live-abort-fixed-1495dee8-7634-498a-b2b9-e590f755859c-13",
+      "outcome": "client_cancelled"
+    },
+    {
+      "requestId": "logging-live-abort-fixed-1495dee8-7634-498a-b2b9-e590f755859c-14",
+      "outcome": "client_cancelled"
+    },
+    {
+      "requestId": "logging-live-abort-fixed-1495dee8-7634-498a-b2b9-e590f755859c-15",
+      "outcome": "client_cancelled"
+    },
+    {
+      "requestId": "logging-live-abort-fixed-1495dee8-7634-498a-b2b9-e590f755859c-16",
+      "outcome": "client_cancelled"
+    },
+    {
+      "requestId": "logging-live-abort-fixed-1495dee8-7634-498a-b2b9-e590f755859c-17",
+      "outcome": "client_cancelled"
+    },
+    {
+      "requestId": "logging-live-abort-fixed-1495dee8-7634-498a-b2b9-e590f755859c-18",
+      "outcome": "client_cancelled"
+    },
+    {
+      "requestId": "logging-live-abort-fixed-1495dee8-7634-498a-b2b9-e590f755859c-19",
+      "outcome": "client_cancelled"
+    }
+  ],
+  "serverFailures": [
+    {
+      "requestId": "logging-live-abort-fixed-1495dee8-7634-498a-b2b9-e590f755859c-11",
+      "failureSource": "client",
+      "abortCause": "client_disconnect",
+      "requestStage": "upload",
+      "providerCallStarted": false,
+      "providerAttempts": 0,
+      "httpStatus": 499,
+      "clientAborted": true
+    },
+    {
+      "requestId": "logging-live-abort-fixed-1495dee8-7634-498a-b2b9-e590f755859c-12",
+      "failureSource": "client",
+      "abortCause": "client_disconnect",
+      "requestStage": "upload",
+      "providerCallStarted": false,
+      "providerAttempts": 0,
+      "httpStatus": 499,
+      "clientAborted": true
+    },
+    {
+      "requestId": "logging-live-abort-fixed-1495dee8-7634-498a-b2b9-e590f755859c-13",
+      "failureSource": "client",
+      "abortCause": "client_disconnect",
+      "requestStage": "upload",
+      "providerCallStarted": false,
+      "providerAttempts": 0,
+      "httpStatus": 499,
+      "clientAborted": true
+    },
+    {
+      "requestId": "logging-live-abort-fixed-1495dee8-7634-498a-b2b9-e590f755859c-14",
+      "failureSource": "client",
+      "abortCause": "client_disconnect",
+      "requestStage": "upload",
+      "providerCallStarted": false,
+      "providerAttempts": 0,
+      "httpStatus": 499,
+      "clientAborted": true
+    },
+    {
+      "requestId": "logging-live-abort-fixed-1495dee8-7634-498a-b2b9-e590f755859c-15",
+      "failureSource": "client",
+      "abortCause": "client_disconnect",
+      "requestStage": "upload",
+      "providerCallStarted": false,
+      "providerAttempts": 0,
+      "httpStatus": 499,
+      "clientAborted": true
+    },
+    {
+      "requestId": "logging-live-abort-fixed-1495dee8-7634-498a-b2b9-e590f755859c-16",
+      "failureSource": "client",
+      "abortCause": "client_disconnect",
+      "requestStage": "upload",
+      "providerCallStarted": false,
+      "providerAttempts": 0,
+      "httpStatus": 499,
+      "clientAborted": true
+    },
+    {
+      "requestId": "logging-live-abort-fixed-1495dee8-7634-498a-b2b9-e590f755859c-17",
+      "failureSource": "client",
+      "abortCause": "client_disconnect",
+      "requestStage": "upload",
+      "providerCallStarted": false,
+      "providerAttempts": 0,
+      "httpStatus": 499,
+      "clientAborted": true
+    },
+    {
+      "requestId": "logging-live-abort-fixed-1495dee8-7634-498a-b2b9-e590f755859c-18",
+      "failureSource": "client",
+      "abortCause": "client_disconnect",
+      "requestStage": "upload",
+      "providerCallStarted": false,
+      "providerAttempts": 0,
+      "httpStatus": 499,
+      "clientAborted": true
+    },
+    {
+      "requestId": "logging-live-abort-fixed-1495dee8-7634-498a-b2b9-e590f755859c-19",
+      "failureSource": "client",
+      "abortCause": "client_disconnect",
+      "requestStage": "upload",
+      "providerCallStarted": false,
+      "providerAttempts": 0,
+      "httpStatus": 499,
+      "clientAborted": true
+    },
+    {
+      "requestId": "logging-live-abort-fixed-1495dee8-7634-498a-b2b9-e590f755859c-5",
+      "failureSource": "client",
+      "abortCause": "client_disconnect",
+      "requestStage": "cache_lookup",
+      "providerCallStarted": false,
+      "providerAttempts": 0,
+      "httpStatus": 499,
+      "clientAborted": true
+    },
+    {
+      "requestId": "logging-live-abort-fixed-1495dee8-7634-498a-b2b9-e590f755859c-6",
+      "failureSource": "client",
+      "abortCause": "client_disconnect",
+      "requestStage": "cache_lookup",
+      "providerCallStarted": false,
+      "providerAttempts": 0,
+      "httpStatus": 499,
+      "clientAborted": true
+    },
+    {
+      "requestId": "logging-live-abort-fixed-1495dee8-7634-498a-b2b9-e590f755859c-7",
+      "failureSource": "client",
+      "abortCause": "client_disconnect",
+      "requestStage": "cache_lookup",
+      "providerCallStarted": false,
+      "providerAttempts": 0,
+      "httpStatus": 499,
+      "clientAborted": true
+    },
+    {
+      "requestId": "logging-live-abort-fixed-1495dee8-7634-498a-b2b9-e590f755859c-9",
+      "failureSource": "client",
+      "abortCause": "client_disconnect",
+      "requestStage": "cache_lookup",
+      "providerCallStarted": false,
+      "providerAttempts": 0,
+      "httpStatus": 499,
+      "clientAborted": true
+    },
+    {
+      "requestId": "logging-live-abort-fixed-1495dee8-7634-498a-b2b9-e590f755859c-8",
+      "failureSource": "client",
+      "abortCause": "client_disconnect",
+      "requestStage": "cache_lookup",
+      "providerCallStarted": false,
+      "providerAttempts": 0,
+      "httpStatus": 499,
+      "clientAborted": true
+    },
+    {
+      "requestId": "logging-live-abort-fixed-1495dee8-7634-498a-b2b9-e590f755859c-10",
+      "failureSource": "client",
+      "abortCause": "client_disconnect",
+      "requestStage": "cache_lookup",
+      "providerCallStarted": false,
+      "providerAttempts": 0,
+      "httpStatus": 499,
+      "clientAborted": true
+    }
+  ],
+  "workCancellations": 0,
+  "serverEventCounts": {
+    "cloudflare_audio_translation_completed": 5,
+    "cloudflare_audio_translation_failed": 15
+  },
+  "serverCompletedBeforeDisconnectObserved": 5,
+  "requestsWithoutAppTerminalLog": 0
+}

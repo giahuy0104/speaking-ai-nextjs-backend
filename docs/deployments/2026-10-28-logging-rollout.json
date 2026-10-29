@@ -1,0 +1,248 @@
+{
+  "startedAt": "2026-10-28T04:59:51.886Z",
+  "status": "completed",
+  "rollbackTag": "speaking-ai-backend:before-logging-20261028t045951z",
+  "before": [
+    {
+      "name": "speaking-ai-cloudflare-backend-3000-1",
+      "id": "464278afbbdc2c2e59f98ff52936d20671f8b777a484f38cc10f8633103bc953",
+      "imageId": "sha256:e3672642072780ab606b98545605300e03c0194b811ee24773e38002d66e19c2",
+      "image": "speaking-ai-backend:local",
+      "startedAt": "2026-10-28T02:38:45.892612516Z",
+      "health": "healthy",
+      "service": "backend-3000"
+    },
+    {
+      "name": "speaking-ai-cloudflare-backend-3001-1",
+      "id": "213f3849b63d8c5ea7667723d35c5bf5e133b7da56ba96f17b53da459adaee89",
+      "imageId": "sha256:e3672642072780ab606b98545605300e03c0194b811ee24773e38002d66e19c2",
+      "image": "speaking-ai-backend:local",
+      "startedAt": "2026-10-28T02:38:45.894347531Z",
+      "health": "healthy",
+      "service": "backend-3001"
+    },
+    {
+      "name": "speaking-ai-cloudflare-nginx-1",
+      "id": "32a9d1dd8736d775f2d708f4814faada95bc06fa7935e965f4cc6486720bae99",
+      "imageId": "sha256:47928bf67eb62a1863cb08d9ecb52d3e704304ba614eaee17884204677702951",
+      "image": "nginx:1.30-alpine",
+      "startedAt": "2026-10-28T02:11:12.459747889Z",
+      "health": "healthy",
+      "service": "nginx"
+    },
+    {
+      "name": "speaking-ai-cloudflare-redis",
+      "id": "3e44b6636bdc67e3e82dbd2c9c1f18443007554c08e09bbba3f355b4025b23ea",
+      "imageId": "sha256:57e4255cc971b1c8d6f8a6ca283ac01bc3ecdd914273ef6bfaede87aaecd6541",
+      "image": "redis:7.4-alpine",
+      "startedAt": "2026-10-28T01:30:37.2173498Z",
+      "health": "healthy",
+      "service": "redis"
+    },
+    {
+      "name": "speaking-ai-audio-cache",
+      "id": "9dbae4d13b9a864b60bd5cb0e8b9a2d56dd6a0139450593b4464d911284f31d4",
+      "imageId": "sha256:57e4255cc971b1c8d6f8a6ca283ac01bc3ecdd914273ef6bfaede87aaecd6541",
+      "image": "redis:7.4-alpine",
+      "startedAt": "2026-10-28T01:30:37.2069167Z",
+      "health": "healthy",
+      "service": "redis-cache"
+    },
+    {
+      "name": "speaking-ai-audio-jobs",
+      "id": "cb2f812231f8549f96acef195f8b8a4b963c219d3ac4c2384c32e9e0addb2e6e",
+      "imageId": "sha256:57e4255cc971b1c8d6f8a6ca283ac01bc3ecdd914273ef6bfaede87aaecd6541",
+      "image": "redis:7.4-alpine",
+      "startedAt": "2026-10-28T01:30:37.2220224Z",
+      "health": "healthy",
+      "service": "redis-jobs"
+    }
+  ],
+  "worker": {
+    "running": false,
+    "jobsEnabled": false,
+    "action": "No worker restart needed; jobs profile is disabled."
+  },
+  "imageId": "sha256:d9f375a964d02e05085554b2627ed53d3b1ac08edaec4acdeeb083c50480a4fe",
+  "preflight": {
+    "configurationValidated": true,
+    "cancelledStatus": 499,
+    "timeoutStatus": 504,
+    "networkCalls": 0,
+    "results": [
+      {
+        "requestId": "rollout-preflight-abort",
+        "failureSource": "client",
+        "abortCause": "client_disconnect",
+        "requestStage": "upload",
+        "httpStatus": 499,
+        "providerCallStarted": false
+      },
+      {
+        "requestId": "rollout-preflight-timeout",
+        "failureSource": "backend",
+        "abortCause": "request_deadline",
+        "requestStage": "upload",
+        "httpStatus": 504,
+        "providerCallStarted": false
+      }
+    ]
+  },
+  "backends": {
+    "backend-3000": {
+      "healthStatus": 200,
+      "instance": "5a48b6080dd6",
+      "validationStatus": 415,
+      "requestId": "logging-rollout-backend-3000-a3c7449d-1da2-406a-8ff5-73fd7c5550b4",
+      "id": "5a48b6080dd623ff24ad1f1e938e7e27fe08e11997cdf02594d8081a44538724",
+      "imageId": "sha256:d9f375a964d02e05085554b2627ed53d3b1ac08edaec4acdeeb083c50480a4fe",
+      "startedAt": "2026-10-28T05:01:46.178808767Z",
+      "health": "healthy",
+      "logging": {
+        "failureSource": "backend",
+        "requestStage": "validation",
+        "httpStatus": 415,
+        "providerCallStarted": false,
+        "elapsedMs": 1
+      }
+    },
+    "backend-3001": {
+      "healthStatus": 200,
+      "instance": "9551f07aad0d",
+      "validationStatus": 415,
+      "requestId": "logging-rollout-backend-3001-9d071ef6-7888-498d-9b78-3e958eebc076",
+      "id": "9551f07aad0d6e8cb837e2d71e40cf00e73d9bca23276f5954d16fe82dd639d1",
+      "imageId": "sha256:d9f375a964d02e05085554b2627ed53d3b1ac08edaec4acdeeb083c50480a4fe",
+      "startedAt": "2026-10-28T05:02:38.897893817Z",
+      "health": "healthy",
+      "logging": {
+        "failureSource": "backend",
+        "requestStage": "validation",
+        "httpStatus": 415,
+        "providerCallStarted": false,
+        "elapsedMs": 1
+      }
+    }
+  },
+  "audioSmoke": {
+    "requestId": "logging-rollout-ai-smoke-1e14eed4-9fe8-4e71-8c54-06ea85ad5698",
+    "status": 200,
+    "cache": "disabled",
+    "contractValid": true,
+    "events": [
+      {
+        "service": "backend-3000",
+        "event": "cloudflare_pool_request_admitted",
+        "stage": "request"
+      },
+      {
+        "service": "backend-3000",
+        "event": "cloudflare_pool_admission",
+        "stage": "audio_translation_asr",
+        "accountAlias": "audio-b"
+      },
+      {
+        "service": "backend-3000",
+        "event": "cloudflare_pool_attempt_completed",
+        "stage": "audio_translation_asr",
+        "accountAlias": "audio-b",
+        "status": "success",
+        "providerElapsedMs": 1872
+      },
+      {
+        "service": "backend-3000",
+        "event": "cloudflare_pool_admission",
+        "stage": "audio_translation_text",
+        "accountAlias": "audio-b"
+      },
+      {
+        "service": "backend-3000",
+        "event": "cloudflare_pool_attempt_completed",
+        "stage": "audio_translation_text",
+        "accountAlias": "audio-b",
+        "status": "success",
+        "providerElapsedMs": 465
+      },
+      {
+        "service": "backend-3000",
+        "event": "cloudflare_audio_translation_completed"
+      }
+    ]
+  },
+  "after": [
+    {
+      "name": "speaking-ai-cloudflare-backend-3000-1",
+      "id": "5a48b6080dd623ff24ad1f1e938e7e27fe08e11997cdf02594d8081a44538724",
+      "imageId": "sha256:d9f375a964d02e05085554b2627ed53d3b1ac08edaec4acdeeb083c50480a4fe",
+      "image": "speaking-ai-backend:local",
+      "startedAt": "2026-10-28T05:01:46.178808767Z",
+      "health": "healthy",
+      "service": "backend-3000"
+    },
+    {
+      "name": "speaking-ai-cloudflare-backend-3001-1",
+      "id": "9551f07aad0d6e8cb837e2d71e40cf00e73d9bca23276f5954d16fe82dd639d1",
+      "imageId": "sha256:d9f375a964d02e05085554b2627ed53d3b1ac08edaec4acdeeb083c50480a4fe",
+      "image": "speaking-ai-backend:local",
+      "startedAt": "2026-10-28T05:02:38.897893817Z",
+      "health": "healthy",
+      "service": "backend-3001"
+    },
+    {
+      "name": "speaking-ai-cloudflare-nginx-1",
+      "id": "32a9d1dd8736d775f2d708f4814faada95bc06fa7935e965f4cc6486720bae99",
+      "imageId": "sha256:47928bf67eb62a1863cb08d9ecb52d3e704304ba614eaee17884204677702951",
+      "image": "nginx:1.30-alpine",
+      "startedAt": "2026-10-28T02:11:12.459747889Z",
+      "health": "healthy",
+      "service": "nginx"
+    },
+    {
+      "name": "speaking-ai-cloudflare-redis",
+      "id": "3e44b6636bdc67e3e82dbd2c9c1f18443007554c08e09bbba3f355b4025b23ea",
+      "imageId": "sha256:57e4255cc971b1c8d6f8a6ca283ac01bc3ecdd914273ef6bfaede87aaecd6541",
+      "image": "redis:7.4-alpine",
+      "startedAt": "2026-10-28T01:30:37.2173498Z",
+      "health": "healthy",
+      "service": "redis"
+    },
+    {
+      "name": "speaking-ai-audio-cache",
+      "id": "9dbae4d13b9a864b60bd5cb0e8b9a2d56dd6a0139450593b4464d911284f31d4",
+      "imageId": "sha256:57e4255cc971b1c8d6f8a6ca283ac01bc3ecdd914273ef6bfaede87aaecd6541",
+      "image": "redis:7.4-alpine",
+      "startedAt": "2026-10-28T01:30:37.2069167Z",
+      "health": "healthy",
+      "service": "redis-cache"
+    },
+    {
+      "name": "speaking-ai-audio-jobs",
+      "id": "cb2f812231f8549f96acef195f8b8a4b963c219d3ac4c2384c32e9e0addb2e6e",
+      "imageId": "sha256:57e4255cc971b1c8d6f8a6ca283ac01bc3ecdd914273ef6bfaede87aaecd6541",
+      "image": "redis:7.4-alpine",
+      "startedAt": "2026-10-28T01:30:37.2220224Z",
+      "health": "healthy",
+      "service": "redis-jobs"
+    }
+  ],
+  "loadBalancerCheck": {
+    "command": "npm run lb:check",
+    "passed": true,
+    "requests": 20,
+    "instances": [
+      "5a48b6080dd6",
+      "9551f07aad0d"
+    ]
+  },
+  "checks": {
+    "productionBuildPassed": true,
+    "compiledImageClientAbortVerified": true,
+    "compiledImageBackendDeadlineVerified": true,
+    "allBackendsHealthy": true,
+    "newHttpLoggingVerifiedOnAllBackends": true,
+    "nginxAndRedisPreserved": true,
+    "audioSmokePassed": true
+  },
+  "publicApiUrl": "http://localhost:8080/api/audio/translate",
+  "completedAt": "2026-10-28T05:05:12.406Z"
+}

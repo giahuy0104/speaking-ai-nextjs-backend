@@ -1,5 +1,7 @@
 "use client";
 
+import { browserInstallationFetch } from "./installationFetch";
+
 type FetchLike = typeof fetch;
 
 type AudioSessionCapabilities = {
@@ -71,6 +73,19 @@ async function sha256Hex(blob: Blob) {
   ).join("");
 }
 
+export async function audioSessionChunkHeaders(
+  session: { audioSessionId: string; uploadToken?: string },
+  sequence: number,
+  blob: Blob,
+) {
+  const headers: Record<string, string> = {
+    "Idempotency-Key": `chunk:${session.audioSessionId}:${sequence}`,
+    "X-Chunk-Sha256": await sha256Hex(blob),
+  };
+  if (session.uploadToken) headers.Authorization = `Bearer ${session.uploadToken}`;
+  return headers;
+}
+
 async function getResponseError(response: Response) {
   const payload = await response.json().catch(() => null);
   if (
@@ -111,7 +126,7 @@ export class BrowserAudioSessionUploader {
   private sessionCreateMs = 0;
 
   constructor(options: BrowserAudioSessionUploaderOptions) {
-    this.fetchImpl = options.fetchImpl ?? fetch;
+    this.fetchImpl = options.fetchImpl ?? browserInstallationFetch;
     this.now = options.now ?? (() => performance.now());
     this.startedAt = this.now();
     this.sourceChunkIntervalMs =
@@ -210,17 +225,10 @@ export class BrowserAudioSessionUploader {
   private async uploadChunk(sequence: number, blob: Blob) {
     const session = await this.sessionPromise;
     const startedAt = this.now();
-    const checksum = await sha256Hex(blob);
     const formData = new FormData();
     formData.append("sequence", String(sequence));
     formData.append("audio", blob, `chunk-${sequence}.part`);
-    const headers: Record<string, string> = {
-      "Idempotency-Key": `chunk:${session.audioSessionId}:${sequence}`,
-      "X-Chunk-Sha256": checksum,
-    };
-    if (session.uploadToken) {
-      headers.Authorization = `Bearer ${session.uploadToken}`;
-    }
+    const headers = await audioSessionChunkHeaders(session, sequence, blob);
     const response = await this.fetchImpl(
       `/api/audio-sessions/${encodeURIComponent(session.audioSessionId)}/chunks`,
       { method: "POST", headers, body: formData },

@@ -1,0 +1,47 @@
+{
+  "report": {
+    "runId": "opt-config-fixed-49c39a47-ea35-4970-bb35-b39629b09ab7",
+    "startedAt": "2026-10-27T13:13:50.352Z",
+    "completedAt": "2026-10-27T13:13:50.502Z",
+    "clients": 1,
+    "sendWindowSeconds": 1,
+    "elapsedSeconds": 0.14954489999999998,
+    "mode": "burst",
+    "workload": "unchanged Postman raw multipart; identical recording",
+    "drain": "in-flight requests finish after send window; no end-of-test cancellation",
+    "attempted": 1,
+    "successful": 0,
+    "successRate": 0,
+    "successfulPerSecond": 0,
+    "statusCounts": {
+      "503": 1
+    },
+    "cacheCounts": {
+      "not_instrumented": 1
+    },
+    "successLatencyMs": {
+      "p50": null,
+      "p95": null,
+      "p99": null,
+      "max": null
+    },
+    "allLatencyMs": {
+      "p50": 149,
+      "p95": 149,
+      "p99": 149,
+      "max": 149
+    },
+    "semanticQualityEvaluated": false,
+    "requestLimitReached": false
+  },
+  "requests": [
+    {
+      "requestId": "opt-config-fixed-49c39a47-ea35-4970-bb35-b39629b09ab7-0",
+      "status": 503,
+      "elapsedMs": 149,
+      "cache": null,
+      "reason": "store_unavailable",
+      "stage": "asr"
+    }
+  ]
+}

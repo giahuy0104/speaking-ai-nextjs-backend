@@ -4,13 +4,38 @@
   "private": true,
   "scripts": {
     "storage:migrate-tts": "node --import tsx scripts/migrate-tts-to-cloudinary.ts",
-    "test:archive": "node --import tsx --test src/lib/storage/appRecordsArchiveCore.test.ts src/lib/db/schema.test.ts",
+    "test:archive": "node --import tsx --test src/lib/storage/appRecordsArchiveCore.test.ts src/lib/storage/appRecordsArchive.test.ts src/lib/storage/appRecordsArchive.integration.test.ts src/lib/db/schema.test.ts",
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
+    "lb:up": "docker compose --env-file .env.local -f docker-compose.redis.yml -f docker-compose.nginx.yml up -d --build --wait nginx",
+    "postlb:up": "docker compose --env-file .env.local -f docker-compose.redis.yml -f docker-compose.nginx.yml exec -T nginx nginx -s reload",
+    "lb:stop": "docker compose --env-file .env.local -f docker-compose.redis.yml -f docker-compose.nginx.yml stop nginx backend-3000 backend-3001 audio-worker",
+    "lb:status": "docker compose --env-file .env.local -f docker-compose.redis.yml -f docker-compose.nginx.yml ps",
+    "lb:logs": "docker compose --env-file .env.local -f docker-compose.redis.yml -f docker-compose.nginx.yml logs --tail=100 nginx backend-3000 backend-3001",
+    "lb:logs:3000": "docker compose --env-file .env.local -f docker-compose.redis.yml -f docker-compose.nginx.yml logs --follow --tail=100 backend-3000",
+    "lb:logs:3001": "docker compose --env-file .env.local -f docker-compose.redis.yml -f docker-compose.nginx.yml logs --follow --tail=100 backend-3001",
+    "lb:check": "node --env-file-if-exists=.env.local scripts/check-nginx-load-balancer.mjs",
+    "postman:local-auth": "node scripts/setup-local-postman.mjs",
     "lint": "eslint",
-    "test:cloudflare": "node --import tsx --test src/lib/ai/cloudflareWorkersAi.test.ts",
+    "redis:up": "docker compose --env-file .env.local -f docker-compose.redis.yml up -d --wait",
+    "redis:down": "docker compose --env-file .env.local -f docker-compose.redis.yml down",
+    "redis:status": "docker compose --env-file .env.local -f docker-compose.redis.yml ps",
+    "redis:logs": "docker compose --env-file .env.local -f docker-compose.redis.yml logs --tail=100 redis",
+    "benchmark:audio-load": "node --import tsx scripts/benchmark-audio-load.ts",
+    "benchmark:nginx": "node --import tsx scripts/benchmark-audio-load.ts --url http://localhost:8080/api/audio/translate --collection docs/postman/Audio-Translation-Nginx-8080.postman_collection.json --clients 20 --seconds 30 --max-requests 120 --label nginx",
+    "test:nginx-load-runner": "node --import tsx --test scripts/lib/audioLoadRunner.test.ts",
+    "audio:worker": "node --env-file-if-exists=.env.local --import tsx scripts/audio-translation-worker.ts",
+    "check:audio-optimization": "node --env-file-if-exists=.env.local --import tsx scripts/check-audio-optimization.ts",
+    "test:audio-optimization": "node --import tsx --test src/lib/ai/audioTranslationService.test.ts src/lib/audio/trimPcmWav.test.ts src/lib/client/audioTranslationJobs.test.ts",
+    "test:audio-jobs:redis": "node --import tsx --test src/lib/ai/audioTranslationJobs.integration.test.ts",
+    "test:cloudflare": "node --import tsx --test src/lib/ai/cloudflareWorkersAi.test.ts src/lib/ai/cloudflareAudioTranslation.test.ts",
     "test:cloudflare-text": "node --import tsx --test src/lib/ai/cloudflareText.test.ts",
+    "test:cloudflare-pool": "node --import tsx --test src/lib/ai/cloudflare/accountConfig.test.ts src/lib/ai/cloudflare/quotaPolicy.test.ts src/lib/ai/cloudflare/providerError.test.ts src/lib/ai/cloudflare/deadline.test.ts src/lib/ai/cloudflare/memoryAdmissionStore.test.ts src/lib/ai/cloudflare/redisAdmissionStore.test.ts src/lib/ai/cloudflare/dispatcher.test.ts src/lib/ai/cloudflare/runtime.test.ts src/lib/ai/cloudflare/requestQueue.test.ts src/lib/ai/cloudflare/upload.test.ts src/lib/ai/cloudflareMultiAccountCompatibility.test.ts src/app/api/audio/translate/route.test.ts",
+    "test:cloudflare-legacy": "node --import tsx --test src/lib/ai/cloudflare/legacyAdmission.test.ts",
+    "test:cloudflare-pool:redis": "node --import tsx --test src/lib/ai/cloudflare/redisAdmissionStore.integration.test.ts",
+    "check:cloudflare-pool": "node --env-file-if-exists=.env.local --import tsx scripts/check-cloudflare-pool.ts",
+    "benchmark:cloudflare-pool": "node --env-file-if-exists=.env.local --import tsx scripts/benchmark-cloudflare-pool.ts",
     "benchmark:cloudflare-text": "node --env-file=.env.local --import tsx scripts/benchmark-cloudflare-text.ts",
     "test:translation": "node --import tsx --test --test-concurrency=1 src/lib/ai/faithfulTranslation.test.ts src/lib/ai/llm.test.mjs src/lib/ai/corpusRules.test.ts src/lib/ai/phraseSupplementRules.test.ts src/lib/ai/textCache.test.ts src/lib/ai/singleFlight.test.ts src/lib/ai/audioSessionAsr.test.ts src/lib/ai/batchPrefetch.test.ts",
     "test:transcript": "node --import tsx --test src/lib/audio/trimRecordedAudio.test.ts src/lib/ai/transcriptRepair.test.ts src/lib/ai/transcriptCorpusRepair.test.ts src/lib/ai/prefetchedTranscriptPolicy.test.ts src/lib/ai/regionalVocabularyNormalizer.test.ts src/lib/ai/transcriptQuality.test.ts",
@@ -20,23 +45,31 @@
     "test:cloudflare-only": "node --import tsx --test src/lib/ai/cloudflareOnly.test.ts",
     "test:tts-cache": "node --import tsx --test --test-concurrency=1 src/lib/ai/tts.test.ts src/lib/ai/audioWarmup.test.ts",
     "test:admin-auth": "node --import tsx --test src/lib/adminAuthCore.test.ts",
-    "test:installation-auth": "node --import tsx --test src/lib/installationAuthCore.test.ts src/lib/storage/audioSessionSecurity.test.ts",
+    "test:installation-auth": "node --import tsx --test src/lib/installationAuthCore.test.ts src/lib/installationAuth.test.ts src/lib/storage/audioSessionSecurity.test.ts src/lib/storage/audioSessionProductionSecurity.test.ts src/lib/client/installationFetch.test.ts",
     "test:app-version": "node --import tsx --test src/lib/appVersionPolicy.test.ts",
     "test:proxy": "node --import tsx --test src/proxy.test.ts",
     "storage:check": "node --env-file=.env.local --import tsx scripts/check-storage.ts",
     "storage:migrate:dry-run": "node --env-file=.env.local --import tsx scripts/migrate-local-to-managed.ts --dry-run",
     "storage:migrate": "node --env-file=.env.local --import tsx scripts/migrate-local-to-managed.ts",
     "storage:rollback": "node --env-file=.env.local --import tsx scripts/rollback-managed-to-local.ts",
-    "storage:rollback:apply": "node --env-file=.env.local --import tsx scripts/rollback-managed-to-local.ts --apply"
+    "storage:rollback:apply": "node --env-file=.env.local --import tsx scripts/rollback-managed-to-local.ts --apply",
+    "test": "node scripts/run-tests.mjs",
+    "build:runtime": "node scripts/build-deployment-runtime.mjs",
+    "check:deployment": "npm run build:runtime && node infra/docker/start.mjs check",
+    "test:deployment": "node --import tsx --test infra/docker/runtime-config.test.mjs src/lib/deployment/readinessCore.test.ts src/lib/ai/audioTranslationRedisConfig.test.ts",
+    "test:integration": "node scripts/test-integration.mjs",
+    "smoke:railway": "node scripts/smoke-railway-images.mjs"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1096.0",
     "@neondatabase/serverless": "^1.0.2",
     "@vercel/blob": "^2.6.1",
+    "bullmq": "6.5.0",
     "cloudinary": "^2.7.0",
     "next": "16.2.11",
     "react": "19.2.4",
-    "react-dom": "19.2.4"
+    "react-dom": "19.2.4",
+    "redis": "6.3.0"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
@@ -54,5 +87,8 @@
     "next": {
       "postcss": "8.5.20"
     }
+  },
+  "engines": {
+    "node": ">=22 <25"
   }
 }

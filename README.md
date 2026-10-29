@@ -184,6 +184,30 @@ To learn more about Next.js, take a look at the following resources:
 
 You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
 
+## Nginx load balancer (Docker)
+
+Run `npm run lb:up` to build the production image and start Nginx at
+`http://127.0.0.1:8080`, balancing `backend-3000:3000` and `backend-3001:3001`.
+The backend ports are internal to Docker. The stack reuses the existing Redis
+services and requires shared PostgreSQL storage in `.env.local`. Use
+`npm run lb:logs:3000` or `npm run lb:logs:3001` to follow each backend's logs.
+
+Run `npm run lb:check` to verify distribution across replicas without calling
+Cloudflare. See [the Vietnamese deployment guide](docs/nginx-load-balancer.md)
+for configuration, scaling, failure checks, optional workers and shutdown.
+
+## Deploy on Railway
+
+Use `railway.json` and `Dockerfile` for the web service. Populate Railway Variables
+from `.env.railway.example`, retain the Neon database, and use `/api/ready` for the
+deployment healthcheck. Production requires installation authentication and
+scoped audio upload; the built-in browser flows handle this automatically.
+
+See [the Vietnamese Railway deployment runbook](docs/railway-deployment.md) for
+required credentials, optional Redis/R2 workers, client compatibility, checks,
+cron safety and rollback. The optional worker service uses `railway.worker.json`
+and `Dockerfile.worker`.
+
 ## Deploy on Vercel
 
 The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.

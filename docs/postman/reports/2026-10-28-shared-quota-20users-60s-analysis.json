@@ -1,0 +1,278 @@
+{
+  "run": {
+    "runId": "opt-shared-quota-c81462c5-c81e-4545-897b-668678dc0de3",
+    "startedAt": "2026-10-28T09:21:24.160Z",
+    "completedAt": "2026-10-28T09:22:39.617Z",
+    "clients": 20,
+    "sendWindowSeconds": 60,
+    "elapsedSeconds": 75.45553050000001,
+    "mode": "sustained",
+    "workload": "unchanged Postman raw multipart; identical recording",
+    "drain": "in-flight requests finish after send window; no end-of-test cancellation",
+    "attempted": 458,
+    "successful": 455,
+    "successRate": 0.9934497816593887,
+    "successfulPerSecond": 6.030041760822289,
+    "statusCounts": {
+      "200": 455,
+      "502": 1,
+      "504": 2
+    },
+    "cacheCounts": {
+      "disabled": 455,
+      "not_instrumented": 3
+    },
+    "successLatencyMs": {
+      "p50": 2394,
+      "p95": 4760,
+      "p99": 6363,
+      "max": 8395
+    },
+    "allLatencyMs": {
+      "p50": 2394,
+      "p95": 4804,
+      "p99": 6581,
+      "max": 20024
+    },
+    "semanticQualityEvaluated": false,
+    "maxRequests": 2000,
+    "requestLimitReached": false,
+    "loadControl": {
+      "admitted": 458,
+      "stopReason": "duration",
+      "peakUsedMemoryPercent": 89.48,
+      "minimumFreeMemoryMB": 1696
+    },
+    "generatorMemory": {
+      "rssMB": 66,
+      "maxUsedMemoryPercent": 90,
+      "minFreeMemoryMB": 1024
+    }
+  },
+  "backendCompleted": 455,
+  "failures": [
+    {
+      "timestamp": "2026-10-28T09:21:53.565Z",
+      "level": "warn",
+      "event": "cloudflare_audio_translation_failed",
+      "requestId": "opt-shared-quota-c81462c5-c81e-4545-897b-668678dc0de3-73",
+      "error": {
+        "name": "AppError",
+        "message": "Đã hết thời gian chờ Cloudflare phản hồi ở bước nhận diện giọng nói. Vui lòng thử lại."
+      },
+      "details": {
+        "provider": "cloudflare",
+        "stage": "asr",
+        "reason": "timeout"
+      },
+      "failureSource": "backend",
+      "abortCause": "attempt_timeout",
+      "requestStage": "asr",
+      "clientAborted": false,
+      "providerCallStarted": true,
+      "providerAttempts": 1,
+      "elapsedMs": 20007,
+      "httpStatus": 504,
+      "instance": "speaking-ai-cloudflare-backend-3000-1"
+    },
+    {
+      "timestamp": "2026-10-28T09:22:20.855Z",
+      "level": "warn",
+      "event": "cloudflare_audio_translation_failed",
+      "requestId": "opt-shared-quota-c81462c5-c81e-4545-897b-668678dc0de3-429",
+      "error": {
+        "name": "AppError",
+        "message": "Cloudflare trả về lỗi HTTP 500 ở bước nhận diện giọng nói. Vui lòng thử lại sau."
+      },
+      "details": {
+        "provider": "cloudflare",
+        "stage": "asr",
+        "reason": "provider_error"
+      },
+      "failureSource": "cloudflare",
+      "upstreamStatus": 500,
+      "upstreamCodes": [
+        3043
+      ],
+      "requestStage": "asr",
+      "clientAborted": false,
+      "providerCallStarted": true,
+      "providerAttempts": 1,
+      "elapsedMs": 1114,
+      "httpStatus": 502,
+      "instance": "speaking-ai-cloudflare-backend-3000-1"
+    },
+    {
+      "timestamp": "2026-10-28T09:22:39.614Z",
+      "level": "warn",
+      "event": "cloudflare_audio_translation_failed",
+      "requestId": "opt-shared-quota-c81462c5-c81e-4545-897b-668678dc0de3-426",
+      "error": {
+        "name": "AppError",
+        "message": "Đã hết thời gian chờ Cloudflare phản hồi ở bước nhận diện giọng nói. Vui lòng thử lại."
+      },
+      "details": {
+        "provider": "cloudflare",
+        "stage": "asr",
+        "reason": "timeout"
+      },
+      "failureSource": "backend",
+      "abortCause": "attempt_timeout",
+      "requestStage": "asr",
+      "clientAborted": false,
+      "providerCallStarted": true,
+      "providerAttempts": 1,
+      "elapsedMs": 20008,
+      "httpStatus": 504,
+      "instance": "speaking-ai-cloudflare-backend-3000-1"
+    }
+  ],
+  "cancelledEvents": 0,
+  "accountAdmissions": {
+    "audio-b": 462,
+    "audio-a": 451
+  },
+  "accountStages": {
+    "audio-b:audio_translation_asr": 232,
+    "audio-a:audio_translation_asr": 226,
+    "audio-a:audio_translation_text": 225,
+    "audio-b:audio_translation_text": 230
+  },
+  "configVersions": {
+    "73bc70475416078e": 913
+  },
+  "attemptFailures": [
+    {
+      "timestamp": "2026-10-28T09:21:53.561Z",
+      "level": "info",
+      "event": "cloudflare_pool_attempt_completed",
+      "requestId": "opt-shared-quota-c81462c5-c81e-4545-897b-668678dc0de3-73",
+      "workload": "audio-translate",
+      "stage": "audio_translation_asr",
+      "model": "@cf/openai/whisper-large-v3-turbo",
+      "configVersion": "73bc70475416078e",
+      "accountAlias": "audio-a",
+      "attempt": 1,
+      "providerElapsedMs": 19897,
+      "safeReason": "timeout",
+      "failureSource": "backend",
+      "abortCause": "attempt_timeout",
+      "instance": "speaking-ai-cloudflare-backend-3000-1"
+    },
+    {
+      "timestamp": "2026-10-28T09:22:20.853Z",
+      "level": "info",
+      "event": "cloudflare_pool_attempt_completed",
+      "requestId": "opt-shared-quota-c81462c5-c81e-4545-897b-668678dc0de3-429",
+      "workload": "audio-translate",
+      "stage": "audio_translation_asr",
+      "model": "@cf/openai/whisper-large-v3-turbo",
+      "configVersion": "73bc70475416078e",
+      "accountAlias": "audio-b",
+      "attempt": 1,
+      "providerElapsedMs": 1109,
+      "safeReason": "provider_error",
+      "status": 500,
+      "failureSource": "cloudflare",
+      "upstreamStatus": 500,
+      "upstreamCodes": "3043",
+      "instance": "speaking-ai-cloudflare-backend-3000-1"
+    },
+    {
+      "timestamp": "2026-10-28T09:22:39.607Z",
+      "level": "info",
+      "event": "cloudflare_pool_attempt_completed",
+      "requestId": "opt-shared-quota-c81462c5-c81e-4545-897b-668678dc0de3-426",
+      "workload": "audio-translate",
+      "stage": "audio_translation_asr",
+      "model": "@cf/openai/whisper-large-v3-turbo",
+      "configVersion": "73bc70475416078e",
+      "accountAlias": "audio-a",
+      "attempt": 1,
+      "providerElapsedMs": 19995,
+      "safeReason": "timeout",
+      "failureSource": "backend",
+      "abortCause": "attempt_timeout",
+      "instance": "speaking-ai-cloudflare-backend-3000-1"
+    }
+  ],
+  "latencyMs": {
+    "asrProvider": {
+      "count": 455,
+      "mean": 1914,
+      "p95": 3996,
+      "max": 7680
+    },
+    "textProvider": {
+      "count": 455,
+      "mean": 642,
+      "p95": 985,
+      "max": 1490
+    },
+    "asrAdmission": {
+      "count": 458,
+      "mean": 8,
+      "p95": 9,
+      "max": 275
+    },
+    "textAdmission": {
+      "count": 455,
+      "mean": 25,
+      "p95": 182,
+      "max": 560
+    }
+  },
+  "perBackend": {
+    "speaking-ai-cloudflare-backend-3001-1": 229,
+    "speaking-ai-cloudflare-backend-3000-1": 229
+  },
+  "nginx": {
+    "requests": 458,
+    "statusCounts": {
+      "200": 455,
+      "502": 1,
+      "504": 2
+    },
+    "upstreamStatusCounts": {
+      "200": 455,
+      "502": 1,
+      "504": 2
+    }
+  },
+  "allRequestsHaveBackendTerminal": true,
+  "limitations": [
+    "Identical Postman audio; production legacy access disables translation cache.",
+    "No manual semantic translation quality evaluation.",
+    "One local sustained run, not a production capacity guarantee.",
+    "Legacy mixed-workload concurrency verified separately, not mixed into this baseline."
+  ],
+  "comparison": {
+    "baseline": "2026-10-28-nginx-20users-60s-messages.json",
+    "previousSuccessful": 252,
+    "currentSuccessful": 455,
+    "previousSuccessP95Ms": 7538,
+    "currentSuccessP95Ms": 4760,
+    "successP95ReductionPercent": 36.85,
+    "previousSuccessPerSecondIncludingDrain": 3.894502152638156,
+    "currentSuccessPerSecondIncludingDrain": 6.030041760822289,
+    "previousDrainSeconds": 4.71,
+    "currentDrainSeconds": 15.46,
+    "previousStatusCounts": {
+      "200": 252,
+      "429": 2,
+      "502": 1,
+      "504": 1
+    },
+    "currentStatusCounts": {
+      "200": 455,
+      "502": 1,
+      "504": 2
+    }
+  },
+  "mixedSmoke": "docs/postman/reports/2026-10-28-shared-quota-mixed-smoke.json",
+  "legacyTextLiveSmoke": {
+    "success": true,
+    "model": "@cf/qwen/qwen3-30b-a3b-fp8",
+    "elapsedMs": 1695
+  }
+}

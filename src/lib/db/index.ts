@@ -83,6 +83,20 @@ export async function pingDatabase() {
   };
 }
 
+/** Readiness probes must never initialize/migrate schema or alter user data. */
+export async function probeDatabase(signal: AbortSignal) {
+  const rows = await getDatabaseClient().query(
+    `SELECT 1 AS ok,
+      to_regclass('app_records') IS NOT NULL
+      AND to_regclass('audio_upload_sessions') IS NOT NULL
+      AND to_regclass('audio_upload_chunks') IS NOT NULL
+      AND to_regclass('generated_audio') IS NOT NULL AS schema_ready`,
+    [],
+    { fetchOptions: { signal, cache: "no-store" } },
+  ) as { ok: number; schema_ready: boolean }[];
+  return rows[0]?.ok === 1 && rows[0]?.schema_ready === true;
+}
+
 export function resetDatabaseForTests() {
   databaseClient = null;
   schemaPromise = null;

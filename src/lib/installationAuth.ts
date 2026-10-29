@@ -55,7 +55,8 @@ export function getInstallationAuthConfig() {
   return {
     secret,
     invalidSecret: Boolean(configuredSecret && !secret),
-    required: enabled("INSTALLATION_AUTH_REQUIRED"),
+    // A legacy clientId is a development convenience, never a production credential.
+    required: process.env.NODE_ENV === "production" || enabled("INSTALLATION_AUTH_REQUIRED"),
     accessTtlSeconds: positiveInteger("INSTALLATION_ACCESS_TTL_SECONDS", 3600),
     refreshTtlSeconds: positiveInteger(
       "INSTALLATION_REFRESH_TTL_SECONDS",
@@ -258,7 +259,9 @@ export async function registerInstallation(input: unknown) {
     }
     const refreshed = await replaceRecord(existing.clientId, (current) => ({
       ...current,
-      refreshSessionId: randomUUID(),
+      // Registering the same installation is idempotent. Browser tabs share the
+      // device credential; registering one tab must not revoke every other tab.
+      // Explicit refresh/revoke still rotates or removes the session below.
       appVersion: registration.appVersion ?? current.appVersion,
       updatedAt: now,
     }));
@@ -283,6 +286,12 @@ export async function registerInstallation(input: unknown) {
     updatedAt: now,
   };
   if (!(await createRecord(record))) {
+    // Two tabs can read a new identity before either insert commits. Re-read
+    // the winner and accept only the exact same credential, never another owner.
+    const winner = await readRecord(record.clientId);
+    if (winner?.installationSecretHash === suppliedSecretHash) {
+      return issueTokens(winner);
+    }
     throw new AppError(
       "INSTALLATION_ALREADY_REGISTERED",
       "Installation vừa được đăng ký. Vui lòng thử lại.",

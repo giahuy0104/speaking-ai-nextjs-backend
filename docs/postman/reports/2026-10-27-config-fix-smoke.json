@@ -1,0 +1,45 @@
+{
+  "report": {
+    "runId": "opt-config-fix-9c54db81-f852-4de6-86d5-b68dc06ecb3e",
+    "startedAt": "2026-10-27T10:32:54.963Z",
+    "completedAt": "2026-10-27T10:32:55.569Z",
+    "clients": 1,
+    "sendWindowSeconds": 1,
+    "elapsedSeconds": 0.6051898,
+    "mode": "burst",
+    "workload": "unchanged Postman raw multipart; identical recording",
+    "drain": "in-flight requests finish after send window; no end-of-test cancellation",
+    "attempted": 1,
+    "successful": 0,
+    "successRate": 0,
+    "successfulPerSecond": 0,
+    "statusCounts": {
+      "404": 1
+    },
+    "cacheCounts": {
+      "not_instrumented": 1
+    },
+    "successLatencyMs": {
+      "p50": null,
+      "p95": null,
+      "p99": null,
+      "max": null
+    },
+    "allLatencyMs": {
+      "p50": 605,
+      "p95": 605,
+      "p99": 605,
+      "max": 605
+    },
+    "semanticQualityEvaluated": false,
+    "requestLimitReached": false
+  },
+  "requests": [
+    {
+      "requestId": "opt-config-fix-9c54db81-f852-4de6-86d5-b68dc06ecb3e-0",
+      "status": 404,
+      "elapsedMs": 605,
+      "cache": null
+    }
+  ]
+}

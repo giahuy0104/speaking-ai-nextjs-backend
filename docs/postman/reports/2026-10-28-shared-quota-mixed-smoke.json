@@ -1,0 +1,43 @@
+{
+  "startedAt": "2026-10-28T09:25:29.768Z",
+  "completedAt": "2026-10-28T09:25:34.187Z",
+  "concurrentRequests": 6,
+  "results": [
+    {
+      "kind": "pooled-translate",
+      "status": 200,
+      "elapsedMs": 2259,
+      "bytes": 321
+    },
+    {
+      "kind": "pooled-translate",
+      "status": 200,
+      "elapsedMs": 3107,
+      "bytes": 339
+    },
+    {
+      "kind": "pooled-translate",
+      "status": 200,
+      "elapsedMs": 3119,
+      "bytes": 324
+    },
+    {
+      "kind": "pooled-translate",
+      "status": 200,
+      "elapsedMs": 4413,
+      "bytes": 324
+    },
+    {
+      "kind": "legacy-asr",
+      "status": 200,
+      "elapsedMs": 4047,
+      "bytes": 148
+    },
+    {
+      "kind": "legacy-tts",
+      "status": 200,
+      "elapsedMs": 1108,
+      "bytes": 15987
+    }
+  ]
+}

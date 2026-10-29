@@ -1,0 +1,119 @@
+{
+  "environment": "local Next.js development server",
+  "endpoint": "http://localhost:3000/api/audio/translate",
+  "workload": "Unchanged Postman raw multipart, repeated identical audio; in-flight requests drain after send window.",
+  "finalLoad": {
+    "file": "docs/postman/reports/2026-10-28-cancellation-logging-sustained-final.json",
+    "runId": "opt-cancellation-logging-final-192aa6e4-a609-4c3c-9726-4901fa5644e2",
+    "startedAt": "2026-10-28T02:45:09.014Z",
+    "completedAt": "2026-10-28T02:46:09.209Z",
+    "clients": 20,
+    "sendWindowSeconds": 60,
+    "attempted": 4169,
+    "successful": 4169,
+    "statusCounts": {
+      "200": 4169
+    },
+    "successfulPerSecond": 69.2591404567876,
+    "latencyMs": {
+      "p50": 269,
+      "p95": 424,
+      "p99": 491,
+      "max": 551
+    },
+    "cacheCounts": {
+      "hit": 4169
+    },
+    "cacheHitAvgMs": 288,
+    "requestLimitReached": false,
+    "logEventCounts": {
+      "cloudflare_audio_translation_completed": 4169
+    },
+    "failures": 0,
+    "workCancellations": 0,
+    "providerAttempts": [],
+    "completedHaveElapsedMs": true
+  },
+  "initialLoad": {
+    "file": "docs/postman/reports/2026-10-28-cancellation-logging-sustained.json",
+    "runId": "opt-cancellation-logging-7679a18f-62ac-4360-a84c-8ebbf9752acc",
+    "startedAt": "2026-10-28T02:38:03.872Z",
+    "completedAt": "2026-10-28T02:39:04.054Z",
+    "clients": 20,
+    "sendWindowSeconds": 60,
+    "attempted": 3005,
+    "successful": 3005,
+    "statusCounts": {
+      "200": 3005
+    },
+    "successfulPerSecond": 49.93326522956614,
+    "latencyMs": {
+      "p50": 343,
+      "p95": 701,
+      "p99": 881,
+      "max": 3449
+    },
+    "cacheCounts": {
+      "miss": 1,
+      "coalesced": 19,
+      "hit": 2985
+    },
+    "cacheHitAvgMs": 379,
+    "requestLimitReached": false,
+    "logEventCounts": {
+      "cloudflare_pool_request_admitted": 1,
+      "cloudflare_pool_admission": 2,
+      "cloudflare_pool_attempt_completed": 2,
+      "cloudflare_audio_translation_completed": 3005
+    },
+    "failures": 0,
+    "workCancellations": 0,
+    "providerAttempts": [
+      {
+        "stage": "audio_translation_asr",
+        "accountAlias": "audio-b",
+        "status": "success",
+        "providerElapsedMs": 1348
+      },
+      {
+        "stage": "audio_translation_text",
+        "accountAlias": "audio-a",
+        "status": "success",
+        "providerElapsedMs": 1388
+      }
+    ],
+    "completedHaveElapsedMs": true
+  },
+  "controlledClientAbort": {
+    "file": "docs/postman/reports/2026-10-28-cancellation-logging-live-client-abort-fixed.json",
+    "requested": 20,
+    "callerCancelled": 20,
+    "serverCancelled": 15,
+    "serverCompletedBeforeDisconnectObserved": 5,
+    "requestsWithoutAppTerminalLog": 0,
+    "allObservedCancellationsCorrect": true,
+    "providerCallsInCancelledRequests": 0
+  },
+  "validation": {
+    "testSuites": {
+      "cloudflarePool": 85,
+      "audioOptimization": 12,
+      "cloudflare": 18,
+      "cloudflareText": 4
+    },
+    "automatedTestsPassed": 119,
+    "routeFailureScenarios": 8,
+    "additionalUploadRaceCases": 2,
+    "typeScriptPassed": true,
+    "eslintPassed": true,
+    "cloudflareFailuresSimulated": true,
+    "apiResponseShapePreserved": true,
+    "uploadCancellationRaceFixed": true,
+    "rawAbortReasonsAndUpstreamMessagesExcluded": true
+  },
+  "limitations": [
+    "Final load is all cache hit, not unique-audio AI capacity.",
+    "Cloudflare 429/503 failures were simulated in route tests.",
+    "client_disconnect identifies incoming-connection cancellation; it cannot alone distinguish a user Stop from a proxy closing the connection."
+  ]
+}

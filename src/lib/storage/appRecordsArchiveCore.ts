@@ -1,5 +1,11 @@
 import { createHash } from "node:crypto";
 
+// Preparation consumers reject these rows after their durable TTL. Other
+// namespaces include credentials, history and idempotency records that must
+// remain available even when they are old.
+export const ARCHIVE_POLICY_VERSION = "expired-preparations-v1";
+export const ARCHIVABLE_RECORD_NAMESPACES = ["conversation_preparations_v1"] as const;
+
 export function createArchiveObjectKey(date: Date, batchId: string) {
   const parts = new Intl.DateTimeFormat("en-GB", {
     timeZone: "Asia/Ho_Chi_Minh",
@@ -18,7 +24,29 @@ export type ArchiveJob = {
   bucket: string;
   object_key: string;
   body: string;
+  record_count: number;
 };
+
+/** Reject pending snapshots made by the former all-namespace archive policy. */
+export function isSafeArchiveJob(job: ArchiveJob, now = Date.now()) {
+  try {
+    const body = JSON.parse(job.body);
+    return body.archive_policy === ARCHIVE_POLICY_VERSION &&
+      body.batch_id === job.batch_id &&
+      Number.isInteger(job.record_count) && job.record_count >= 1 && job.record_count <= 50 &&
+      body.record_count === job.record_count &&
+      Array.isArray(body.records) && body.records.length === job.record_count &&
+      body.records.every((row: Record<string, unknown>) => {
+        if (!row || typeof row !== "object" ||
+            !ARCHIVABLE_RECORD_NAMESPACES.includes(row.namespace as typeof ARCHIVABLE_RECORD_NAMESPACES[number]) ||
+            typeof row.record_key !== "string" || !row.record_key || typeof row.expires_at !== "string") return false;
+        const expiresAt = Date.parse(row.expires_at);
+        return Number.isFinite(expiresAt) && expiresAt <= now;
+      });
+  } catch {
+    return false;
+  }
+}
 
 export async function exportVerifiedArchive(
   job: ArchiveJob,
@@ -36,5 +64,5 @@ export async function exportVerifiedArchive(
     throw new Error("Archive verification failed; app_records were not deleted.");
   }
   const deleted = await dependencies.finalize();
-  return { batchId: job.batch_id, key: job.object_key, exported: 50, deleted, sha256 };
+  return { batchId: job.batch_id, key: job.object_key, exported: job.record_count, deleted, sha256 };
 }
