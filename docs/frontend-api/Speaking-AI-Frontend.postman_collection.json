@@ -1,0 +1,528 @@
+{
+  "info": {
+    "_postman_id": "da5974a0-8500-43f3-8749-321ce9aab668",
+    "name": "Speaking AI — Frontend REST API (Railway 2026-10-29)",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "description": "Đọc README.vi.md trước khi dùng. Auth+sync hoạt động; HTTP jobs OFF tại checkpoint. File không chứa credential thật. Điền collection variables và chọn audio file trước khi gửi. Request không tự loop polling, retry upload hoặc refresh. Folder revoke thu hồi installation test. Không chạy toàn bộ Runner mà chưa cấu hình các bước tùy chọn. Guard dùng pm.execution.skipRequest(); cần Postman/runtime có API này. Không nghiệm thu runner cũ thiếu skipRequest."
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "https://speaking-ai-nextjs-backend-production.up.railway.app",
+      "type": "string"
+    },
+    {
+      "key": "platform",
+      "value": "android",
+      "type": "string"
+    },
+    {
+      "key": "client_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "installation_secret",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "app_version",
+      "value": "1.0.0",
+      "type": "string"
+    },
+    {
+      "key": "access_token",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "refresh_token",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "access_token_expires_at",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "refresh_token_expires_at",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "source_language",
+      "value": "vi",
+      "type": "string"
+    },
+    {
+      "key": "jobs_enabled",
+      "value": "false",
+      "type": "string"
+    },
+    {
+      "key": "idempotency_key",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "job_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "status_url",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// Bộ ví dụ dùng collection variables; không để environment token cũ che giá trị mới.",
+          "for (const key of ['base_url','platform','client_id','installation_secret','app_version','access_token','refresh_token','source_language','idempotency_key','job_id','status_url']) pm.variables.set(key, pm.collectionVariables.get(key) || '');",
+          "pm.variables.set('request_id', pm.variables.replaceIn('{{$guid}}'));"
+        ]
+      }
+    }
+  ],
+  "item": [
+    {
+      "name": "01 — Installation và dịch đồng bộ",
+      "item": [
+        {
+          "name": "01 - Register installation",
+          "request": {
+            "method": "POST",
+            "auth": {
+              "type": "noauth"
+            },
+            "header": [
+              {
+                "key": "X-Request-Id",
+                "value": "{{request_id}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"clientId\": \"{{client_id}}\",\n  \"platform\": \"{{platform}}\",\n  \"installationSecret\": \"{{installation_secret}}\",\n  \"appVersion\": \"{{app_version}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{base_url}}/api/installations/register",
+            "description": "201, kể cả re-register cùng credential. Điền ID+secret riêng trước khi gửi. Script lưu cả cặp token vào collection variables."
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "function handoffStop(message) { pm.execution.skipRequest(); throw new Error(message); }",
+                  "const platform = pm.collectionVariables.get('platform');",
+                  "const id = pm.collectionVariables.get('client_id') || '';",
+                  "const secret = pm.collectionVariables.get('installation_secret') || '';",
+                  "if (!['android','ios','web'].includes(platform) || !id.startsWith(platform+'_') || !/^(ios|android|web)_[A-Za-z0-9._:-]{8,180}$/.test(id)) handoffStop('Điền platform và client_id riêng, khớp tiền tố. Xem README.vi.md.');",
+                  "if (!/^[A-Za-z0-9_-]{32,180}$/.test(secret)) handoffStop('Điền installation_secret ngẫu nhiên riêng của installation test, không phải secret Railway.');"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 201', () => pm.response.to.have.status(201));",
+                  "if (pm.response.code === 201) {",
+                  "  const body = pm.response.json();",
+                  "  const fields = ['clientId', 'accessToken', 'accessTokenExpiresAt', 'refreshToken', 'refreshTokenExpiresAt'];",
+                  "  pm.test('Session đủ field', () => fields.forEach(k => pm.expect(body[k]).to.be.a('string').and.not.empty));",
+                  "  if (fields.every(k => typeof body[k] === 'string' && body[k])) {",
+                  "    for (const [key, value] of Object.entries({access_token:body.accessToken,refresh_token:body.refreshToken,access_token_expires_at:body.accessTokenExpiresAt,refresh_token_expires_at:body.refreshTokenExpiresAt})) pm.collectionVariables.set(key, value);",
+                  "  }",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "02 - Refresh session",
+          "request": {
+            "method": "POST",
+            "auth": {
+              "type": "noauth"
+            },
+            "header": [
+              {
+                "key": "X-Request-Id",
+                "value": "{{request_id}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"refreshToken\": \"{{refresh_token}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{base_url}}/api/installations/refresh",
+            "description": "200 và xoay session. Cả accessToken lẫn refreshToken cũ mất hiệu lực. Không gửi song song nhiều refresh."
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "function handoffStop(message) { pm.execution.skipRequest(); throw new Error(message); }",
+                  "if (!pm.collectionVariables.get('refresh_token')) handoffStop('Chưa có refresh_token. Gửi Register trước.');"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "if (pm.response.code === 200) {",
+                  "  const body = pm.response.json();",
+                  "  const fields = ['clientId', 'accessToken', 'accessTokenExpiresAt', 'refreshToken', 'refreshTokenExpiresAt'];",
+                  "  pm.test('Session đủ field', () => fields.forEach(k => pm.expect(body[k]).to.be.a('string').and.not.empty));",
+                  "  if (fields.every(k => typeof body[k] === 'string' && body[k])) {",
+                  "    for (const [key, value] of Object.entries({access_token:body.accessToken,refresh_token:body.refreshToken,access_token_expires_at:body.accessTokenExpiresAt,refresh_token_expires_at:body.refreshTokenExpiresAt})) pm.collectionVariables.set(key, value);",
+                  "  }",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "03 - Translate audio",
+          "request": {
+            "method": "POST",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{access_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "X-Request-Id",
+                "value": "{{request_id}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "sourceLanguage",
+                  "value": "{{source_language}}",
+                  "type": "text"
+                },
+                {
+                  "key": "audio",
+                  "type": "file",
+                  "src": []
+                }
+              ]
+            },
+            "url": "{{base_url}}/api/audio/translate",
+            "description": "Chọn file ở Body/form-data/audio. Không tự thêm Content-Type multipart. Không gửi Prefer nên luồng này là sync200. source_language mặc địnhvi; với fixture tiếngAnh đặt en."
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "function handoffStop(message) { pm.execution.skipRequest(); throw new Error(message); }",
+                  "if (!pm.collectionVariables.get('access_token')) handoffStop('Gửi Register installation trước để lấy access_token.');"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "if (pm.response.code === 200) { const b=pm.response.json(); pm.test('English text',()=>{pm.expect(b.targetLanguage).to.eql('en');pm.expect(b.englishText).to.be.a('string').and.not.empty;}); }"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "02 — Health và readiness",
+      "item": [
+        {
+          "name": "04 - Health",
+          "request": {
+            "method": "GET",
+            "auth": {
+              "type": "noauth"
+            },
+            "header": [
+              {
+                "key": "X-Request-Id",
+                "value": "{{request_id}}",
+                "type": "text"
+              }
+            ],
+            "url": "{{base_url}}/api/health",
+            "description": ""
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Liveness 200',()=>pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "05 - Ready",
+          "request": {
+            "method": "GET",
+            "auth": {
+              "type": "noauth"
+            },
+            "header": [
+              {
+                "key": "X-Request-Id",
+                "value": "{{request_id}}",
+                "type": "text"
+              }
+            ],
+            "url": "{{base_url}}/api/ready",
+            "description": "200 ready hoặc503 unavailable. Không dùng để suy ra jobsHTTP đãbật."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Readiness 200',()=>pm.response.to.have.status(200));",
+                  "if(pm.response.code===200)pm.test('Ready',()=>pm.expect(pm.response.json().status).to.eql('ready'));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "03 — HTTP jobs OFF tại checkpoint (chỉ dùng sau kích hoạt)",
+      "item": [
+        {
+          "name": "06 - Enqueue audio job",
+          "request": {
+            "method": "POST",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{access_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "X-Request-Id",
+                "value": "{{request_id}}",
+                "type": "text"
+              },
+              {
+                "key": "Idempotency-Key",
+                "value": "{{idempotency_key}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "sourceLanguage",
+                  "value": "{{source_language}}",
+                  "type": "text"
+                },
+                {
+                  "key": "audio",
+                  "type": "file",
+                  "src": []
+                }
+              ]
+            },
+            "url": "{{base_url}}/api/audio/jobs",
+            "description": "Chọn file riêng cho request này. Mộtkey ổn định/lượt ghi âm. 202 là nhậnjob, chưa phải completed. Existingjob cũng202 statusqueued. Không tự gửi lại bằngkeymới khi timeout. Dedupe chỉ khi jobrecordcòn tồn tại; không tựPOST lại sau404/410 vì có thể tạo jobmới khi recordđãdọn."
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "function handoffStop(message) { pm.execution.skipRequest(); throw new Error(message); }",
+                  "if (pm.collectionVariables.get('jobs_enabled') !== 'true') handoffStop('HTTP jobs OFF tại checkpoint. Chỉ đặt jobs_enabled=true sau khi backend xác nhận kích hoạt.');",
+                  "if (!pm.collectionVariables.get('access_token')) handoffStop('Gửi Register installation trước để lấy access_token.');",
+                  "if (!/^[A-Za-z0-9._:-]{8,128}$/.test(pm.collectionVariables.get('idempotency_key')||'')) handoffStop('Điền idempotency_key 8–128 ký tự, giữ nguyên cho cùng lượt.');"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 202',()=>pm.response.to.have.status(202));",
+                  "if(pm.response.code===202){const b=pm.response.json();pm.test('Job contract',()=>{pm.expect(b.jobId).to.match(/^[a-f0-9]{64}$/);pm.expect(b.statusUrl).to.eql('/api/audio/jobs/'+b.jobId);pm.expect(b.status).to.eql('queued');});if(/^[a-f0-9]{64}$/.test(b.jobId)&&b.statusUrl==='/api/audio/jobs/'+b.jobId){pm.collectionVariables.set('job_id',b.jobId);pm.collectionVariables.set('status_url',b.statusUrl);}}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "07 - Poll own job (bấm cách khoảng 2 giây)",
+          "request": {
+            "method": "GET",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{access_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "X-Request-Id",
+                "value": "{{request_id}}",
+                "type": "text"
+              }
+            ],
+            "url": "{{base_url}}/api/audio/jobs/{{job_id}}",
+            "description": "Cùng installation owner; statusfailed vẫnHTTP200. Khôngtựloop. Dừng khi completed/failed/404/410. Chỉ ghép status_url trên cùngbase_url."
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "function handoffStop(message) { pm.execution.skipRequest(); throw new Error(message); }",
+                  "if (pm.collectionVariables.get('jobs_enabled') !== 'true') handoffStop('HTTP jobs OFF tại checkpoint. Chỉ đặt jobs_enabled=true sau khi backend xác nhận kích hoạt.');",
+                  "if (!pm.collectionVariables.get('access_token')) handoffStop('Gửi Register installation trước để lấy access_token.');",
+                  "if (!new RegExp('^/api/audio/jobs/[a-f0-9]{64}$').test(pm.collectionVariables.get('status_url')||'')) handoffStop('status_url phải là relative path hợp lệ từ enqueue202, không phải URL ngoài.');",
+                  "if (!new RegExp('^[a-f0-9]{64}$').test(pm.collectionVariables.get('job_id')||'') || pm.collectionVariables.get('status_url') !== '/api/audio/jobs/'+pm.collectionVariables.get('job_id')) handoffStop('job_id/status_url không khớp response enqueue hợp lệ.');"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200',()=>pm.response.to.have.status(200));",
+                  "if(pm.response.code===200){const b=pm.response.json();pm.test('Job state',()=>pm.expect(b.status).to.be.oneOf(['queued','running','retrying','completed','failed']));pm.test('Job không failed',()=>pm.expect(b.status).not.to.eql('failed'));if(b.status==='completed')pm.test('English result',()=>pm.expect(b.result.englishText).to.be.a('string').and.not.empty);}"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "90 — Logout installation test (tùy chọn, gửi sau cùng)",
+      "item": [
+        {
+          "name": "90 - Revoke own installation",
+          "request": {
+            "method": "DELETE",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{access_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "X-Request-Id",
+                "value": "{{request_id}}",
+                "type": "text"
+              }
+            ],
+            "url": "{{base_url}}/api/installations/revoke",
+            "description": "Thu hồi installation hiện tại. Chỉ gửi khi muốn logout test. Scriptxóa cặp token khỏicollection, giữidentity đểcóthểregisterlại."
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "function handoffStop(message) { pm.execution.skipRequest(); throw new Error(message); }",
+                  "if (!pm.collectionVariables.get('access_token')) handoffStop('Gửi Register installation trước để lấy access_token.');"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200',()=>pm.response.to.have.status(200));",
+                  "if(pm.response.code===200&&pm.response.json().revoked===true){for(const key of ['access_token','refresh_token','access_token_expires_at','refresh_token_expires_at'])pm.collectionVariables.set(key,'');}"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

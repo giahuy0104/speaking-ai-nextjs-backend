@@ -1,0 +1,148 @@
+{
+  "base": "https://speaking-ai-nextjs-backend-production.up.railway.app",
+  "checkedAt": "2026-10-29T08:16:17.755Z",
+  "passed": true,
+  "checks": [
+    {
+      "name": "fr-short",
+      "language": "fr",
+      "requestId": "mlfix-20261029-fr-short-8f5f60",
+      "status": 200,
+      "elapsedMs": 2233,
+      "sourceLength": 19,
+      "translatedLength": 29,
+      "text": "L'enfant veut boire de l'eau.",
+      "audioSource": "device_tts",
+      "audioReady": false,
+      "latency": {
+        "asrMs": 1,
+        "llmMs": 884,
+        "ttsMs": 1286,
+        "timeToFirstAudioMs": 2171
+      }
+    },
+    {
+      "name": "fr-multiple-sentences",
+      "language": "fr",
+      "requestId": "mlfix-20261029-fr-multiple-sentences-95b966",
+      "status": 200,
+      "elapsedMs": 1181,
+      "sourceLength": 67,
+      "translatedLength": 79,
+      "text": "Je veux boire de l'eau. Maman, je veux manger du riz. Après ça, je veux dormir.",
+      "audioSource": "device_tts",
+      "audioReady": false,
+      "latency": {
+        "asrMs": 0,
+        "llmMs": 726,
+        "ttsMs": 392,
+        "timeToFirstAudioMs": 1118
+      }
+    },
+    {
+      "name": "fr-long",
+      "language": "fr",
+      "requestId": "mlfix-20261029-fr-long-54819b",
+      "status": 200,
+      "elapsedMs": 1740,
+      "sourceLength": 142,
+      "translatedLength": 194,
+      "text": "Maman, je veux apporter le livre vert à l'école demain matin. Après l'école, papa viendra me chercher à la porte puis m'emmènera à la maison pour manger avec grand-mère et grand-père, d'accord ?",
+      "audioSource": "device_tts",
+      "audioReady": false,
+      "latency": {
+        "asrMs": 0,
+        "llmMs": 1290,
+        "ttsMs": 372,
+        "timeToFirstAudioMs": 1663
+      }
+    },
+    {
+      "name": "input-length-guard",
+      "language": "fr",
+      "requestId": "mlfix-20261029-input-length-guard-f818ef",
+      "status": 422,
+      "elapsedMs": 69,
+      "sourceLength": 436,
+      "audioReady": false,
+      "error": {
+        "code": "ASR_LOW_CONFIDENCE",
+        "message": "Mình chưa nghe rõ. Con đưa micro lại gần và nói rõ hơn nhé.",
+        "requestId": "mlfix-20261029-input-length-guard-f818ef"
+      }
+    },
+    {
+      "name": "zh-multiple-sentences",
+      "language": "zh",
+      "requestId": "mlfix-20261029-zh-multiple-sentences-866e25",
+      "status": 200,
+      "elapsedMs": 1036,
+      "sourceLength": 43,
+      "translatedLength": 13,
+      "text": "我想喝水。妈妈，我想吃饭。",
+      "audioSource": "device_tts",
+      "audioReady": false,
+      "latency": {
+        "asrMs": 0,
+        "llmMs": 567,
+        "ttsMs": 397,
+        "timeToFirstAudioMs": 964
+      }
+    },
+    {
+      "name": "ja-multiple-sentences",
+      "language": "ja",
+      "requestId": "mlfix-20261029-ja-multiple-sentences-8beb49",
+      "status": 200,
+      "elapsedMs": 1323,
+      "sourceLength": 43,
+      "translatedLength": 26,
+      "text": "わたしは水を飲みたい。お母さん、私はご飯を食べたい。",
+      "audioSource": "device_tts",
+      "audioReady": false,
+      "latency": {
+        "asrMs": 0,
+        "llmMs": 894,
+        "ttsMs": 367,
+        "timeToFirstAudioMs": 1261
+      }
+    },
+    {
+      "name": "ko-multiple-sentences",
+      "language": "ko",
+      "requestId": "mlfix-20261029-ko-multiple-sentences-ad28d8",
+      "status": 200,
+      "elapsedMs": 1832,
+      "sourceLength": 43,
+      "translatedLength": 30,
+      "text": "나는 물을 마시고 싶어. 엄마, 나는 밥을 먹고 싶어.",
+      "audioSource": "device_tts",
+      "audioReady": false,
+      "latency": {
+        "asrMs": 0,
+        "llmMs": 1376,
+        "ttsMs": 378,
+        "timeToFirstAudioMs": 1754
+      }
+    },
+    {
+      "name": "english-control",
+      "language": "en",
+      "requestId": "mlfix-20261029-english-control-333939",
+      "status": 200,
+      "elapsedMs": 88,
+      "sourceLength": 56,
+      "translatedLength": 61,
+      "text": "Dad, I want to bring the new book to school tomorrow morning.",
+      "audioSource": "cloudflare_tts",
+      "audioReady": true,
+      "latency": {
+        "asrMs": 0,
+        "llmMs": 12,
+        "ttsMs": 7,
+        "timeToFirstAudioMs": 19
+      }
+    }
+  ],
+  "revokeStatus": 200
+}

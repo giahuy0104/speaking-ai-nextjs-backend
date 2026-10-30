@@ -1,0 +1,1554 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "Speaking AI — Frontend REST API",
+    "version": "2026-10-29",
+    "description": "Tài liệu frontend cho installation auth và audio → English text. Đối chiếu app commit 82ec0be. HTTP jobs CHƯA BẬT trên web tại checkpoint 29/10/2026; các operation Jobs có x-production-enabled=false. Token opaque, không dùng JWT decoder. Chi tiết và Flutter examples: README.vi.md."
+  },
+  "servers": [
+    {
+      "url": "https://speaking-ai-nextjs-backend-production.up.railway.app",
+      "description": "Railway production"
+    }
+  ],
+  "tags": [
+    {
+      "name": "Installation",
+      "description": "Credential riêng cho từng installation; không phải tài khoản người dùng."
+    },
+    {
+      "name": "Audio",
+      "description": "Luồng đồng bộ đang hoạt động."
+    },
+    {
+      "name": "Jobs (OFF at checkpoint)",
+      "description": "Chỉ dùng sau khi backend xác nhận kích hoạt HTTP jobs."
+    },
+    {
+      "name": "Operations"
+    }
+  ],
+  "security": [
+    {
+      "InstallationBearer": []
+    }
+  ],
+  "paths": {
+    "/api/installations/register": {
+      "post": {
+        "tags": [
+          "Installation"
+        ],
+        "operationId": "registerInstallation",
+        "security": [],
+        "summary": "Đăng ký/khôi phục installation",
+        "description": "201 cả khi đăng ký lại cùng clientId + secret. Cùng ID nhưng secret khác409. Register lại cùng credential không xoay session hiện tại. Không có requestId trong body session; đọc header X-Request-Id.",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/RequestId"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Registration"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Session được cấp.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TokenSession"
+                },
+                "example": {
+                  "clientId": "android_550e8400-e29b-41d4-a716-446655440000",
+                  "accessToken": "<opaque-access-token>",
+                  "accessTokenExpiresAt": "2026-10-29T06:00:00.000Z",
+                  "refreshToken": "<opaque-refresh-token>",
+                  "refreshTokenExpiresAt": "2027-01-27T05:00:00.000Z"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error400"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error403"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error404"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error409"
+          },
+          "429": {
+            "$ref": "#/components/responses/Error429"
+          },
+          "500": {
+            "$ref": "#/components/responses/Error500"
+          },
+          "503": {
+            "$ref": "#/components/responses/Error503"
+          }
+        }
+      }
+    },
+    "/api/installations/refresh": {
+      "post": {
+        "tags": [
+          "Installation"
+        ],
+        "operationId": "refreshInstallation",
+        "security": [],
+        "summary": "Xoay cả cặp token",
+        "description": "Refresh vô hiệu hóa ngay cả accessToken và refreshToken cũ. Chỉ một refresh/installation tại một thời điểm. Lưu cả cặp mới atomically. Nếu mất response sau rotation, khôi phục bằng register cùng credential đã lưu.",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/RequestId"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RefreshRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Session mới.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TokenSession"
+                },
+                "example": {
+                  "clientId": "android_550e8400-e29b-41d4-a716-446655440000",
+                  "accessToken": "<opaque-access-token>",
+                  "accessTokenExpiresAt": "2026-10-29T06:00:00.000Z",
+                  "refreshToken": "<opaque-refresh-token>",
+                  "refreshTokenExpiresAt": "2027-01-27T05:00:00.000Z"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Error401"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error403"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error404"
+          },
+          "500": {
+            "$ref": "#/components/responses/Error500"
+          },
+          "503": {
+            "$ref": "#/components/responses/Error503"
+          }
+        }
+      }
+    },
+    "/api/installations/revoke": {
+      "delete": {
+        "tags": [
+          "Installation"
+        ],
+        "operationId": "revokeInstallation",
+        "summary": "Thu hồi installation đang xác thực",
+        "description": "Không có body. Thu hồi session; không phải endpoint xóa lịch sử hội thoại.",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/RequestId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Đã thu hồi.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RevokeResult"
+                },
+                "example": {
+                  "revoked": true,
+                  "requestId": "550e8400-e29b-41d4-a716-446655440001"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Error401"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error403"
+          },
+          "500": {
+            "$ref": "#/components/responses/Error500"
+          },
+          "503": {
+            "$ref": "#/components/responses/Error503"
+          }
+        }
+      }
+    },
+    "/api/audio/translate": {
+      "post": {
+        "tags": [
+          "Audio"
+        ],
+        "operationId": "translateAudio",
+        "summary": "Gửi audio, nhận English text",
+        "description": "Không gửi Prefer để dùng luồng đồng bộ. sourceLanguage mặc địnhvi; target luônen; không trả TTS. Prefer respond-async chỉ có thể handoff khi feature jobs bật và gặp điều kiện thích hợp; không ép queue, có thể200 hoặc202. Khi jobsOFF header bị bỏ qua. Idempotency-Key không chống lặp bền vững cho sync thông thường.",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/RequestId"
+          },
+          {
+            "$ref": "#/components/parameters/PreferAsync"
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/AudioUpload"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Bản dịch đồng bộ/cache.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              },
+              "Cache-Control": {
+                "$ref": "#/components/headers/PrivateNoStore"
+              },
+              "X-Audio-Cache": {
+                "$ref": "#/components/headers/AudioCache"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TranslationResponse"
+                },
+                "example": {
+                  "requestId": "550e8400-e29b-41d4-a716-446655440001",
+                  "sourceLanguage": "vi",
+                  "targetLanguage": "en",
+                  "englishText": "The weather is nice today.",
+                  "sourceText": "Hôm nay thời tiết đẹp.",
+                  "model": "@cf/openai/whisper-large-v3-turbo",
+                  "textModel": "@cf/meta/llama-4-scout-17b-16e-instruct",
+                  "wordCount": 6,
+                  "timings": {
+                    "asrMs": 1200,
+                    "translationMs": 500
+                  }
+                }
+              }
+            }
+          },
+          "202": {
+            "description": "Chỉ khi async handoff được bật và chấp nhận; poll statusUrl.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              },
+              "Cache-Control": {
+                "$ref": "#/components/headers/PrivateNoStore"
+              },
+              "Location": {
+                "$ref": "#/components/headers/JobLocation"
+              },
+              "Retry-After": {
+                "$ref": "#/components/headers/RetryAfter"
+              },
+              "Preference-Applied": {
+                "$ref": "#/components/headers/PreferenceApplied"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JobAccepted"
+                },
+                "example": {
+                  "requestId": "550e8400-e29b-41d4-a716-446655440001",
+                  "jobId": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                  "statusUrl": "/api/audio/jobs/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                  "nextPollMs": 2000,
+                  "status": "queued"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error400"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error401"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error403"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error409"
+          },
+          "413": {
+            "$ref": "#/components/responses/Error413"
+          },
+          "415": {
+            "$ref": "#/components/responses/Error415"
+          },
+          "422": {
+            "$ref": "#/components/responses/Error422"
+          },
+          "429": {
+            "$ref": "#/components/responses/Error429"
+          },
+          "499": {
+            "$ref": "#/components/responses/Error499"
+          },
+          "500": {
+            "$ref": "#/components/responses/Error500"
+          },
+          "502": {
+            "$ref": "#/components/responses/Error502"
+          },
+          "503": {
+            "$ref": "#/components/responses/Error503"
+          },
+          "504": {
+            "$ref": "#/components/responses/Error504"
+          }
+        }
+      }
+    },
+    "/api/audio/jobs": {
+      "post": {
+        "tags": [
+          "Jobs (OFF at checkpoint)"
+        ],
+        "operationId": "enqueueAudioJob",
+        "x-production-enabled": false,
+        "summary": "[OFF] Ép enqueue job audio",
+        "description": "Chưa bật trên web tại checkpoint. Request hợp lệ, đã xác thực nhận404 AUDIO_JOB_NOT_FOUND khi featureOFF; validation/auth có thể từ chối trước đó. Khi bật, gửi key ổn định cho cùng owner/audio/language; backend cho bỏ key nhưng frontend không nên bỏ nếu cần recovery. Existing job vẫn202 statusqueued kể cả đãterminal. Dedupe chỉ khi job record còn tồn tại; có thể bị dọn theo tuổi/số lượng. Sau404/410 không tựPOST lại: cùngkey sau khi record bịdọn cóthểtạo jobmới vàgọiAI lại. Không coi idempotency là vĩnhviễn.",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/RequestId"
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/AudioUpload"
+              }
+            }
+          }
+        },
+        "responses": {
+          "202": {
+            "description": "Job được xác nhận; poll bằng cùng owner.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              },
+              "Cache-Control": {
+                "$ref": "#/components/headers/PrivateNoStore"
+              },
+              "Location": {
+                "$ref": "#/components/headers/JobLocation"
+              },
+              "Retry-After": {
+                "$ref": "#/components/headers/RetryAfter"
+              },
+              "Preference-Applied": {
+                "$ref": "#/components/headers/PreferenceApplied"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JobAccepted"
+                },
+                "example": {
+                  "requestId": "550e8400-e29b-41d4-a716-446655440001",
+                  "jobId": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                  "statusUrl": "/api/audio/jobs/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                  "nextPollMs": 2000,
+                  "status": "queued"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error400"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error401"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error403"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error404"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error409"
+          },
+          "413": {
+            "$ref": "#/components/responses/Error413"
+          },
+          "415": {
+            "$ref": "#/components/responses/Error415"
+          },
+          "422": {
+            "$ref": "#/components/responses/Error422"
+          },
+          "429": {
+            "$ref": "#/components/responses/Error429"
+          },
+          "499": {
+            "$ref": "#/components/responses/Error499"
+          },
+          "500": {
+            "$ref": "#/components/responses/Error500"
+          },
+          "502": {
+            "$ref": "#/components/responses/Error502"
+          },
+          "503": {
+            "$ref": "#/components/responses/Error503"
+          },
+          "504": {
+            "$ref": "#/components/responses/Error504"
+          }
+        }
+      }
+    },
+    "/api/audio/jobs/{jobId}": {
+      "get": {
+        "tags": [
+          "Jobs (OFF at checkpoint)"
+        ],
+        "operationId": "getAudioJob",
+        "x-production-enabled": false,
+        "summary": "[OFF] Poll trạng thái job",
+        "description": "Cùng owner và accessToken còn hiệu lực. Pending hết publicTTL15phút từenqueue; terminal mộtgiờ từfinishedOn. Job đãdọn hoặc ownerkhác404. Failed job vẫnHTTP200 với statusfailed; dừngpoll. Ngừngpoll khônghủyjob; chưa có cancel endpoint.",
+        "parameters": [
+          {
+            "name": "jobId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[a-f0-9]{64}$"
+            },
+            "example": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          },
+          {
+            "$ref": "#/components/parameters/RequestId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Phải kiểm tra status; HTTP200 không đồng nghĩa completed.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              },
+              "Cache-Control": {
+                "$ref": "#/components/headers/PrivateNoStore"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JobStatus"
+                },
+                "examples": {
+                  "pending": {
+                    "value": {
+                      "requestId": "550e8400-e29b-41d4-a716-446655440001",
+                      "jobId": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                      "status": "running",
+                      "nextPollMs": 2000,
+                      "createdAt": "2026-10-29T05:00:00.000Z",
+                      "startedAt": "2026-10-29T05:00:01.000Z"
+                    }
+                  },
+                  "completed": {
+                    "value": {
+                      "requestId": "550e8400-e29b-41d4-a716-446655440001",
+                      "jobId": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                      "status": "completed",
+                      "createdAt": "2026-10-29T05:00:00.000Z",
+                      "startedAt": "2026-10-29T05:00:01.000Z",
+                      "completedAt": "2026-10-29T05:00:04.000Z",
+                      "result": {
+                        "sourceLanguage": "vi",
+                        "targetLanguage": "en",
+                        "englishText": "The weather is nice today.",
+                        "sourceText": "Hôm nay thời tiết đẹp.",
+                        "model": "@cf/openai/whisper-large-v3-turbo",
+                        "textModel": "@cf/meta/llama-4-scout-17b-16e-instruct",
+                        "wordCount": 6,
+                        "timings": {
+                          "asrMs": 1200,
+                          "translationMs": 500
+                        }
+                      }
+                    }
+                  },
+                  "failed": {
+                    "value": {
+                      "requestId": "550e8400-e29b-41d4-a716-446655440001",
+                      "jobId": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                      "status": "failed",
+                      "createdAt": "2026-10-29T05:00:00.000Z",
+                      "error": {
+                        "code": "AUDIO_JOB_FAILED",
+                        "message": "Không thể hoàn tất bản dịch. Vui lòng gửi lại audio nếu cần."
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Error401"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error403"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error404"
+          },
+          "410": {
+            "$ref": "#/components/responses/Error410"
+          },
+          "500": {
+            "$ref": "#/components/responses/Error500"
+          },
+          "503": {
+            "$ref": "#/components/responses/Error503"
+          }
+        }
+      }
+    },
+    "/api/health": {
+      "get": {
+        "tags": [
+          "Operations"
+        ],
+        "operationId": "getHealth",
+        "security": [],
+        "summary": "Liveness",
+        "description": "Không inference; không dùng để suy ra jobs/provider sẵn sàng.",
+        "responses": {
+          "200": {
+            "description": "Tiến trình còn sống.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              },
+              "Cache-Control": {
+                "$ref": "#/components/headers/NoStore"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Health"
+                },
+                "example": {
+                  "status": "ok",
+                  "service": "speaking-ai-nextjs-backend",
+                  "checkedAt": "2026-10-29T05:00:00.000Z",
+                  "instance": "<runtime-instance>"
+                }
+              }
+            }
+          },
+          "403": {
+            "$ref": "#/components/responses/Error403"
+          }
+        }
+      }
+    },
+    "/api/ready": {
+      "get": {
+        "tags": [
+          "Operations"
+        ],
+        "operationId": "getReadiness",
+        "security": [],
+        "summary": "Readiness dependencies đang bật",
+        "description": "200 không xác nhận worker heartbeat, entitlement AI hay HTTP jobs đã bật. Response503 ở đây dùng {status:unavailable}, không phải error envelope.",
+        "responses": {
+          "200": {
+            "description": "Sẵn sàng.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              },
+              "Cache-Control": {
+                "$ref": "#/components/headers/NoStore"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Readiness"
+                },
+                "example": {
+                  "status": "ready"
+                }
+              }
+            }
+          },
+          "403": {
+            "$ref": "#/components/responses/Error403"
+          },
+          "503": {
+            "description": "Chưa sẵn sàng.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              },
+              "Cache-Control": {
+                "$ref": "#/components/headers/NoStore"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Readiness"
+                },
+                "example": {
+                  "status": "unavailable"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "InstallationBearer": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "homi_install_v1 opaque token",
+        "description": "accessToken từ register/refresh. Không đặt server signing secret trong client."
+      }
+    },
+    "parameters": {
+      "RequestId": {
+        "name": "X-Request-Id",
+        "in": "header",
+        "required": false,
+        "schema": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9._:-]{8,100}$"
+        },
+        "description": "Correlation ID tùy chọn. Không phải idempotency key; không hợp lệ thì server tự sinh."
+      },
+      "IdempotencyKey": {
+        "name": "Idempotency-Key",
+        "in": "header",
+        "required": false,
+        "schema": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9._:-]{8,128}$"
+        },
+        "example": "audio-turn-550e8400-e29b-41d4-a716-446655440003",
+        "description": "Backend cho bỏ khi async và tự sinh key; frontend nên tự lưu mộtkey/lượt để recovery. Chỉ có hiệu lực durable khi dùng jobs. Dedupe kết thúc khi job record bị dọn; không tựPOST lại sau404/410."
+      },
+      "PreferAsync": {
+        "name": "Prefer",
+        "in": "header",
+        "required": false,
+        "schema": {
+          "type": "string",
+          "enum": [
+            "respond-async"
+          ]
+        },
+        "description": "Chấp nhận handoff, không ép enqueue. Chỉ có hiệu lực khi feature jobs bật."
+      }
+    },
+    "headers": {
+      "RequestId": {
+        "description": "ID truy vết.",
+        "schema": {
+          "type": "string"
+        }
+      },
+      "NoStore": {
+        "description": "Không lưu response ở HTTP cache.",
+        "schema": {
+          "type": "string"
+        },
+        "example": "no-store"
+      },
+      "AudioCache": {
+        "description": "Chẩn đoán cache backend; không phải feature flag.",
+        "schema": {
+          "type": "string",
+          "enum": [
+            "hit",
+            "miss",
+            "coalesced",
+            "disabled"
+          ]
+        }
+      },
+      "RetryAfter": {
+        "description": "Số giây nên chờ. 202 trả2; 429 ứng dụng có header này.",
+        "schema": {
+          "type": "string",
+          "pattern": "^[0-9]+$"
+        },
+        "example": "2"
+      },
+      "JobLocation": {
+        "description": "Đường dẫn tương đối trên cùng origin.",
+        "schema": {
+          "type": "string"
+        },
+        "example": "/api/audio/jobs/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      },
+      "PreferenceApplied": {
+        "schema": {
+          "type": "string",
+          "enum": [
+            "respond-async"
+          ]
+        }
+      },
+      "PrivateNoStore": {
+        "description": "Không lưu ở HTTP cache; kết quả riêng cho installation.",
+        "schema": {
+          "type": "string"
+        },
+        "example": "private, no-store"
+      }
+    },
+    "schemas": {
+      "Registration": {
+        "type": "object",
+        "properties": {
+          "clientId": {
+            "type": "string",
+            "description": "Tiền tố phải khớp platform; suffix8–180 ký tự.",
+            "pattern": "^(ios|android|web)_[A-Za-z0-9._:-]{8,180}$",
+            "example": "android_550e8400-e29b-41d4-a716-446655440000"
+          },
+          "platform": {
+            "type": "string",
+            "enum": [
+              "android",
+              "ios",
+              "web"
+            ],
+            "example": "android"
+          },
+          "installationSecret": {
+            "type": "string",
+            "description": "Sinh an toàn, lưu riêng cho installation. Example chỉ minh họa, không dùng làm credential chung.",
+            "pattern": "^[A-Za-z0-9_-]{32,180}$",
+            "writeOnly": true
+          },
+          "appVersion": {
+            "type": "string",
+            "description": "Tùy chọn; server trim và giữ tối đa80ký tự.",
+            "example": "1.0.0"
+          }
+        },
+        "required": [
+          "clientId",
+          "platform",
+          "installationSecret"
+        ]
+      },
+      "RefreshRequest": {
+        "type": "object",
+        "properties": {
+          "refreshToken": {
+            "type": "string",
+            "description": "Opaque refresh token hiện tại.",
+            "minLength": 1,
+            "writeOnly": true
+          }
+        },
+        "required": [
+          "refreshToken"
+        ]
+      },
+      "TokenSession": {
+        "type": "object",
+        "properties": {
+          "clientId": {
+            "type": "string",
+            "description": "Installation owner."
+          },
+          "accessToken": {
+            "type": "string",
+            "description": "Opaque access token; không phải JWT chuẩn."
+          },
+          "accessTokenExpiresAt": {
+            "type": "string",
+            "description": "Dùng expiry trả về, không hardcode TTL.",
+            "format": "date-time"
+          },
+          "refreshToken": {
+            "type": "string",
+            "description": "Refresh xoay session, vô hiệu hóa cả hai token cũ."
+          },
+          "refreshTokenExpiresAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "clientId",
+          "accessToken",
+          "accessTokenExpiresAt",
+          "refreshToken",
+          "refreshTokenExpiresAt"
+        ]
+      },
+      "RevokeResult": {
+        "type": "object",
+        "properties": {
+          "revoked": {
+            "type": "boolean",
+            "enum": [
+              true
+            ]
+          },
+          "requestId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "revoked",
+          "requestId"
+        ]
+      },
+      "AudioUpload": {
+        "type": "object",
+        "properties": {
+          "audio": {
+            "type": "string",
+            "format": "binary",
+            "description": "File đầy đủ, không rỗng. Mặc định≤10485760byte; AAC/FLAC/M4A/MP3/MP4/OGG/WAV/WebM; khôngbase64/PCMthô.",
+            "x-max-bytes-default": 10485760
+          },
+          "sourceLanguage": {
+            "type": "string",
+            "description": "Trim+lowercase; thiếu/rỗng mặc địnhvi; app nên gửi mã lower-case đúng audio.",
+            "default": "vi",
+            "example": "vi",
+            "pattern": "^\\s*([A-Za-z]{2,3})?\\s*$"
+          },
+          "clientId": {
+            "type": "string",
+            "description": "Tùy chọn; nếu gửi phải bằng owner trong accessToken."
+          }
+        },
+        "required": [
+          "audio"
+        ]
+      },
+      "TranslationResponse": {
+        "type": "object",
+        "properties": {
+          "requestId": {
+            "type": "string"
+          },
+          "englishText": {
+            "type": "string",
+            "description": "Văn bản tiếng Anh."
+          },
+          "sourceText": {
+            "type": "string",
+            "description": "Transcript ngôn ngữ nguồn, nếu có."
+          },
+          "sourceLanguage": {
+            "type": "string",
+            "description": "Ngôn ngữ nguồn đã chuẩn hóa.",
+            "example": "vi"
+          },
+          "targetLanguage": {
+            "type": "string",
+            "enum": [
+              "en"
+            ]
+          },
+          "model": {
+            "type": "string",
+            "description": "Metadata model ASR, không hardcode tên để điều khiển UI."
+          },
+          "textModel": {
+            "type": "string",
+            "description": "Có thể thiếu khi nguồn en."
+          },
+          "wordCount": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "timings": {
+            "type": "object",
+            "properties": {
+              "asrMs": {
+                "type": "number",
+                "minimum": 0
+              },
+              "translationMs": {
+                "type": "number",
+                "minimum": 0
+              }
+            },
+            "required": [
+              "asrMs",
+              "translationMs"
+            ]
+          },
+          "segments": {
+            "type": "array",
+            "items": {},
+            "description": "Metadata tùy chọn; không hứa cung cấp timestamps tiếng Anh."
+          },
+          "vtt": {
+            "type": "string",
+            "description": "Metadata tùy chọn; không được coi là phụ đề tiếng Anh của bản dịch."
+          }
+        },
+        "required": [
+          "requestId",
+          "sourceLanguage",
+          "targetLanguage",
+          "englishText",
+          "model"
+        ]
+      },
+      "TranslationResult": {
+        "type": "object",
+        "properties": {
+          "englishText": {
+            "type": "string",
+            "description": "Văn bản tiếng Anh."
+          },
+          "sourceText": {
+            "type": "string",
+            "description": "Transcript ngôn ngữ nguồn, nếu có."
+          },
+          "sourceLanguage": {
+            "type": "string",
+            "description": "Ngôn ngữ nguồn đã chuẩn hóa.",
+            "example": "vi"
+          },
+          "targetLanguage": {
+            "type": "string",
+            "enum": [
+              "en"
+            ]
+          },
+          "model": {
+            "type": "string",
+            "description": "Metadata model ASR, không hardcode tên để điều khiển UI."
+          },
+          "textModel": {
+            "type": "string",
+            "description": "Có thể thiếu khi nguồn en."
+          },
+          "wordCount": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "timings": {
+            "type": "object",
+            "properties": {
+              "asrMs": {
+                "type": "number",
+                "minimum": 0
+              },
+              "translationMs": {
+                "type": "number",
+                "minimum": 0
+              }
+            },
+            "required": [
+              "asrMs",
+              "translationMs"
+            ]
+          },
+          "segments": {
+            "type": "array",
+            "items": {},
+            "description": "Metadata tùy chọn; không hứa cung cấp timestamps tiếng Anh."
+          },
+          "vtt": {
+            "type": "string",
+            "description": "Metadata tùy chọn; không được coi là phụ đề tiếng Anh của bản dịch."
+          }
+        },
+        "required": [
+          "sourceLanguage",
+          "targetLanguage",
+          "englishText",
+          "model"
+        ]
+      },
+      "JobAccepted": {
+        "type": "object",
+        "properties": {
+          "requestId": {
+            "type": "string"
+          },
+          "jobId": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$"
+          },
+          "statusUrl": {
+            "type": "string",
+            "description": "Relative path; chỉ gửi Bearer trên cùng origin.",
+            "pattern": "^/api/audio/jobs/[a-f0-9]{64}$"
+          },
+          "nextPollMs": {
+            "type": "integer",
+            "enum": [
+              2000
+            ]
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "queued"
+            ]
+          }
+        },
+        "required": [
+          "requestId",
+          "jobId",
+          "statusUrl",
+          "nextPollMs",
+          "status"
+        ]
+      },
+      "JobPending": {
+        "type": "object",
+        "properties": {
+          "requestId": {
+            "type": "string"
+          },
+          "jobId": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "startedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "completedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "queued",
+              "running",
+              "retrying"
+            ]
+          },
+          "nextPollMs": {
+            "type": "integer",
+            "enum": [
+              2000
+            ]
+          }
+        },
+        "required": [
+          "requestId",
+          "jobId",
+          "status",
+          "createdAt",
+          "nextPollMs"
+        ]
+      },
+      "JobCompleted": {
+        "type": "object",
+        "properties": {
+          "requestId": {
+            "type": "string"
+          },
+          "jobId": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "startedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "completedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "completed"
+            ]
+          },
+          "result": {
+            "$ref": "#/components/schemas/TranslationResult"
+          }
+        },
+        "required": [
+          "requestId",
+          "jobId",
+          "status",
+          "createdAt",
+          "result"
+        ]
+      },
+      "JobFailed": {
+        "type": "object",
+        "properties": {
+          "requestId": {
+            "type": "string"
+          },
+          "jobId": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "startedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "completedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "failed"
+            ]
+          },
+          "error": {
+            "type": "object",
+            "properties": {
+              "code": {
+                "type": "string",
+                "enum": [
+                  "AUDIO_JOB_FAILED"
+                ]
+              },
+              "message": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "code",
+              "message"
+            ]
+          }
+        },
+        "required": [
+          "requestId",
+          "jobId",
+          "status",
+          "createdAt",
+          "error"
+        ]
+      },
+      "JobStatus": {
+        "oneOf": [
+          {
+            "$ref": "#/components/schemas/JobPending"
+          },
+          {
+            "$ref": "#/components/schemas/JobCompleted"
+          },
+          {
+            "$ref": "#/components/schemas/JobFailed"
+          }
+        ]
+      },
+      "ErrorEnvelope": {
+        "type": "object",
+        "properties": {
+          "error": {
+            "type": "object",
+            "properties": {
+              "code": {
+                "type": "string",
+                "description": "Branch theo HTTPstatus+code; không match message."
+              },
+              "message": {
+                "type": "string"
+              },
+              "requestId": {
+                "type": "string",
+                "description": "Có thể không có nếu lỗi ngoài handler."
+              },
+              "details": {
+                "type": "object",
+                "additionalProperties": true,
+                "description": "Metadata tùy chọn, không có schema ổn định theo từng reason."
+              }
+            },
+            "required": [
+              "code",
+              "message"
+            ]
+          }
+        },
+        "required": [
+          "error"
+        ]
+      },
+      "Health": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "ok"
+            ]
+          },
+          "service": {
+            "type": "string"
+          },
+          "checkedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "instance": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "status",
+          "service",
+          "checkedAt",
+          "instance"
+        ]
+      },
+      "Readiness": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "ready",
+              "unavailable"
+            ]
+          }
+        },
+        "required": [
+          "status"
+        ]
+      }
+    },
+    "responses": {
+      "Error400": {
+        "description": "Request sai; audio thiếu/rỗng là AUDIO_TOO_SHORT. SourceLanguage vi-VN không hợp lệ.",
+        "headers": {
+          "X-Request-Id": {
+            "$ref": "#/components/headers/RequestId"
+          }
+        },
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorEnvelope"
+            }
+          }
+        }
+      },
+      "Error401": {
+        "description": "Thiếu token, token sai loại/chữ ký/hết hạn/đã bị thu hồi.",
+        "headers": {
+          "X-Request-Id": {
+            "$ref": "#/components/headers/RequestId"
+          }
+        },
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorEnvelope"
+            }
+          }
+        }
+      },
+      "Error403": {
+        "description": "Claimed clientId khác token hoặc ORIGIN_NOT_ALLOWED từ CORS.",
+        "headers": {
+          "X-Request-Id": {
+            "$ref": "#/components/headers/RequestId"
+          }
+        },
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorEnvelope"
+            }
+          }
+        }
+      },
+      "Error404": {
+        "description": "Installation/job không tồn tại, sai owner, hoặc feature HTTP jobs chưa bật.",
+        "headers": {
+          "X-Request-Id": {
+            "$ref": "#/components/headers/RequestId"
+          }
+        },
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorEnvelope"
+            }
+          }
+        }
+      },
+      "Error409": {
+        "description": "Credential installation xung đột hoặc idempotency key được dùng cho fingerprint khác.",
+        "headers": {
+          "X-Request-Id": {
+            "$ref": "#/components/headers/RequestId"
+          }
+        },
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorEnvelope"
+            }
+          }
+        }
+      },
+      "Error410": {
+        "description": "Job đã hết thời hạn public; dừng polling.",
+        "headers": {
+          "X-Request-Id": {
+            "$ref": "#/components/headers/RequestId"
+          }
+        },
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorEnvelope"
+            }
+          }
+        }
+      },
+      "Error413": {
+        "description": "File hoặc multipart vượt giới hạn dung lượng.",
+        "headers": {
+          "X-Request-Id": {
+            "$ref": "#/components/headers/RequestId"
+          }
+        },
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorEnvelope"
+            }
+          }
+        }
+      },
+      "Error415": {
+        "description": "Sai Content-Type hoặc định dạng audio.",
+        "headers": {
+          "X-Request-Id": {
+            "$ref": "#/components/headers/RequestId"
+          }
+        },
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorEnvelope"
+            }
+          }
+        }
+      },
+      "Error422": {
+        "description": "ASR_LOW_CONFIDENCE: không nghe rõ/không nhận diện được lời nói.",
+        "headers": {
+          "X-Request-Id": {
+            "$ref": "#/components/headers/RequestId"
+          }
+        },
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorEnvelope"
+            },
+            "example": {
+              "error": {
+                "code": "ASR_LOW_CONFIDENCE",
+                "message": "Không nghe rõ lời nói trong audio. Vui lòng ghi âm lại.",
+                "requestId": "550e8400-e29b-41d4-a716-446655440001",
+                "details": {
+                  "provider": "cloudflare",
+                  "reason": "empty_transcript"
+                }
+              }
+            }
+          }
+        }
+      },
+      "Error429": {
+        "description": "Quá tải/rate limit. Dùng Retry-After (giây); không lặp upload liên tục.",
+        "headers": {
+          "X-Request-Id": {
+            "$ref": "#/components/headers/RequestId"
+          },
+          "Retry-After": {
+            "$ref": "#/components/headers/RetryAfter"
+          }
+        },
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorEnvelope"
+            }
+          }
+        }
+      },
+      "Error499": {
+        "description": "Xử lý bị hủy; không coi là lỗi input.",
+        "headers": {
+          "X-Request-Id": {
+            "$ref": "#/components/headers/RequestId"
+          }
+        },
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorEnvelope"
+            }
+          }
+        }
+      },
+      "Error500": {
+        "description": "Lỗi máy chủ. Code có thể vẫn là BAD_REQUEST hoặc ASR_FAILED.",
+        "headers": {
+          "X-Request-Id": {
+            "$ref": "#/components/headers/RequestId"
+          }
+        },
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorEnvelope"
+            }
+          }
+        }
+      },
+      "Error502": {
+        "description": "ASR_FAILED/LLM_FAILED do upstream/network/response không hợp lệ.",
+        "headers": {
+          "X-Request-Id": {
+            "$ref": "#/components/headers/RequestId"
+          }
+        },
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorEnvelope"
+            }
+          }
+        }
+      },
+      "Error503": {
+        "description": "Dịch vụ/cấu hình/điều phối chưa sẵn sàng.",
+        "headers": {
+          "X-Request-Id": {
+            "$ref": "#/components/headers/RequestId"
+          }
+        },
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorEnvelope"
+            }
+          }
+        }
+      },
+      "Error504": {
+        "description": "Hết thời gian xử lý; không tự suy ra AI chưa được gọi.",
+        "headers": {
+          "X-Request-Id": {
+            "$ref": "#/components/headers/RequestId"
+          }
+        },
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorEnvelope"
+            }
+          }
+        }
+      }
+    }
+  }
+}
