@@ -9,6 +9,8 @@ data
 backups
 models
 docs
+deploy
+.github
 coverage
 build
 out
