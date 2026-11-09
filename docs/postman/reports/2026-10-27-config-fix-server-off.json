@@ -1,0 +1,46 @@
+{
+  "report": {
+    "runId": "opt-config-fix-75e67a29-cd39-4339-9718-c92fc35958fd",
+    "startedAt": "2026-10-27T10:31:58.827Z",
+    "completedAt": "2026-10-27T10:31:58.870Z",
+    "clients": 1,
+    "sendWindowSeconds": 1,
+    "elapsedSeconds": 0.04236080000000001,
+    "mode": "burst",
+    "workload": "unchanged Postman raw multipart; identical recording",
+    "drain": "in-flight requests finish after send window; no end-of-test cancellation",
+    "attempted": 1,
+    "successful": 0,
+    "successRate": 0,
+    "successfulPerSecond": 0,
+    "statusCounts": {
+      "network": 1
+    },
+    "cacheCounts": {
+      "not_instrumented": 1
+    },
+    "successLatencyMs": {
+      "p50": null,
+      "p95": null,
+      "p99": null,
+      "max": null
+    },
+    "allLatencyMs": {
+      "p50": 41,
+      "p95": 41,
+      "p99": 41,
+      "max": 41
+    },
+    "semanticQualityEvaluated": false,
+    "requestLimitReached": false
+  },
+  "requests": [
+    {
+      "requestId": "opt-config-fix-75e67a29-cd39-4339-9718-c92fc35958fd-0",
+      "status": null,
+      "elapsedMs": 41,
+      "cache": null,
+      "reason": "network_failure"
+    }
+  ]
+}

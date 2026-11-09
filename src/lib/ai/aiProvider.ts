@@ -1,5 +1,9 @@
 import type { ApiErrorCode, AudioSource, TextSource } from "@/types/conversation";
 import { AppError } from "@/lib/appError";
+import { fetchLegacyCloudflare } from "./cloudflare/legacyAdmission";
+import { clientAbortSignal, combineAbortSignals, timeoutSignal } from "./cloudflare/abortDiagnostics";
+import type { CloudflareTask } from "./cloudflare/types";
+import { attachFailureDiagnostics } from "./cloudflare/providerError";
 
 // `@cf/openai/...` is a model namespace in Cloudflare's catalog. Requests are
 // still sent only to api.cloudflare.com; this does not use an OpenAI account.
@@ -136,14 +140,18 @@ async function fetchProvider(
   init: RequestInit,
   errorCode: ProviderErrorCode,
   timeoutMs: number,
+  inference?: { task: CloudflareTask; model: string; stream?: boolean; parentRequestId?: string },
 ) {
   try {
-    return await fetch(url, {
+    const options = {
       ...init,
-      signal: AbortSignal.timeout(timeoutMs),
-      cache: "no-store",
-    });
+      signal: init.signal ? combineAbortSignals([clientAbortSignal(init.signal), timeoutSignal(timeoutMs, "request_deadline")])
+        : timeoutSignal(timeoutMs, "request_deadline"),
+      cache: "no-store" as const,
+    };
+    return inference ? await fetchLegacyCloudflare(url, options, { ...inference, timeoutMs }) : await fetch(url, options);
   } catch (error) {
+    if (error instanceof AppError) throw error;
     throw new AppError(
       errorCode,
       error instanceof DOMException && error.name === "TimeoutError"
@@ -201,6 +209,7 @@ async function generateAiTextWithProfile(
     },
     "LLM_FAILED",
     options.timeoutMs,
+    { task: "text", model: profile.model },
   );
   const payload = (await response.json().catch(() => null)) as
     | CloudflareChatResponse
@@ -271,6 +280,7 @@ async function transcribeVietnameseAudioWithCloudflare(audio: File) {
     },
     "ASR_FAILED",
     positiveInteger("CLOUDFLARE_ASR_TIMEOUT_MS", 6_000),
+    { task: "asr", model },
   );
   const payload = (await response.json().catch(() => null)) as
     | CloudflareEnvelope<CloudflareAsrResult>
@@ -323,6 +333,7 @@ export function getTargetTtsProfile(language: TargetSpeechLanguage): TtsProfile 
 export async function requestTargetSpeech(
   text: string,
   language: TargetSpeechLanguage,
+  options: { parentRequestId?: string } = {},
 ): Promise<ArrayBuffer> {
   const config = requireCloudflareConfig("TTS_FAILED");
   const response = await fetchProvider(
@@ -340,14 +351,16 @@ export async function requestTargetSpeech(
     },
     "TTS_FAILED",
     positiveInteger("CLOUDFLARE_MULTILINGUAL_TTS_TIMEOUT_MS", 30_000),
+    { task: "tts", model: multilingualCloudflareTtsModel, parentRequestId: options.parentRequestId },
   );
 
   if (!response.ok) {
-    throw new AppError(
+    throw attachFailureDiagnostics(new AppError(
       "TTS_FAILED",
       providerMessage(response.status, "Cloudflare chưa tạo được giọng đọc bản dịch."),
       providerStatus(response.status),
-    );
+      { provider: "cloudflare", stage: "tts", reason: "provider_http_error" },
+    ), { failureSource: "cloudflare", upstreamStatus: response.status });
   }
 
   const payload = (await response.json().catch(() => null)) as
@@ -416,6 +429,7 @@ export async function requestEnglishSpeech(
     },
     "TTS_FAILED",
     positiveInteger("CLOUDFLARE_TTS_TIMEOUT_MS", 20_000),
+    { task: "tts", model: profile.model, stream: true },
   );
 
   if (!response.ok || !response.body) {

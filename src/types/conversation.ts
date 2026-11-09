@@ -409,6 +409,11 @@ export type LatencyReport = {
 };
 
 export type ApiErrorCode =
+  | "AUDIO_JOB_NOT_FOUND"
+  | "AUDIO_JOB_EXPIRED"
+  | "AUDIO_JOB_UNAVAILABLE"
+  | "AUDIO_JOB_FAILED"
+  | "IDEMPOTENCY_CONFLICT"
   | "BAD_REQUEST"
   | "UNAUTHORIZED"
   | "FORBIDDEN"

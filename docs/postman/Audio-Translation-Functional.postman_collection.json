@@ -1,0 +1,82 @@
+{
+  "info": {
+    "name": "Audio Translation - Functional Local (fixed file path)",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "description": "Chạy bằng Postman Desktop: Functional > Local. Settings > Working directory phải là C:/Users/DELL/Postman/files. File 7-con-xem-con-gau.wav phải nằm trực tiếp trong thư mục này. Không cần Environment hay Iteration data. Collection chỉ tham chiếu file trên máy, không đính kèm nội dung file. Header X-Request-Id giúp tìm log chia tải theo từng request."
+  },
+  "item": [
+    {
+      "name": "Translate 7-con-xem-con-gau.wav",
+      "request": {
+        "method": "POST",
+        "auth": {
+          "type": "noauth"
+        },
+        "header": [
+          {
+            "key": "X-Request-Id",
+            "value": "postman-functional-{{$guid}}",
+            "type": "text"
+          },
+          {
+            "key": "Accept",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "formdata",
+          "formdata": [
+            {
+              "key": "audio",
+              "type": "file",
+              "src": "7-con-xem-con-gau.wav"
+            },
+            {
+              "key": "sourceLanguage",
+              "type": "text",
+              "value": "vi"
+            },
+            {
+              "key": "clientId",
+              "type": "text",
+              "value": "web_postman01"
+            }
+          ]
+        },
+        "url": "http://localhost:3000/api/audio/translate"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "let data;",
+              "try { data = pm.response.json(); } catch (error) { data = null; }",
+              "const requestId = pm.response.headers.get(\"X-Request-Id\") || (data && data.requestId) || \"unknown\";",
+              "console.log(\"Audio translation result\", { status: pm.response.code, requestId: requestId });",
+              "let failureMessage = data && data.error ? data.error.code + \": \" + data.error.message : \"Response is not JSON\";",
+              "if (data && data.error && data.error.code === \"AUDIO_TOO_SHORT\") {",
+              "  failureMessage += \" | Runner chưa gửi được file audio hợp lệ. Đặt Working directory = C:/Users/DELL/Postman/files; bảo đảm file 7-con-xem-con-gau.wav tồn tại; chọn lại Body > form-data > audio > File và Save request nếu cần.\";",
+              "}",
+              "pm.test(\"HTTP 200 - audio file accepted\", function () {",
+              "  pm.expect(pm.response.code, failureMessage + \" | requestId=\" + requestId).to.eql(200);",
+              "});",
+              "if (pm.response.code === 200) {",
+              "  pm.test(\"Nonempty English translation\", function () {",
+              "    pm.expect(data).to.be.an(\"object\");",
+              "    pm.expect(data.targetLanguage).to.eql(\"en\");",
+              "    pm.expect(data.englishText).to.be.a(\"string\");",
+              "    pm.expect(data.englishText.trim().length).to.be.above(0);",
+              "  });",
+              "} else {",
+              "  console.error(\"Audio translation failed\", { status: pm.response.code, requestId: requestId, message: failureMessage });",
+              "}"
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

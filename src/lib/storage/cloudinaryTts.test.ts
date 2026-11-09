@@ -39,7 +39,7 @@ test("checksum mismatch rejects migration before any database write", async () =
         secure_url: "https://res.cloudinary.com/test/video/upload/v1/hello.mp3",
       }));
       return stream;
-    }) as typeof originalUpload;
+    }) as unknown as typeof originalUpload;
     globalThis.fetch = async (url) => {
       assert.match(String(url), /^https:\/\/res\.cloudinary\.com\//);
       return new Response("different audio");

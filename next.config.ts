@@ -1,6 +1,9 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  output: process.env.NEXT_OUTPUT_STANDALONE === "true" ? "standalone" : undefined,
+  // Verify production builds without touching a running local dev checkout.
+  distDir: process.env.AUDIO_TRANSLATION_ISOLATED_BUILD === "true" ? ".next-audio-check" : ".next",
   async rewrites() {
     return {
       beforeFiles: [],

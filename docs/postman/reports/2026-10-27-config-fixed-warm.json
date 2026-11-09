@@ -1,0 +1,45 @@
+{
+  "report": {
+    "runId": "opt-config-fixed-warm-4a76f34e-2515-4aeb-8f64-e60dea87071b",
+    "startedAt": "2026-10-27T13:16:07.085Z",
+    "completedAt": "2026-10-27T13:16:07.151Z",
+    "clients": 1,
+    "sendWindowSeconds": 1,
+    "elapsedSeconds": 0.0650187,
+    "mode": "burst",
+    "workload": "unchanged Postman raw multipart; identical recording",
+    "drain": "in-flight requests finish after send window; no end-of-test cancellation",
+    "attempted": 1,
+    "successful": 1,
+    "successRate": 1,
+    "successfulPerSecond": 15.380190622082571,
+    "statusCounts": {
+      "200": 1
+    },
+    "cacheCounts": {
+      "hit": 1
+    },
+    "successLatencyMs": {
+      "p50": 64,
+      "p95": 64,
+      "p99": 64,
+      "max": 64
+    },
+    "allLatencyMs": {
+      "p50": 64,
+      "p95": 64,
+      "p99": 64,
+      "max": 64
+    },
+    "semanticQualityEvaluated": false,
+    "requestLimitReached": false
+  },
+  "requests": [
+    {
+      "requestId": "opt-config-fixed-warm-4a76f34e-2515-4aeb-8f64-e60dea87071b-0",
+      "status": 200,
+      "elapsedMs": 64,
+      "cache": "hit"
+    }
+  ]
+}

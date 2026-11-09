@@ -1,0 +1,168 @@
+{
+  "report": {
+    "runId": "opt-cache-warm-final-e4c59b73-38ec-4c18-84ed-83eb6f75a376",
+    "startedAt": "2026-10-27T09:52:48.804Z",
+    "completedAt": "2026-10-27T09:52:49.654Z",
+    "clients": 20,
+    "sendWindowSeconds": 1,
+    "elapsedSeconds": 0.8497614,
+    "mode": "burst",
+    "workload": "unchanged Postman raw multipart; identical recording",
+    "drain": "in-flight requests finish after send window; no end-of-test cancellation",
+    "attempted": 20,
+    "successful": 20,
+    "successRate": 1,
+    "successfulPerSecond": 23.536018463535765,
+    "statusCounts": {
+      "200": 20
+    },
+    "cacheCounts": {
+      "hit": 20
+    },
+    "successLatencyMs": {
+      "p50": 816,
+      "p95": 825,
+      "p99": 842,
+      "max": 842
+    },
+    "allLatencyMs": {
+      "p50": 816,
+      "p95": 825,
+      "p99": 842,
+      "max": 842
+    },
+    "semanticQualityEvaluated": false,
+    "requestLimitReached": false,
+    "backendObservations": {
+      "matchedEvents": 20,
+      "configVersions": [],
+      "asrAttempts": 0,
+      "textAttempts": 0,
+      "queuedStages": 0,
+      "maxQueueDepth": 0,
+      "failures": []
+    }
+  },
+  "requests": [
+    {
+      "requestId": "opt-cache-warm-final-e4c59b73-38ec-4c18-84ed-83eb6f75a376-1",
+      "status": 200,
+      "elapsedMs": 533,
+      "cache": "hit"
+    },
+    {
+      "requestId": "opt-cache-warm-final-e4c59b73-38ec-4c18-84ed-83eb6f75a376-9",
+      "status": 200,
+      "elapsedMs": 815,
+      "cache": "hit"
+    },
+    {
+      "requestId": "opt-cache-warm-final-e4c59b73-38ec-4c18-84ed-83eb6f75a376-11",
+      "status": 200,
+      "elapsedMs": 815,
+      "cache": "hit"
+    },
+    {
+      "requestId": "opt-cache-warm-final-e4c59b73-38ec-4c18-84ed-83eb6f75a376-12",
+      "status": 200,
+      "elapsedMs": 815,
+      "cache": "hit"
+    },
+    {
+      "requestId": "opt-cache-warm-final-e4c59b73-38ec-4c18-84ed-83eb6f75a376-13",
+      "status": 200,
+      "elapsedMs": 815,
+      "cache": "hit"
+    },
+    {
+      "requestId": "opt-cache-warm-final-e4c59b73-38ec-4c18-84ed-83eb6f75a376-14",
+      "status": 200,
+      "elapsedMs": 815,
+      "cache": "hit"
+    },
+    {
+      "requestId": "opt-cache-warm-final-e4c59b73-38ec-4c18-84ed-83eb6f75a376-15",
+      "status": 200,
+      "elapsedMs": 816,
+      "cache": "hit"
+    },
+    {
+      "requestId": "opt-cache-warm-final-e4c59b73-38ec-4c18-84ed-83eb6f75a376-16",
+      "status": 200,
+      "elapsedMs": 816,
+      "cache": "hit"
+    },
+    {
+      "requestId": "opt-cache-warm-final-e4c59b73-38ec-4c18-84ed-83eb6f75a376-18",
+      "status": 200,
+      "elapsedMs": 816,
+      "cache": "hit"
+    },
+    {
+      "requestId": "opt-cache-warm-final-e4c59b73-38ec-4c18-84ed-83eb6f75a376-17",
+      "status": 200,
+      "elapsedMs": 816,
+      "cache": "hit"
+    },
+    {
+      "requestId": "opt-cache-warm-final-e4c59b73-38ec-4c18-84ed-83eb6f75a376-10",
+      "status": 200,
+      "elapsedMs": 818,
+      "cache": "hit"
+    },
+    {
+      "requestId": "opt-cache-warm-final-e4c59b73-38ec-4c18-84ed-83eb6f75a376-2",
+      "status": 200,
+      "elapsedMs": 821,
+      "cache": "hit"
+    },
+    {
+      "requestId": "opt-cache-warm-final-e4c59b73-38ec-4c18-84ed-83eb6f75a376-3",
+      "status": 200,
+      "elapsedMs": 821,
+      "cache": "hit"
+    },
+    {
+      "requestId": "opt-cache-warm-final-e4c59b73-38ec-4c18-84ed-83eb6f75a376-4",
+      "status": 200,
+      "elapsedMs": 820,
+      "cache": "hit"
+    },
+    {
+      "requestId": "opt-cache-warm-final-e4c59b73-38ec-4c18-84ed-83eb6f75a376-5",
+      "status": 200,
+      "elapsedMs": 820,
+      "cache": "hit"
+    },
+    {
+      "requestId": "opt-cache-warm-final-e4c59b73-38ec-4c18-84ed-83eb6f75a376-0",
+      "status": 200,
+      "elapsedMs": 842,
+      "cache": "hit"
+    },
+    {
+      "requestId": "opt-cache-warm-final-e4c59b73-38ec-4c18-84ed-83eb6f75a376-6",
+      "status": 200,
+      "elapsedMs": 820,
+      "cache": "hit"
+    },
+    {
+      "requestId": "opt-cache-warm-final-e4c59b73-38ec-4c18-84ed-83eb6f75a376-7",
+      "status": 200,
+      "elapsedMs": 820,
+      "cache": "hit"
+    },
+    {
+      "requestId": "opt-cache-warm-final-e4c59b73-38ec-4c18-84ed-83eb6f75a376-8",
+      "status": 200,
+      "elapsedMs": 820,
+      "cache": "hit"
+    },
+    {
+      "requestId": "opt-cache-warm-final-e4c59b73-38ec-4c18-84ed-83eb6f75a376-19",
+      "status": 200,
+      "elapsedMs": 825,
+      "cache": "hit"
+    }
+  ]
+}

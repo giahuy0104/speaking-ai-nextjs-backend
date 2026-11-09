@@ -164,10 +164,14 @@ export function authorizeAudioSessionRequest(
   sessionId: string,
   claimedClientId?: string,
 ): AudioSessionTokenClaims | null {
+  const security = getAudioUploadSecurityConfig();
   if (!isScopedAudioSessionId(sessionId)) {
+    if (security.requireScopedToken) {
+      unauthorized("Audio session cũ không được phép truy cập khi yêu cầu scoped upload token.");
+    }
     return null;
   }
-  const secret = getAudioUploadSecurityConfig().tokenSecret;
+  const secret = security.tokenSecret;
   if (!secret) {
     unauthorized("Máy chủ không thể xác thực audio session.", 503);
   }

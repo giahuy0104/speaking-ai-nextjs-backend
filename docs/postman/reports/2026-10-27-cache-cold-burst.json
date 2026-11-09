@@ -1,0 +1,171 @@
+{
+  "report": {
+    "runId": "opt-cache-cold-57470081-121b-484b-9c8d-5943ab33e157",
+    "startedAt": "2026-10-27T09:50:57.226Z",
+    "completedAt": "2026-10-27T09:51:00.772Z",
+    "clients": 20,
+    "sendWindowSeconds": 1,
+    "elapsedSeconds": 3.5454752000000003,
+    "mode": "burst",
+    "workload": "unchanged Postman raw multipart; identical recording",
+    "drain": "in-flight requests finish after send window; no end-of-test cancellation",
+    "attempted": 20,
+    "successful": 20,
+    "successRate": 1,
+    "successfulPerSecond": 5.640992778626684,
+    "statusCounts": {
+      "200": 20
+    },
+    "cacheCounts": {
+      "coalesced": 19,
+      "miss": 1
+    },
+    "successLatencyMs": {
+      "p50": 3522,
+      "p95": 3524,
+      "p99": 3543,
+      "max": 3543
+    },
+    "allLatencyMs": {
+      "p50": 3522,
+      "p95": 3524,
+      "p99": 3543,
+      "max": 3543
+    },
+    "semanticQualityEvaluated": false,
+    "requestLimitReached": false,
+    "backendObservations": {
+      "matchedEvents": 25,
+      "configVersions": [
+        "6615f4bdaac2f9e4"
+      ],
+      "asrAttempts": 1,
+      "textAttempts": 1,
+      "queuedStages": 0,
+      "maxQueueDepth": 0,
+      "failures": []
+    }
+  },
+  "requests": [
+    {
+      "requestId": "opt-cache-cold-57470081-121b-484b-9c8d-5943ab33e157-11",
+      "status": 200,
+      "elapsedMs": 3514,
+      "cache": "coalesced"
+    },
+    {
+      "requestId": "opt-cache-cold-57470081-121b-484b-9c8d-5943ab33e157-12",
+      "status": 200,
+      "elapsedMs": 3515,
+      "cache": "coalesced"
+    },
+    {
+      "requestId": "opt-cache-cold-57470081-121b-484b-9c8d-5943ab33e157-13",
+      "status": 200,
+      "elapsedMs": 3516,
+      "cache": "coalesced"
+    },
+    {
+      "requestId": "opt-cache-cold-57470081-121b-484b-9c8d-5943ab33e157-14",
+      "status": 200,
+      "elapsedMs": 3516,
+      "cache": "coalesced"
+    },
+    {
+      "requestId": "opt-cache-cold-57470081-121b-484b-9c8d-5943ab33e157-15",
+      "status": 200,
+      "elapsedMs": 3517,
+      "cache": "coalesced"
+    },
+    {
+      "requestId": "opt-cache-cold-57470081-121b-484b-9c8d-5943ab33e157-16",
+      "status": 200,
+      "elapsedMs": 3517,
+      "cache": "coalesced"
+    },
+    {
+      "requestId": "opt-cache-cold-57470081-121b-484b-9c8d-5943ab33e157-17",
+      "status": 200,
+      "elapsedMs": 3517,
+      "cache": "coalesced"
+    },
+    {
+      "requestId": "opt-cache-cold-57470081-121b-484b-9c8d-5943ab33e157-18",
+      "status": 200,
+      "elapsedMs": 3518,
+      "cache": "coalesced"
+    },
+    {
+      "requestId": "opt-cache-cold-57470081-121b-484b-9c8d-5943ab33e157-19",
+      "status": 200,
+      "elapsedMs": 3518,
+      "cache": "coalesced"
+    },
+    {
+      "requestId": "opt-cache-cold-57470081-121b-484b-9c8d-5943ab33e157-0",
+      "status": 200,
+      "elapsedMs": 3543,
+      "cache": "miss"
+    },
+    {
+      "requestId": "opt-cache-cold-57470081-121b-484b-9c8d-5943ab33e157-2",
+      "status": 200,
+      "elapsedMs": 3523,
+      "cache": "coalesced"
+    },
+    {
+      "requestId": "opt-cache-cold-57470081-121b-484b-9c8d-5943ab33e157-1",
+      "status": 200,
+      "elapsedMs": 3524,
+      "cache": "coalesced"
+    },
+    {
+      "requestId": "opt-cache-cold-57470081-121b-484b-9c8d-5943ab33e157-3",
+      "status": 200,
+      "elapsedMs": 3523,
+      "cache": "coalesced"
+    },
+    {
+      "requestId": "opt-cache-cold-57470081-121b-484b-9c8d-5943ab33e157-4",
+      "status": 200,
+      "elapsedMs": 3523,
+      "cache": "coalesced"
+    },
+    {
+      "requestId": "opt-cache-cold-57470081-121b-484b-9c8d-5943ab33e157-5",
+      "status": 200,
+      "elapsedMs": 3523,
+      "cache": "coalesced"
+    },
+    {
+      "requestId": "opt-cache-cold-57470081-121b-484b-9c8d-5943ab33e157-6",
+      "status": 200,
+      "elapsedMs": 3522,
+      "cache": "coalesced"
+    },
+    {
+      "requestId": "opt-cache-cold-57470081-121b-484b-9c8d-5943ab33e157-7",
+      "status": 200,
+      "elapsedMs": 3522,
+      "cache": "coalesced"
+    },
+    {
+      "requestId": "opt-cache-cold-57470081-121b-484b-9c8d-5943ab33e157-8",
+      "status": 200,
+      "elapsedMs": 3522,
+      "cache": "coalesced"
+    },
+    {
+      "requestId": "opt-cache-cold-57470081-121b-484b-9c8d-5943ab33e157-9",
+      "status": 200,
+      "elapsedMs": 3522,
+      "cache": "coalesced"
+    },
+    {
+      "requestId": "opt-cache-cold-57470081-121b-484b-9c8d-5943ab33e157-10",
+      "status": 200,
+      "elapsedMs": 3522,
+      "cache": "coalesced"
+    }
+  ]
+}

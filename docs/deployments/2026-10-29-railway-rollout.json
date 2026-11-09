@@ -1,0 +1,93 @@
+{
+  "deployedAt": "2026-10-29T04:57:36.572Z",
+  "browserProfile": "HuaMei - A Huy",
+  "projectId": "a0d3a70c-d154-4d0d-9ae9-e45b0fe05e86",
+  "environmentId": "7793f741-37cc-41f8-9bb3-8f4a529502d8",
+  "serviceId": "112c7f32-e31c-46b1-8349-ca19d2d58c1b",
+  "deploymentId": "ddda2020-3b64-4e49-b2e3-afd3ecc8bf2b",
+  "commit": "757ced97a50ed6b3f41a6e0628fcec3bb8f75681",
+  "branch": "can-bang-tai",
+  "status": "ACTIVE",
+  "url": "https://speaking-ai-nextjs-backend-production.up.railway.app",
+  "publicChecks": {
+    "ready": 200,
+    "health": 200,
+    "adminApiWithoutCookie": 401,
+    "historyWithoutToken": 401,
+    "adminRedirect": 307,
+    "sameOriginPreflight": 204
+  },
+  "archive": {
+    "serviceId": "d373d593-078e-4aab-9fb1-aacb2e907b28",
+    "paused": true,
+    "schedule": null,
+    "startCommand": "node -e \"console.log('Archive paused during backend rollout')\"",
+    "previousSchedule": "*/5 * * * *",
+    "previousStartCommand": "node -e '(async()=>{const s=process.env.CRON_SECRET;if(!s)throw new Error(\"CRON_SECRET missing\");const r=await fetch(\"https://speaking-ai-nextjs-backend-production.up.railway.app/api/internal/app-records/archive\",{headers:{Authorization:\"Bearer \"+s},signal:AbortSignal.timeout(90000)});if(!r.ok)throw new Error(\"Archive HTTP \"+r.status);console.log(JSON.stringify(await r.json()));})().catch(e=>{console.error(e.message);process.exit(1)})'",
+    "previousBucket": "homi-db-archives",
+    "reason": "Existing CRON_SECRET is shorter than the production minimum of 32 characters. Archive bucket is temporarily empty on web and cron has no schedule.",
+    "resumeRequirements": [
+      "Set the same strong CRON_SECRET of at least 32 characters on web and cron.",
+      "Restore APP_RECORDS_ARCHIVE_R2_BUCKET to the previous private bucket on web.",
+      "Restore cron start command and schedule after web deployment succeeds."
+    ]
+  },
+  "evidenceScreenshot": "C:/Users/DELL/.codex/visualizations/2026/10/29/01a18554-646e-7a52-8cbc-6f13af1a7053/railway-deployed.jpg",
+  "secretsChanged": false,
+  "latestCheckpoint": {
+    "recordedAt": "2026-10-29T05:36:55.290Z",
+    "status": "waiting_for_r2_private_visibility_confirmation",
+    "report": "docs/deployments/2026-10-29-redis-rollout.md",
+    "web": {
+      "deploymentId": "7a62ecad-e0fc-4b82-8c72-1b9fe04cff72",
+      "commit": "82ec0be428b876d489eac7a6473020be4a525fd9",
+      "branch": "can-bang-tai"
+    },
+    "worker": {
+      "serviceId": "5148acbc-910e-426d-9593-8ac1fe54da19",
+      "deploymentId": "dc3ff64d-a9fb-47f0-8a14-dc9c893effa6",
+      "commit": "513ec8e3fc08aa20e40fcf72309ab351ce8aab40",
+      "branch": "codex/railway-worker-deploy",
+      "heartbeatVerified": true
+    },
+    "redis": {
+      "quota": "17ebc904-8ddc-450d-b32d-e5ccf16edbca",
+      "cache": "c64cbfe1-763d-4644-a65b-8b7b243a28a3",
+      "jobs": "7e75afcc-7ef6-4ff0-b554-3d65dee29fff",
+      "allPrivate": true,
+      "region": "Singapore",
+      "effectiveConfigurationVerified": true
+    },
+    "features": {
+      "pool": true,
+      "cache": true,
+      "sharedLegacyAdmission": true,
+      "routeLegacyAccount": true,
+      "workerJobs": true,
+      "webHttpJobs": false
+    },
+    "tests": {
+      "integrationPassed": 426,
+      "integrationFailed": 0,
+      "integrationSkipped": 0,
+      "linuxImageSmokePassed": 19,
+      "publicSecurityProbesPassed": 6,
+      "enabledPoolAccountsTextSmokePassed": 2,
+      "internalWorkerJobCompleted": true,
+      "workerProviderAttempts": 1,
+      "workerR2InputDeleted": true,
+      "workerToWebCacheHit": true
+    },
+    "pending": [
+      "Confirm private R2 visibility",
+      "Enable web HTTP jobs",
+      "Verify public authenticated HTTP202-to-completed flow"
+    ],
+    "archiveStillPaused": true,
+    "secretValuesIncluded": false,
+    "evidenceScreenshot": "C:/Users/DELL/.codex/visualizations/2026/10/29/01a18554-646e-7a52-8cbc-6f13af1a7053/railway-redis-worker-online.jpg",
+    "credentialsRotated": false,
+    "poolCredentialVariablesAdded": 2,
+    "probeInstallationsRevoked": 2
+  }
+}

@@ -1,0 +1,80 @@
+name: speaking-ai-cloudflare
+
+services:
+  redis:
+    image: redis:7.4-alpine
+    container_name: speaking-ai-cloudflare-redis
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:16379:6379"
+    environment:
+      REDISCLI_AUTH: "${CLOUDFLARE_POOL_REDIS_PASSWORD:?Set CLOUDFLARE_POOL_REDIS_PASSWORD in .env.local}"
+    command:
+      - sh
+      - -c
+      - 'exec redis-server /usr/local/etc/redis/redis.conf --requirepass "$$REDISCLI_AUTH"'
+    volumes:
+      - ./infra/redis/redis.conf:/usr/local/etc/redis/redis.conf:ro
+      - redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 5s
+    mem_limit: 256m
+    cpus: 0.5
+    logging:
+      driver: json-file
+      options:
+        max-size: "5m"
+        max-file: "2"
+
+  redis-cache:
+    image: redis:7.4-alpine
+    container_name: speaking-ai-audio-cache
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:16380:6379"
+    environment:
+      REDISCLI_AUTH: "${CLOUDFLARE_POOL_REDIS_PASSWORD:?Set CLOUDFLARE_POOL_REDIS_PASSWORD in .env.local}"
+    command: ["sh", "-c", 'exec redis-server /usr/local/etc/redis/redis.conf --requirepass "$$REDISCLI_AUTH"']
+    volumes:
+      - ./infra/redis/cache.conf:/usr/local/etc/redis/redis.conf:ro
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    mem_limit: 128m
+    cpus: 0.5
+    logging:
+      driver: json-file
+      options: { max-size: "5m", max-file: "2" }
+
+  redis-jobs:
+    image: redis:7.4-alpine
+    container_name: speaking-ai-audio-jobs
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:16381:6379"
+    environment:
+      REDISCLI_AUTH: "${CLOUDFLARE_POOL_REDIS_PASSWORD:?Set CLOUDFLARE_POOL_REDIS_PASSWORD in .env.local}"
+    command: ["sh", "-c", 'exec redis-server /usr/local/etc/redis/redis.conf --requirepass "$$REDISCLI_AUTH"']
+    volumes:
+      - ./infra/redis/jobs.conf:/usr/local/etc/redis/redis.conf:ro
+      - audio-jobs-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    mem_limit: 256m
+    cpus: 0.5
+    logging:
+      driver: json-file
+      options: { max-size: "5m", max-file: "2" }
+
+volumes:
+  redis-data:
+  audio-jobs-data:

@@ -6,9 +6,10 @@ import {
 } from "./appVersionPolicy";
 
 function configuredEnvironment(
-  overrides: NodeJS.ProcessEnv = {},
+  overrides: Partial<NodeJS.ProcessEnv> = {},
 ): NodeJS.ProcessEnv {
   return {
+    NODE_ENV: "test",
     ANDROID_LATEST_VERSION: "1.0.1",
     ANDROID_LATEST_BUILD: "3",
     ANDROID_MIN_SUPPORTED_BUILD: "2",

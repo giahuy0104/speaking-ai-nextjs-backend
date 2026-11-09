@@ -1,0 +1,216 @@
+{
+  "prefix": "logging-live-abort-12aa630a-7909-4e73-8e90-231405afe1ab",
+  "method": "Controlled caller cancellation after 100ms; separate from the sustained run.",
+  "prime": {
+    "status": 200,
+    "cache": "hit"
+  },
+  "outcomes": [
+    {
+      "requestId": "logging-live-abort-12aa630a-7909-4e73-8e90-231405afe1ab-0",
+      "outcome": "client_cancelled"
+    },
+    {
+      "requestId": "logging-live-abort-12aa630a-7909-4e73-8e90-231405afe1ab-1",
+      "outcome": "client_cancelled"
+    },
+    {
+      "requestId": "logging-live-abort-12aa630a-7909-4e73-8e90-231405afe1ab-2",
+      "outcome": "client_cancelled"
+    },
+    {
+      "requestId": "logging-live-abort-12aa630a-7909-4e73-8e90-231405afe1ab-3",
+      "outcome": "client_cancelled"
+    },
+    {
+      "requestId": "logging-live-abort-12aa630a-7909-4e73-8e90-231405afe1ab-4",
+      "outcome": "client_cancelled"
+    },
+    {
+      "requestId": "logging-live-abort-12aa630a-7909-4e73-8e90-231405afe1ab-5",
+      "outcome": "client_cancelled"
+    },
+    {
+      "requestId": "logging-live-abort-12aa630a-7909-4e73-8e90-231405afe1ab-6",
+      "outcome": "client_cancelled"
+    },
+    {
+      "requestId": "logging-live-abort-12aa630a-7909-4e73-8e90-231405afe1ab-7",
+      "outcome": "client_cancelled"
+    },
+    {
+      "requestId": "logging-live-abort-12aa630a-7909-4e73-8e90-231405afe1ab-8",
+      "outcome": "client_cancelled"
+    },
+    {
+      "requestId": "logging-live-abort-12aa630a-7909-4e73-8e90-231405afe1ab-9",
+      "outcome": "client_cancelled"
+    },
+    {
+      "requestId": "logging-live-abort-12aa630a-7909-4e73-8e90-231405afe1ab-10",
+      "outcome": "client_cancelled"
+    },
+    {
+      "requestId": "logging-live-abort-12aa630a-7909-4e73-8e90-231405afe1ab-11",
+      "outcome": "client_cancelled"
+    },
+    {
+      "requestId": "logging-live-abort-12aa630a-7909-4e73-8e90-231405afe1ab-12",
+      "outcome": "client_cancelled"
+    },
+    {
+      "requestId": "logging-live-abort-12aa630a-7909-4e73-8e90-231405afe1ab-13",
+      "outcome": "client_cancelled"
+    },
+    {
+      "requestId": "logging-live-abort-12aa630a-7909-4e73-8e90-231405afe1ab-14",
+      "outcome": "client_cancelled"
+    },
+    {
+      "requestId": "logging-live-abort-12aa630a-7909-4e73-8e90-231405afe1ab-15",
+      "outcome": "client_cancelled"
+    },
+    {
+      "requestId": "logging-live-abort-12aa630a-7909-4e73-8e90-231405afe1ab-16",
+      "outcome": "client_cancelled"
+    },
+    {
+      "requestId": "logging-live-abort-12aa630a-7909-4e73-8e90-231405afe1ab-17",
+      "outcome": "client_cancelled"
+    },
+    {
+      "requestId": "logging-live-abort-12aa630a-7909-4e73-8e90-231405afe1ab-18",
+      "outcome": "client_cancelled"
+    },
+    {
+      "requestId": "logging-live-abort-12aa630a-7909-4e73-8e90-231405afe1ab-19",
+      "outcome": "client_cancelled"
+    }
+  ],
+  "serverFailures": [
+    {
+      "requestId": "logging-live-abort-12aa630a-7909-4e73-8e90-231405afe1ab-12",
+      "failureSource": "backend",
+      "requestStage": "upload",
+      "providerCallStarted": false,
+      "providerAttempts": 0,
+      "httpStatus": 400,
+      "clientAborted": true
+    },
+    {
+      "requestId": "logging-live-abort-12aa630a-7909-4e73-8e90-231405afe1ab-13",
+      "failureSource": "backend",
+      "requestStage": "upload",
+      "providerCallStarted": false,
+      "providerAttempts": 0,
+      "httpStatus": 400,
+      "clientAborted": true
+    },
+    {
+      "requestId": "logging-live-abort-12aa630a-7909-4e73-8e90-231405afe1ab-14",
+      "failureSource": "backend",
+      "requestStage": "upload",
+      "providerCallStarted": false,
+      "providerAttempts": 0,
+      "httpStatus": 400,
+      "clientAborted": true
+    },
+    {
+      "requestId": "logging-live-abort-12aa630a-7909-4e73-8e90-231405afe1ab-15",
+      "failureSource": "backend",
+      "requestStage": "upload",
+      "providerCallStarted": false,
+      "providerAttempts": 0,
+      "httpStatus": 400,
+      "clientAborted": true
+    },
+    {
+      "requestId": "logging-live-abort-12aa630a-7909-4e73-8e90-231405afe1ab-16",
+      "failureSource": "backend",
+      "requestStage": "upload",
+      "providerCallStarted": false,
+      "providerAttempts": 0,
+      "httpStatus": 400,
+      "clientAborted": true
+    },
+    {
+      "requestId": "logging-live-abort-12aa630a-7909-4e73-8e90-231405afe1ab-17",
+      "failureSource": "backend",
+      "requestStage": "upload",
+      "providerCallStarted": false,
+      "providerAttempts": 0,
+      "httpStatus": 400,
+      "clientAborted": true
+    },
+    {
+      "requestId": "logging-live-abort-12aa630a-7909-4e73-8e90-231405afe1ab-18",
+      "failureSource": "backend",
+      "requestStage": "upload",
+      "providerCallStarted": false,
+      "providerAttempts": 0,
+      "httpStatus": 400,
+      "clientAborted": true
+    },
+    {
+      "requestId": "logging-live-abort-12aa630a-7909-4e73-8e90-231405afe1ab-7",
+      "failureSource": "client",
+      "abortCause": "client_disconnect",
+      "requestStage": "cache_lookup",
+      "providerCallStarted": false,
+      "providerAttempts": 0,
+      "httpStatus": 499,
+      "clientAborted": true
+    },
+    {
+      "requestId": "logging-live-abort-12aa630a-7909-4e73-8e90-231405afe1ab-6",
+      "failureSource": "client",
+      "abortCause": "client_disconnect",
+      "requestStage": "cache_lookup",
+      "providerCallStarted": false,
+      "providerAttempts": 0,
+      "httpStatus": 499,
+      "clientAborted": true
+    },
+    {
+      "requestId": "logging-live-abort-12aa630a-7909-4e73-8e90-231405afe1ab-8",
+      "failureSource": "client",
+      "abortCause": "client_disconnect",
+      "requestStage": "cache_lookup",
+      "providerCallStarted": false,
+      "providerAttempts": 0,
+      "httpStatus": 499,
+      "clientAborted": true
+    },
+    {
+      "requestId": "logging-live-abort-12aa630a-7909-4e73-8e90-231405afe1ab-9",
+      "failureSource": "client",
+      "abortCause": "client_disconnect",
+      "requestStage": "cache_lookup",
+      "providerCallStarted": false,
+      "providerAttempts": 0,
+      "httpStatus": 499,
+      "clientAborted": true
+    },
+    {
+      "requestId": "logging-live-abort-12aa630a-7909-4e73-8e90-231405afe1ab-10",
+      "failureSource": "client",
+      "abortCause": "client_disconnect",
+      "requestStage": "cache_lookup",
+      "providerCallStarted": false,
+      "providerAttempts": 0,
+      "httpStatus": 499,
+      "clientAborted": true
+    },
+    {
+      "requestId": "logging-live-abort-12aa630a-7909-4e73-8e90-231405afe1ab-11",
+      "failureSource": "client",
+      "abortCause": "client_disconnect",
+      "requestStage": "cache_lookup",
+      "providerCallStarted": false,
+      "providerAttempts": 0,
+      "httpStatus": 499,
+      "clientAborted": true
+    }
+  ],
+  "workCancellations": 0
+}

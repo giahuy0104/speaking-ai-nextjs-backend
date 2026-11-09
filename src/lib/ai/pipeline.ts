@@ -1,7 +1,6 @@
 import type {
   ConversationRequest,
   ConversationResponse,
-  TargetLanguage,
 } from "@/types/conversation";
 import { measureStep, nowMs } from "@/lib/latency";
 import { logEvent } from "@/lib/observability";
@@ -14,8 +13,9 @@ import {
   generateEnglishSentence,
   type EnglishGenerationResult,
 } from "./llm";
-import { buildTargetLanguageInstruction, PROMPT_VERSION } from "./prompts";
-import { CloudflareTextProviderError, translateVietnameseWithCloudflare } from "./cloudflareText";
+import { PROMPT_VERSION } from "./prompts";
+import { translateTargetLanguage } from "./targetTranslation";
+import { getFailureDiagnostics } from "./cloudflare/providerError";
 import { getTargetTtsProfile, requestTargetSpeech } from "./aiProvider";
 import {
   prepareEnglishAudio,
@@ -61,21 +61,6 @@ function createId(prefix: string) {
   return `${prefix}_${crypto.randomUUID().slice(0, 8)}`;
 }
 
-function normalizeTargetTranslation(text: string) {
-  return text.trim().replace(/^[“「«]/u, "").replace(/[”」»]$/u, "").trim();
-}
-
-function invalidTargetTranslation(
-  text: string,
-  language: Exclude<TargetLanguage, "en">,
-) {
-  if (!text || text.length > 500 || /[\r\n]/u.test(text)) return true;
-  if (language === "zh") return !/[\u3400-\u9fff]/u.test(text);
-  if (language === "ja") return !/[\u3040-\u30ff\u3400-\u9fff]/u.test(text);
-  if (language === "ko") return !/[\uac00-\ud7af]/u.test(text);
-  return false;
-}
-
 export async function runTargetLanguageConversationPipeline(
   input: ConversationRequest,
 ): Promise<ConversationResponse> {
@@ -85,28 +70,11 @@ export async function runTargetLanguageConversationPipeline(
   }
   const startedAt = nowMs();
   const asr = await measureStep(() => transcribeVietnamese(input));
-  const translation = await measureStep(async () => {
-    try {
-      return await translateVietnameseWithCloudflare(
-        asr.value,
-        buildTargetLanguageInstruction(language, input.context, input.childAge),
-        128,
-      );
-    } catch (error) {
-      if (error instanceof CloudflareTextProviderError) {
-        throw new AppError(
-          "LLM_FAILED",
-          "Chưa dịch được câu này. Bạn thử lại nhé.",
-          error.reason === "not_configured" ? 503 : 502,
-        );
-      }
-      throw error;
-    }
-  });
-  const translatedText = normalizeTargetTranslation(translation.value.englishText);
-  if (invalidTargetTranslation(translatedText, language)) {
-    throw new AppError("LLM_FAILED", "Chưa dịch được câu này sang ngôn ngữ đã chọn.", 502);
-  }
+  const translation = await measureStep(() => translateTargetLanguage({
+    sourceText: asr.value, language, context: input.context,
+    childAge: input.childAge, requestId: input.requestId,
+  }));
+  const translatedText = translation.value.translatedText;
 
   const profile = getTargetTtsProfile(language);
   const descriptor = {
@@ -120,13 +88,18 @@ export async function runTargetLanguageConversationPipeline(
     try {
       const cachedUrl = await getReusableAudioUrl(descriptor);
       if (cachedUrl) return { audioUrl: cachedUrl, source: "cache" as const };
-      const audio = await requestTargetSpeech(translatedText, language);
+      const audio = await requestTargetSpeech(translatedText, language, { parentRequestId: input.requestId });
       const audioUrl = await saveReusableAudio(descriptor, audio);
       return { audioUrl, source: "cloudflare_tts" as const };
     } catch (error) {
       logEvent("warn", "target_translation_audio_unavailable", {
         requestId: input.requestId,
         language,
+        stage: "tts",
+        model: profile.model,
+        reason: error instanceof AppError ? error.details?.reason ?? "audio_unavailable" : "audio_unavailable",
+        status: error instanceof AppError ? error.status : 500,
+        ...getFailureDiagnostics(error),
         error,
       });
       return { audioUrl: null, source: "device_tts" as const };
@@ -159,6 +132,11 @@ export async function runTargetLanguageConversationPipeline(
       timeToFirstAudioMs: Math.round(nowMs() - startedAt),
     },
   };
+  logEvent("info", "target_translation_pipeline_completed", {
+    requestId: input.requestId, language, model: result.textModel,
+    audioSource: result.audioSource, audioReady: result.audioUrl !== null,
+    latency: result.latency,
+  });
   return result;
 }
 

@@ -1,0 +1,178 @@
+{
+  "startedAt": "2026-10-28T07:09:08.607Z",
+  "status": "completed",
+  "rollbackTag": "speaking-ai-backend:before-error-messages-20261028t070908z",
+  "before": [
+    {
+      "name": "speaking-ai-cloudflare-backend-3000-1",
+      "id": "5a48b6080dd623ff24ad1f1e938e7e27fe08e11997cdf02594d8081a44538724",
+      "imageId": "sha256:d9f375a964d02e05085554b2627ed53d3b1ac08edaec4acdeeb083c50480a4fe",
+      "startedAt": "2026-10-28T07:07:27.7266281Z",
+      "health": "healthy",
+      "service": "backend-3000"
+    },
+    {
+      "name": "speaking-ai-cloudflare-backend-3001-1",
+      "id": "9551f07aad0d6e8cb837e2d71e40cf00e73d9bca23276f5954d16fe82dd639d1",
+      "imageId": "sha256:d9f375a964d02e05085554b2627ed53d3b1ac08edaec4acdeeb083c50480a4fe",
+      "startedAt": "2026-10-28T07:07:27.7314117Z",
+      "health": "healthy",
+      "service": "backend-3001"
+    },
+    {
+      "name": "speaking-ai-cloudflare-nginx-1",
+      "id": "32a9d1dd8736d775f2d708f4814faada95bc06fa7935e965f4cc6486720bae99",
+      "imageId": "sha256:47928bf67eb62a1863cb08d9ecb52d3e704304ba614eaee17884204677702951",
+      "startedAt": "2026-10-28T07:07:27.8073218Z",
+      "health": "healthy",
+      "service": "nginx"
+    },
+    {
+      "name": "speaking-ai-cloudflare-redis",
+      "id": "3e44b6636bdc67e3e82dbd2c9c1f18443007554c08e09bbba3f355b4025b23ea",
+      "imageId": "sha256:57e4255cc971b1c8d6f8a6ca283ac01bc3ecdd914273ef6bfaede87aaecd6541",
+      "startedAt": "2026-10-28T07:07:27.7150729Z",
+      "health": "healthy",
+      "service": "redis"
+    },
+    {
+      "name": "speaking-ai-audio-cache",
+      "id": "9dbae4d13b9a864b60bd5cb0e8b9a2d56dd6a0139450593b4464d911284f31d4",
+      "imageId": "sha256:57e4255cc971b1c8d6f8a6ca283ac01bc3ecdd914273ef6bfaede87aaecd6541",
+      "startedAt": "2026-10-28T07:07:27.7191611Z",
+      "health": "healthy",
+      "service": "redis-cache"
+    },
+    {
+      "name": "speaking-ai-audio-jobs",
+      "id": "cb2f812231f8549f96acef195f8b8a4b963c219d3ac4c2384c32e9e0addb2e6e",
+      "imageId": "sha256:57e4255cc971b1c8d6f8a6ca283ac01bc3ecdd914273ef6bfaede87aaecd6541",
+      "startedAt": "2026-10-28T07:07:27.72452Z",
+      "health": "healthy",
+      "service": "redis-jobs"
+    }
+  ],
+  "tests": {
+    "passed": 13,
+    "typeScript": true,
+    "eslint": true
+  },
+  "worker": {
+    "running": false,
+    "jobsEnabled": false
+  },
+  "preflight": {
+    "cancelled": {
+      "status": 499,
+      "message": "Yêu cầu đã bị hủy do kết nối từ phía gửi yêu cầu bị ngắt."
+    },
+    "deadline": {
+      "status": 504,
+      "message": "Máy chủ đã dừng yêu cầu dịch audio vì hết thời gian xử lý cho phép. Vui lòng thử lại."
+    },
+    "networkCalls": 0
+  },
+  "imageId": "sha256:51463226c3b7cd10afb34a01fe6099dea1bc458f854ad19f6c6d9100487b4cf2",
+  "backends": {
+    "backend-3000": {
+      "healthStatus": 200,
+      "instance": "9d3b75c8de6d",
+      "validationStatus": 415,
+      "cancelledStatus": 499,
+      "cancelledMessage": "Yêu cầu đã bị hủy do kết nối từ phía gửi yêu cầu bị ngắt.",
+      "timeoutStatus": 504,
+      "timeoutMessage": "Máy chủ đã dừng yêu cầu dịch audio vì hết thời gian xử lý cho phép. Vui lòng thử lại.",
+      "networkCalls": 0,
+      "id": "9d3b75c8de6d749871d22f537499f9115107d074187c7afdee40c6952eea5184",
+      "imageId": "sha256:51463226c3b7cd10afb34a01fe6099dea1bc458f854ad19f6c6d9100487b4cf2",
+      "health": "healthy",
+      "startedAt": "2026-10-28T07:11:05.081528508Z",
+      "logging": {
+        "failureSource": "backend",
+        "requestStage": "validation",
+        "httpStatus": 415
+      }
+    },
+    "backend-3001": {
+      "healthStatus": 200,
+      "instance": "f4634863ed0a",
+      "validationStatus": 415,
+      "cancelledStatus": 499,
+      "cancelledMessage": "Yêu cầu đã bị hủy do kết nối từ phía gửi yêu cầu bị ngắt.",
+      "timeoutStatus": 504,
+      "timeoutMessage": "Máy chủ đã dừng yêu cầu dịch audio vì hết thời gian xử lý cho phép. Vui lòng thử lại.",
+      "networkCalls": 0,
+      "id": "f4634863ed0a7ad968f65ee33f43ad794f03e1233286f49964cc8c8a77dcaa62",
+      "imageId": "sha256:51463226c3b7cd10afb34a01fe6099dea1bc458f854ad19f6c6d9100487b4cf2",
+      "health": "healthy",
+      "startedAt": "2026-10-28T07:13:17.760325506Z",
+      "logging": {
+        "failureSource": "backend",
+        "requestStage": "validation",
+        "httpStatus": 415
+      }
+    }
+  },
+  "after": [
+    {
+      "name": "speaking-ai-cloudflare-backend-3000-1",
+      "id": "9d3b75c8de6d749871d22f537499f9115107d074187c7afdee40c6952eea5184",
+      "imageId": "sha256:51463226c3b7cd10afb34a01fe6099dea1bc458f854ad19f6c6d9100487b4cf2",
+      "startedAt": "2026-10-28T07:11:05.081528508Z",
+      "health": "healthy",
+      "service": "backend-3000"
+    },
+    {
+      "name": "speaking-ai-cloudflare-backend-3001-1",
+      "id": "f4634863ed0a7ad968f65ee33f43ad794f03e1233286f49964cc8c8a77dcaa62",
+      "imageId": "sha256:51463226c3b7cd10afb34a01fe6099dea1bc458f854ad19f6c6d9100487b4cf2",
+      "startedAt": "2026-10-28T07:13:17.760325506Z",
+      "health": "healthy",
+      "service": "backend-3001"
+    },
+    {
+      "name": "speaking-ai-cloudflare-nginx-1",
+      "id": "32a9d1dd8736d775f2d708f4814faada95bc06fa7935e965f4cc6486720bae99",
+      "imageId": "sha256:47928bf67eb62a1863cb08d9ecb52d3e704304ba614eaee17884204677702951",
+      "startedAt": "2026-10-28T07:07:27.8073218Z",
+      "health": "healthy",
+      "service": "nginx"
+    },
+    {
+      "name": "speaking-ai-cloudflare-redis",
+      "id": "3e44b6636bdc67e3e82dbd2c9c1f18443007554c08e09bbba3f355b4025b23ea",
+      "imageId": "sha256:57e4255cc971b1c8d6f8a6ca283ac01bc3ecdd914273ef6bfaede87aaecd6541",
+      "startedAt": "2026-10-28T07:07:27.7150729Z",
+      "health": "healthy",
+      "service": "redis"
+    },
+    {
+      "name": "speaking-ai-audio-cache",
+      "id": "9dbae4d13b9a864b60bd5cb0e8b9a2d56dd6a0139450593b4464d911284f31d4",
+      "imageId": "sha256:57e4255cc971b1c8d6f8a6ca283ac01bc3ecdd914273ef6bfaede87aaecd6541",
+      "startedAt": "2026-10-28T07:07:27.7191611Z",
+      "health": "healthy",
+      "service": "redis-cache"
+    },
+    {
+      "name": "speaking-ai-audio-jobs",
+      "id": "cb2f812231f8549f96acef195f8b8a4b963c219d3ac4c2384c32e9e0addb2e6e",
+      "imageId": "sha256:57e4255cc971b1c8d6f8a6ca283ac01bc3ecdd914273ef6bfaede87aaecd6541",
+      "startedAt": "2026-10-28T07:07:27.72452Z",
+      "health": "healthy",
+      "service": "redis-jobs"
+    }
+  ],
+  "loadBalancerCheck": {
+    "passed": true,
+    "requests": 20,
+    "instances": [
+      "9d3b75c8de6d",
+      "f4634863ed0a"
+    ]
+  },
+  "supportServicesNotRecreated": true,
+  "completedAt": "2026-10-28T07:14:14.171Z",
+  "productionBuildPassed": true,
+  "apiUrl": "http://localhost:8080/api/audio/translate"
+}

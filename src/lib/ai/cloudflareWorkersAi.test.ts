@@ -16,7 +16,8 @@ test("builds a Cloudflare request for English audio translation", () => {
   const body = buildCloudflareAudioTranslationBody(audio, "vi");
 
   assert.equal(body.audio, bytes.toString("base64"));
-  assert.equal(body.task, "translate");
+  assert.equal(body.task, "transcribe");
+  assert.equal(body.beam_size, 2);
   assert.equal(body.language, "vi");
   assert.equal(body.vad_filter, true);
   assert.equal(body.condition_on_previous_text, false);

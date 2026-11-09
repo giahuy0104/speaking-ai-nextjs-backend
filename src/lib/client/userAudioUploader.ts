@@ -1,3 +1,5 @@
+import { browserInstallationFetch } from "./installationFetch";
+
 type FetchLike = typeof fetch;
 
 export type UserAudioUploadInput = {
@@ -53,7 +55,7 @@ export async function uploadConversationUserAudioAfterResponse(
     throw new Error("Thiếu audio hoặc định danh lượt nói để lưu Cloudinary.");
   }
 
-  const fetchImpl = options.fetchImpl ?? fetch;
+  const fetchImpl = options.fetchImpl ?? browserInstallationFetch;
   const retryDelaysMs = options.retryDelaysMs ?? defaultRetryDelaysMs;
   const delayImpl = options.delayImpl ?? delay;
   let lastError: Error | undefined;

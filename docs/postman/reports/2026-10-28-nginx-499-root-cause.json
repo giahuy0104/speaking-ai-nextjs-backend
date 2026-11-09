@@ -1,0 +1,152 @@
+{
+  "observedAt": "2026-10-28T07:37:42.461Z",
+  "runId": "1f1d29f8-0a75-4900-a5c0-8a94d4437965",
+  "windowUtc": {
+    "from": "2026-10-28T07:16:34Z",
+    "until": "2026-10-28T07:17:09Z"
+  },
+  "postman": {
+    "version": "12.34.1",
+    "virtualUsers": 20,
+    "startedAt": "2026-10-28T07:16:34.008Z",
+    "failedAt": "2026-10-28T07:17:07.694Z",
+    "stopCause": "Critical system resource limit: MEMORY at 98.18% with threshold 95",
+    "stateTransitions": [
+      "running -> error",
+      "error -> stopping",
+      "stopping -> finished"
+    ],
+    "finishedAt": "2026-10-28T07:17:07.808Z",
+    "source": "C:\\Users\\DELL\\AppData\\Roaming\\Postman\\logs\\main.log"
+  },
+  "nginx": {
+    "totalRequests": 150,
+    "statusCounts": {
+      "200": 131,
+      "499": 19
+    },
+    "clientDisconnectCount": 19,
+    "cancelledAtSeconds": [
+      "2026-10-28T07:17:07+00:00"
+    ],
+    "cancelledDurationMs": {
+      "min": 204,
+      "max": 5725
+    },
+    "proxyReadTimeoutSeconds": 60
+  },
+  "backend": {
+    "matchedCancelledRequests": 19,
+    "failureSources": {
+      "client": 19
+    },
+    "abortCauses": {
+      "client_disconnect": 19
+    },
+    "requestStages": {
+      "text_admission": 6,
+      "asr": 10,
+      "asr_admission": 1,
+      "text_translation": 2
+    },
+    "providerAlreadyStarted": 18
+  },
+  "conclusion": "Postman stopped its load process at the host memory safety threshold and cancelled all in-flight client requests. Nginx recorded the disconnects as 499; request ages varied, so these were not a shared per-request timeout.",
+  "cancelledRequests": [
+    {
+      "requestId": "postman-nginx-bfe6ceae-116e-406f-bb02-c189a900e05c",
+      "durationMs": 204,
+      "upstream": "172.21.0.2:3001"
+    },
+    {
+      "requestId": "postman-nginx-b7036e72-7e69-4615-a0c9-e1251e52a403",
+      "durationMs": 1756,
+      "upstream": "172.21.0.5:3000"
+    },
+    {
+      "requestId": "postman-nginx-5cc9ee6d-0764-4f4f-86d2-562794916942",
+      "durationMs": 3040,
+      "upstream": "172.21.0.2:3001"
+    },
+    {
+      "requestId": "postman-nginx-3057cd9a-d934-4f47-abe7-8db358e40ff4",
+      "durationMs": 2438,
+      "upstream": "172.21.0.5:3000"
+    },
+    {
+      "requestId": "postman-nginx-b84339ab-661c-42e0-b51c-60408707831e",
+      "durationMs": 4522,
+      "upstream": "172.21.0.2:3001"
+    },
+    {
+      "requestId": "postman-nginx-096d3d4b-5681-4c5c-807e-e17f82bc1ab1",
+      "durationMs": 1943,
+      "upstream": "172.21.0.5:3000"
+    },
+    {
+      "requestId": "postman-nginx-969832d4-4b9a-4d51-b679-4b722357f05e",
+      "durationMs": 5248,
+      "upstream": "172.21.0.2:3001"
+    },
+    {
+      "requestId": "postman-nginx-aec41fbb-8cf1-440b-a859-e3f16b3ddd9d",
+      "durationMs": 5725,
+      "upstream": "172.21.0.2:3001"
+    },
+    {
+      "requestId": "postman-nginx-4257a5c8-d428-4845-a67c-dd34a380327c",
+      "durationMs": 2127,
+      "upstream": "172.21.0.5:3000"
+    },
+    {
+      "requestId": "postman-nginx-1f2fe225-4c5f-4e5c-8591-0ee5581096d8",
+      "durationMs": 2858,
+      "upstream": "172.21.0.2:3001"
+    },
+    {
+      "requestId": "postman-nginx-83d350b1-960c-46b3-abd5-4db1047a5e4f",
+      "durationMs": 2932,
+      "upstream": "172.21.0.5:3000"
+    },
+    {
+      "requestId": "postman-nginx-380c755a-3477-4229-80e7-7b5d1eed2a5f",
+      "durationMs": 664,
+      "upstream": "172.21.0.5:3000"
+    },
+    {
+      "requestId": "postman-nginx-55f7b6be-8000-4faa-97f9-1be1b301dc5e",
+      "durationMs": 3133,
+      "upstream": "172.21.0.5:3000"
+    },
+    {
+      "requestId": "postman-nginx-2d1f2d52-655b-43f5-ae17-b3583036dfbf",
+      "durationMs": 942,
+      "upstream": "172.21.0.2:3001"
+    },
+    {
+      "requestId": "postman-nginx-9953050b-8209-497c-a96e-d7a80908151b",
+      "durationMs": 3492,
+      "upstream": "172.21.0.5:3000"
+    },
+    {
+      "requestId": "postman-nginx-62331ebc-ce1c-4e4c-93ae-ccded95e6bb8",
+      "durationMs": 511,
+      "upstream": "172.21.0.2:3001"
+    },
+    {
+      "requestId": "postman-nginx-4b669843-104f-49a9-a5af-04aa52a03c22",
+      "durationMs": 1421,
+      "upstream": "172.21.0.5:3000"
+    },
+    {
+      "requestId": "postman-nginx-8153346d-b84d-4a54-afd8-6373c36cdfba",
+      "durationMs": 1142,
+      "upstream": "172.21.0.2:3001"
+    },
+    {
+      "requestId": "postman-nginx-50e789ef-d543-4f42-8a11-ca9f1264f84d",
+      "durationMs": 3812,
+      "upstream": "172.21.0.5:3000"
+    }
+  ]
+}

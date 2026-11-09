@@ -60,12 +60,13 @@ export function buildCloudflareAudioTranslationBody(
 ) {
   return {
     audio: Buffer.from(audio).toString("base64"),
-    task: "translate",
+    // Turbo is trained for transcription, not speech translation. Translate
+    // the resulting source text with the text model in a separate step.
+    task: "transcribe",
     language: sourceLanguage,
     vad_filter: true,
     condition_on_previous_text: false,
-    initial_prompt:
-      "Short everyday speech translated naturally and faithfully into English.",
+    beam_size: 2,
   } as const;
 }
 

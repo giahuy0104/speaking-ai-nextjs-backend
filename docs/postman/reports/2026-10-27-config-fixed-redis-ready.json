@@ -1,0 +1,45 @@
+{
+  "report": {
+    "runId": "opt-config-fixed-redis-ready-fb5457e7-3377-4ea9-bbfd-acb3f8793ee1",
+    "startedAt": "2026-10-27T13:15:31.059Z",
+    "completedAt": "2026-10-27T13:15:39.072Z",
+    "clients": 1,
+    "sendWindowSeconds": 1,
+    "elapsedSeconds": 8.0121891,
+    "mode": "burst",
+    "workload": "unchanged Postman raw multipart; identical recording",
+    "drain": "in-flight requests finish after send window; no end-of-test cancellation",
+    "attempted": 1,
+    "successful": 1,
+    "successRate": 1,
+    "successfulPerSecond": 0.12480983505494146,
+    "statusCounts": {
+      "200": 1
+    },
+    "cacheCounts": {
+      "miss": 1
+    },
+    "successLatencyMs": {
+      "p50": 8012,
+      "p95": 8012,
+      "p99": 8012,
+      "max": 8012
+    },
+    "allLatencyMs": {
+      "p50": 8012,
+      "p95": 8012,
+      "p99": 8012,
+      "max": 8012
+    },
+    "semanticQualityEvaluated": false,
+    "requestLimitReached": false
+  },
+  "requests": [
+    {
+      "requestId": "opt-config-fixed-redis-ready-fb5457e7-3377-4ea9-bbfd-acb3f8793ee1-0",
+      "status": 200,
+      "elapsedMs": 8012,
+      "cache": "miss"
+    }
+  ]
+}
