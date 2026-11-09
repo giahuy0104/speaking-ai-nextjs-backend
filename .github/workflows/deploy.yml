@@ -97,9 +97,11 @@ jobs:
     permissions:
       contents: read
     steps:
+      # Deploy scripts always come from the branch head that triggered this run, so an
+      # older TARGET_SHA (re-deploy/rollback) works even if that commit predates deploy/.
       - uses: actions/checkout@v4
         with:
-          ref: ${{ env.TARGET_SHA }}
+          ref: ${{ github.sha }}
       - name: Prepare SSH (pinned host key, dedicated key)
         env:
           DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
