@@ -1,11 +1,24 @@
 name: Verify deployment
 
+# Required check for pull requests into can-bang-tai. Pushes to can-bang-tai run
+# the same job through deploy.yml (workflow_call), so it is not duplicated here.
 on:
-  push:
   pull_request:
+    branches: [can-bang-tai]
+  workflow_call:
+    inputs:
+      ref:
+        description: Commit SHA to verify
+        required: false
+        type: string
+        default: ""
 
 permissions:
   contents: read
+
+concurrency:
+  group: verify-${{ inputs.ref || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   verify:
@@ -13,6 +26,8 @@ jobs:
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.ref || github.sha }}
       - uses: actions/setup-node@v4
         with:
           node-version: 22
@@ -21,6 +36,7 @@ jobs:
       - run: npm run lint
       # Isolated Redis/PostgreSQL containers; no project/production credentials.
       - run: npm run test:integration
+      # The web image build runs `next build` (production build).
       - run: docker build --target web -t speaking-ai-railway-web:check .
       - run: docker build -f Dockerfile.worker -t speaking-ai-railway-worker:check .
       - run: npm run smoke:railway

@@ -1,0 +1,2 @@
+# Scripts run on Linux (VPS / Actions): always LF, even with core.autocrlf=true on Windows.
+*.sh text eol=lf
