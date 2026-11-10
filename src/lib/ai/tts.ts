@@ -1,4 +1,8 @@
-import { getReusableAudioUrl, saveReusableAudio } from "@/lib/storage/audio";
+import {
+  getReusableAudioUrl,
+  peekReusableAudioUrl,
+  saveReusableAudio,
+} from "@/lib/storage/audio";
 import type { AudioSource } from "@/types/conversation";
 import {
   getConfiguredTtsProfile,
@@ -265,6 +269,21 @@ export function getEnglishAudioStreamUrl(englishText: string) {
   return `/api/audio/stream?text=${encodeURIComponent(englishText)}`;
 }
 
+/**
+ * Eager TTS, miss tokens and active streams live in this process only. When
+ * AUDIO_STREAM_NODE is set (e.g. "3000" behind the Nginx load balancer), the
+ * stream URL carries it so the proxy can route /api/audio/stream back to the
+ * instance that already started synthesis. Unknown values fall back to the
+ * normal load-balanced upstream.
+ */
+function getInstanceAudioStreamUrl(englishText: string) {
+  const node = process.env.AUDIO_STREAM_NODE?.trim();
+  const base = getEnglishAudioStreamUrl(englishText);
+  return node && /^[a-z0-9_-]{1,32}$/i.test(node)
+    ? `${base}&node=${encodeURIComponent(node)}`
+    : base;
+}
+
 function getKnownMissAudioStreamUrl(englishText: string) {
   const now = Date.now();
   for (const [token, entry] of audioMissTokens) {
@@ -277,7 +296,44 @@ function getKnownMissAudioStreamUrl(englishText: string) {
     normalizedText: normalizeEnglishAudioText(englishText),
     expiresAt: now + 30_000,
   });
-  return `${getEnglishAudioStreamUrl(englishText)}&missToken=${token}`;
+  return `${getInstanceAudioStreamUrl(englishText)}&missToken=${token}`;
+}
+
+export function isEagerTranslateTtsEnabled() {
+  return process.env.AUDIO_TRANSLATE_EAGER_TTS?.trim().toLowerCase() !== "false";
+}
+
+/**
+ * Returns an audio URL for a freshly translated sentence without adding any
+ * remote lookup to the caller's response. A remembered durable URL is returned
+ * directly; otherwise the stream URL is returned while the cache probe and,
+ * on a miss, the provider request start in the background. A later
+ * /api/audio/stream request joins that in-flight synthesis.
+ */
+export function startEagerEnglishAudio(
+  englishText: string,
+  options: { onBackgroundError?: (error: unknown) => void } = {},
+) {
+  const text = englishText.trim();
+  if (!text || text.length > 500) return null;
+  const profile = getTtsProfile();
+  const remembered = peekReusableAudioUrl(getAudioDescriptor(text, profile));
+  if (remembered) {
+    return { audioUrl: remembered, cacheReady: true };
+  }
+
+  void (async () => {
+    const cachedUrl = await getCachedProfileAudioUrl(text, profile);
+    if (!cachedUrl) await primeEnglishAudioStream(text);
+  })().catch((error) => {
+    try {
+      options.onBackgroundError?.(error);
+    } catch {
+      // Diagnostics must never surface as an unhandled rejection.
+    }
+  });
+
+  return { audioUrl: getInstanceAudioStreamUrl(text), cacheReady: false };
 }
 
 export function consumeKnownAudioCacheMiss(

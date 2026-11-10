@@ -67,6 +67,15 @@ tải giữa `backend-3000:3000` và `backend-3001:3001`. Docker DNS cập nhậ
 backend sau khoảng 5 giây khi tạo lại container. Backend có lỗi kết nối được
 tạm loại khỏi phân phối bằng passive health checks.
 
+Riêng `/api/audio/stream`: `/api/audio/translate` bắt đầu TTS tiếng Anh ngay
+trong backend đã xử lý request và trả `audioUrl` kèm `&node=<port>` (lấy từ
+biến `AUDIO_STREAM_NODE`). Nginx dùng `map "$uri:$arg_node"` để đưa request
+audio về đúng backend đó (upstream `speaking_ai_3000`/`speaking_ai_3001`, backend
+còn lại làm `backup`), nhờ vậy request nối vào luồng TTS đang chạy thay vì tạo
+lại. Giá trị `node` lạ dùng upstream mặc định. Backend gửi
+`X-Accel-Buffering: no` và Nginx chuyển tiếp header này (`proxy_pass_header`)
+để reverse proxy TLS phía trước cũng không buffer audio.
+
 Xem log realtime từng backend trong hai terminal riêng:
 
 ```powershell
@@ -81,8 +90,9 @@ hiển thị 100 dòng gần nhất của cả Nginx và hai backend. Access log
 Hai port backend không publish ra host: `localhost:3000` và `localhost:3001`
 có thể đang được ứng dụng khác sử dụng. Client gọi `localhost:8080` để đi qua
 load balancer. Nếu muốn thêm backend, thêm service có port và tên riêng trong
-Compose rồi thêm server tương ứng trong upstream Nginx; cấu hình cũ
-`BACKEND_REPLICAS` không còn được sử dụng.
+Compose (kèm `AUDIO_STREAM_NODE` bằng port đó), thêm server vào upstream
+`speaking_ai`, tạo upstream ghim riêng và thêm khóa tương ứng trong `map`
+`$speaking_ai_upstream`; cấu hình cũ `BACKEND_REPLICAS` không còn được sử dụng.
 
 Mỗi backend được giới hạn 1 CPU, 1 GiB RAM; Nginx 0,5 CPU, 128 MiB. Chỉnh
 `docker-compose.nginx.yml` theo tài nguyên host và kết quả đo tải. Thêm replica

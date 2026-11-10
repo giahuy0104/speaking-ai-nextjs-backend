@@ -46,6 +46,8 @@ services:
     environment:
       <<: *app-environment
       PORT: "3000"
+      # Must match the "/api/audio/stream:<node>" keys in infra/nginx/nginx.conf.
+      AUDIO_STREAM_NODE: "3000"
     expose:
       - "3000"
 
@@ -56,6 +58,7 @@ services:
     environment:
       <<: *app-environment
       PORT: "3001"
+      AUDIO_STREAM_NODE: "3001"
     expose:
       - "3001"
 

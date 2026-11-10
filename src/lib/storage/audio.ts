@@ -28,9 +28,54 @@ const AUDIO_PUBLIC_DIR = "generated-audio";
 const immutableCacheSeconds = 31_536_000;
 const safeGeneratedAudioFileName = /^[a-z0-9][a-z0-9._-]{0,254}$/i;
 const maxGeneratedAudioMemoryEntries = 128;
+const maxReusableAudioUrlEntries = 512;
+const reusableAudioUrlTtlMs = 60 * 60 * 1000;
 const audioStorageGlobal = globalThis as typeof globalThis & {
   __aiSpeakingGeneratedAudioMemory?: Map<string, Buffer | true>;
+  __aiSpeakingReusableAudioUrls?: Map<string, { url: string; expiresAt: number }>;
 };
+
+/**
+ * Process-local memory of reusable audio that is known to exist. File names are
+ * content-addressed and generated audio is never deleted, so a positive entry
+ * cannot point at different bytes. Misses are never cached here.
+ */
+function getReusableAudioUrlMemory() {
+  audioStorageGlobal.__aiSpeakingReusableAudioUrls ??= new Map();
+  return audioStorageGlobal.__aiSpeakingReusableAudioUrls;
+}
+
+function reusableAudioUrlKey(fileName: string) {
+  return `${getAudioStorageBackend()}:${fileName}`;
+}
+
+function readReusableAudioUrlMemory(fileName: string) {
+  const cache = getReusableAudioUrlMemory();
+  const key = reusableAudioUrlKey(fileName);
+  const entry = cache.get(key);
+  if (!entry) return null;
+  cache.delete(key);
+  if (entry.expiresAt <= Date.now()) return null;
+  cache.set(key, entry);
+  return entry.url;
+}
+
+function writeReusableAudioUrlMemory(fileName: string, url: string) {
+  const cache = getReusableAudioUrlMemory();
+  const key = reusableAudioUrlKey(fileName);
+  cache.delete(key);
+  cache.set(key, { url, expiresAt: Date.now() + reusableAudioUrlTtlMs });
+  while (cache.size > maxReusableAudioUrlEntries) {
+    const oldest = cache.keys().next().value;
+    if (oldest === undefined) break;
+    cache.delete(oldest);
+  }
+}
+
+/** Synchronous, memory-only lookup. Returns null when unknown (not a miss). */
+export function peekReusableAudioUrl(descriptor: ReusableAudioDescriptor) {
+  return readReusableAudioUrlMemory(getReusableAudioFileName(descriptor));
+}
 
 function getGeneratedAudioMemory() {
   audioStorageGlobal.__aiSpeakingGeneratedAudioMemory ??= new Map();
@@ -346,7 +391,15 @@ export async function getReusableAudioUrl(
   descriptor: ReusableAudioDescriptor,
 ) {
   const fileName = getReusableAudioFileName(descriptor);
+  const remembered = readReusableAudioUrlMemory(fileName);
+  if (remembered) return remembered;
 
+  const url = await lookupReusableAudioUrl(fileName);
+  if (url) writeReusableAudioUrlMemory(fileName, url);
+  return url;
+}
+
+async function lookupReusableAudioUrl(fileName: string) {
   if (getAudioStorageBackend() === "cloudinary") {
     const url = await getCloudinaryTtsUrl(fileName);
     if (url) return url;
@@ -381,7 +434,12 @@ export async function saveReusableAudio(
   audio: ArrayBuffer,
 ) {
   const fileName = getReusableAudioFileName(descriptor);
+  const url = await storeReusableAudio(fileName, audio);
+  writeReusableAudioUrlMemory(fileName, url);
+  return url;
+}
 
+async function storeReusableAudio(fileName: string, audio: ArrayBuffer) {
   if (getAudioStorageBackend() === "cloudinary") {
     return saveCloudinaryTts(fileName, new Uint8Array(audio));
   }
