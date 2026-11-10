@@ -22,6 +22,7 @@ import {
   withoutConversationUserAudio,
 } from "@/lib/dataRetention";
 import { logEvent } from "@/lib/observability";
+import { isVietnameseToEnglish } from "@/lib/ai/targetLanguage";
 import { deleteConversationUserAudio } from "@/lib/storage/cloudinaryUserAudio";
 import { isPostgresStorageEnabled } from "@/lib/db";
 import {
@@ -204,10 +205,10 @@ export async function appendConversationHistory(
     createdAt: new Date().toISOString(),
     inputMode,
     reviewStatus: "unreviewed",
-    learningStatus: conversation.targetLanguage && conversation.targetLanguage !== "en"
+    learningStatus: !isVietnameseToEnglish(conversation)
       ? "not_eligible"
       : initialLearningStatus(conversation.textSource),
-    learningUseCount: (!conversation.targetLanguage || conversation.targetLanguage === "en") && adaptiveTextSources.has(conversation.textSource)
+    learningUseCount: isVietnameseToEnglish(conversation) && adaptiveTextSources.has(conversation.textSource)
       ? 1
       : undefined,
   };

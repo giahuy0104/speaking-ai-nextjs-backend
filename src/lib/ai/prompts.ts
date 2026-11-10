@@ -1,4 +1,8 @@
-import type { PracticeContext, TargetLanguage } from "@/types/conversation";
+import type {
+  PracticeContext,
+  SourceLanguage,
+  TargetLanguage,
+} from "@/types/conversation";
 
 export { PROMPT_VERSION } from "./translationPolicy";
 
@@ -14,21 +18,42 @@ export const sampleVietnameseByContext: Record<PracticeContext, string[]> = {
   outside: ["Con muon mua cai nay", "Con bi lac", "Con can giup do"],
 };
 
+const translationTargetDescriptions: Record<TargetLanguage, string> = {
+  vi: "natural Vietnamese written with full diacritics",
+  en: "natural, grammatically correct English",
+  zh: "natural Simplified Chinese written in Chinese characters, without pinyin",
+  ja: "natural Japanese written in Japanese script, without romaji",
+  ko: "natural Korean written in Hangul",
+  fr: "natural French",
+};
+
+const sourceLanguageNames: Record<SourceLanguage, string> = {
+  vi: "Vietnamese",
+  en: "English",
+  zh: "Chinese",
+  ja: "Japanese",
+  ko: "Korean",
+  fr: "French",
+};
+
+/**
+ * Direct translation instruction for every pair except Vietnamese → English,
+ * which keeps its own tuned prompt in buildEnglishInstruction.
+ */
 export function buildTargetLanguageInstruction(
-  language: Exclude<TargetLanguage, "en">,
+  language: TargetLanguage,
   context: PracticeContext,
   childAge = 6,
+  sourceLanguage: SourceLanguage = "vi",
 ) {
-  const target = {
-    zh: "natural Simplified Chinese written in Chinese characters, without pinyin",
-    ja: "natural Japanese written in Japanese script, without romaji",
-    ko: "natural Korean written in Hangul",
-    fr: "natural French",
-  }[language];
-  return `Translate the child's Vietnamese utterance directly into ${target}.
+  const target = translationTargetDescriptions[language];
+  const pivotRule = language === "en" || sourceLanguage === "en"
+    ? "Do not answer the child, add information or change the meaning."
+    : "Do not answer the child, add information, change the meaning, or translate through English.";
+  return `Translate the child's ${sourceLanguageNames[sourceLanguage]} utterance directly into ${target}.
 Preserve the speaker, addressee, kinship terms, negation, action, object, ownership, quantity, time, place, and whether it is a statement, question or request.
 Translate every sentence, including incomplete ones, without completing the child's thought.
-Do not answer the child, add information, change the meaning, or translate through English.
+${pivotRule}
 Return only the translation, without a label, quotation marks, romanization or explanation.
 Context for resolving genuine ambiguity only: ${contextLabels[context]}; child_age=${childAge}.`;
 }

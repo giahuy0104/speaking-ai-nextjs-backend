@@ -1,4 +1,4 @@
-import type { ApiErrorCode, AudioSource, TextSource } from "@/types/conversation";
+import type { ApiErrorCode, AudioSource, TargetLanguage, TextSource } from "@/types/conversation";
 import { AppError } from "@/lib/appError";
 import { fetchLegacyCloudflare } from "./cloudflare/legacyAdmission";
 import { clientAbortSignal, combineAbortSignals, timeoutSignal } from "./cloudflare/abortDiagnostics";
@@ -12,7 +12,12 @@ const defaultCloudflareTextModel = "@cf/qwen/qwen3-30b-a3b-fp8";
 const defaultCloudflareTtsModel = "@cf/deepgram/aura-1";
 const multilingualCloudflareTtsModel = "xai/grok-tts";
 
-export type TargetSpeechLanguage = "zh" | "ja" | "ko" | "fr";
+/**
+ * Languages sent to the multilingual TTS model. "vi" and "en" are used by
+ * pairs outside Vietnamese → English; when the provider cannot voice one, the
+ * pipeline falls back to device TTS in the same locale.
+ */
+export type TargetSpeechLanguage = TargetLanguage;
 
 const targetSpeechVoice = "ara";
 

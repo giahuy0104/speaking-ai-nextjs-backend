@@ -5,6 +5,7 @@ import {
   saveBatchPrefetchCandidate,
 } from "@/lib/ai/batchPrefetch";
 import { AppError, toErrorResponse } from "@/lib/errors";
+import { isVietnameseToEnglish, parseLanguagePair } from "@/lib/ai/targetLanguage";
 import { getRequestId, logEvent, withRequestId } from "@/lib/observability";
 import {
   type AudioAssemblySource,
@@ -28,6 +29,8 @@ type RouteContext = {
 
 type PreviewRequest = {
   clientId?: string;
+  sourceLanguage?: unknown;
+  targetLanguage?: unknown;
   context?: PracticeContext;
   childAge?: number;
   terminal?: boolean;
@@ -64,6 +67,13 @@ export async function POST(request: Request, context: RouteContext) {
       audioSessionId,
       claimedClientId,
     );
+    if (!isVietnameseToEnglish(parseLanguagePair(body.sourceLanguage, body.targetLanguage))) {
+      // Batch prefetch transcribes Vietnamese for the English fast path.
+      return withRequestId(
+        Response.json({ eligible: false, reason: "language_pair_not_supported" }),
+        requestId,
+      );
+    }
     if (
       body.pcm16Wav.chunkCount === undefined ||
       body.pcm16Wav.chunkCount < 2 ||

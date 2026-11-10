@@ -1,3 +1,4 @@
+import { isVietnameseToEnglish } from "@/lib/ai/targetLanguage";
 import { requireAdminAccess } from "@/lib/adminAuth";
 import { removeAiEnglishText } from "@/lib/ai/textCache";
 import {
@@ -60,6 +61,18 @@ export async function PATCH(request: Request, context: ReviewRouteContext) {
     return Response.json(
       { error: { code: "NOT_FOUND", message: "Không tìm thấy lượt nói." } },
       { status: 404 },
+    );
+  }
+
+  if (!isVietnameseToEnglish(conversation)) {
+    return Response.json(
+      {
+        error: {
+          code: "BAD_REQUEST",
+          message: "Chỉ áp dụng cho lượt dịch Việt → Anh.",
+        },
+      },
+      { status: 400 },
     );
   }
 

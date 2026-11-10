@@ -1,4 +1,4 @@
-import type { PracticeContext, TargetLanguage } from "@/types/conversation";
+import type { PracticeContext, SourceLanguage, TargetLanguage } from "@/types/conversation";
 import { AppError } from "@/lib/appError";
 import { logEvent } from "@/lib/observability";
 import {
@@ -10,7 +10,7 @@ import {
 import { attachFailureDiagnostics, getFailureDiagnostics } from "./cloudflare/providerError";
 import { buildTargetLanguageInstruction } from "./prompts";
 
-type TranslationLanguage = Exclude<TargetLanguage, "en">;
+type TranslationLanguage = TargetLanguage;
 const maxOutputCharacters = 2_000;
 const maxCompletionTokens = 512;
 
@@ -31,6 +31,10 @@ export function targetTranslationIssue(text: string, language: TranslationLangua
   if (language === "zh" && !/[\u3400-\u9fff]/u.test(text)) return "missing_target_script";
   if (language === "ja" && !/[\u3040-\u30ff\u3400-\u9fff]/u.test(text)) return "missing_target_script";
   if (language === "ko" && !/[\uac00-\ud7af]/u.test(text)) return "missing_target_script";
+  if ((language === "en" || language === "fr" || language === "vi") &&
+      /\p{L}/u.test(text) && !/\p{Script=Latin}/u.test(text)) {
+    return "missing_target_script";
+  }
   return undefined;
 }
 
@@ -43,14 +47,18 @@ function completionIssue(completion: CloudflareTextCompletionMetadata | undefine
 export async function translateTargetLanguage(input: {
   sourceText: string;
   language: TranslationLanguage;
+  /** Defaults to Vietnamese, the original Vietnamese → target path. */
+  sourceLanguage?: SourceLanguage;
   context: PracticeContext;
   childAge?: number;
   requestId?: string;
 }) {
   const startedAt = performance.now();
+  const sourceLanguage = input.sourceLanguage ?? "vi";
   const fields = {
     requestId: input.requestId,
     language: input.language,
+    sourceLanguage,
     provider: "cloudflare",
     stage: "text_translation",
     sourceLength: input.sourceText.length,
@@ -64,7 +72,7 @@ export async function translateTargetLanguage(input: {
     model = getCloudflareTextConfig().model;
     const result = await translateVietnameseWithCloudflare(
       input.sourceText,
-      buildTargetLanguageInstruction(input.language, input.context, input.childAge),
+      buildTargetLanguageInstruction(input.language, input.context, input.childAge, sourceLanguage),
       maxCompletionTokens,
       { parentRequestId: input.requestId, onCompletion: (metadata) => { completion = metadata; } },
     );

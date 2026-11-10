@@ -20,7 +20,11 @@ import {
   runConversationPipeline,
   runTargetLanguageConversationPipeline,
 } from "@/lib/ai/pipeline";
-import { parseTargetLanguage } from "@/lib/ai/targetLanguage";
+import {
+  isVietnameseToEnglish,
+  parseLanguagePair,
+  withConversationLanguageFields,
+} from "@/lib/ai/targetLanguage";
 import { scheduleConversationPostResponseTasks } from "@/lib/ai/postResponseTasks";
 import { AppError, toErrorResponse } from "@/lib/errors";
 import {
@@ -44,6 +48,7 @@ import type {
   ConversationRequest,
   ConversationResponse,
   PracticeContext,
+  SourceLanguage,
   TargetLanguage,
 } from "@/types/conversation";
 import { getRequestId, logEvent, withRequestId } from "@/lib/observability";
@@ -58,6 +63,7 @@ type FinalizeRequest = {
   clientId?: string;
   context?: PracticeContext;
   childAge?: number;
+  sourceLanguage?: SourceLanguage;
   targetLanguage?: TargetLanguage;
   sessionId?: string;
   sourceText?: string;
@@ -129,7 +135,12 @@ export async function POST(request: Request, context: RouteContext) {
     const rawBody = await request.text();
     requestHash = createHash("sha256").update(rawBody).digest("hex");
     const body = JSON.parse(rawBody) as FinalizeRequest;
-    const targetLanguage = parseTargetLanguage(body.targetLanguage);
+    const { sourceLanguage, targetLanguage } = parseLanguagePair(
+      body.sourceLanguage,
+      body.targetLanguage,
+    );
+    // Prefetch, hedged ASR and prepared pipelines are Vietnamese → English only.
+    const vietnameseToEnglish = isVietnameseToEnglish({ sourceLanguage, targetLanguage });
     const claimedClientId = body.clientId?.trim() || undefined;
     const uploadClaims = authorizeAudioSessionRequest(
       request,
@@ -214,6 +225,7 @@ export async function POST(request: Request, context: RouteContext) {
         clientId: uploadClaims?.clientId ?? claimedClientId,
         context: practiceContext,
         childAge: body.childAge ?? 6,
+        sourceLanguage,
         targetLanguage,
         sessionId: body.sessionId,
         sourceText: asrMode === "browser_streaming" ? body.sourceText?.trim() : undefined,
@@ -221,7 +233,7 @@ export async function POST(request: Request, context: RouteContext) {
         asrMode,
         benchmark: body.benchmark,
       });
-      const responsePayload = { ...result, learning: null };
+      const responsePayload = { ...withConversationLanguageFields(result), learning: null };
       await completeAudioSessionFinalize(audioSessionId, requestHash, responsePayload);
       finalizeClaimed = false;
       scheduleConversationPostResponseTasks(result, "audio", {
@@ -229,7 +241,7 @@ export async function POST(request: Request, context: RouteContext) {
       });
       return withRequestId(Response.json(responsePayload), requestId);
     };
-    if (targetLanguage !== "en" && asrMode === "browser_streaming") {
+    if (!vietnameseToEnglish && asrMode === "browser_streaming") {
       return await finishTargetTranslation();
     }
     let assemblySource: AudioAssemblySource | undefined;
@@ -310,7 +322,7 @@ export async function POST(request: Request, context: RouteContext) {
           400,
         );
       }
-      if (targetLanguage !== "en") {
+      if (!vietnameseToEnglish) {
         return await finishTargetTranslation(audioFile);
       }
       hedgedAsrPromise = transcribeAudioSessionOnce({
@@ -800,7 +812,7 @@ export async function POST(request: Request, context: RouteContext) {
     }
     pipelineMs = Math.round(performance.now() - pipelineStartedAt);
 
-    const responsePayload = { ...result, learning: null };
+    const responsePayload = { ...withConversationLanguageFields(result), learning: null };
     const responseReadyMs = Math.round(performance.now() - startedAt);
     after(async () => {
       const completeStartedAt = performance.now();

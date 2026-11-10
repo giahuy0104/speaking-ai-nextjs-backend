@@ -7,7 +7,7 @@ import { logEvent } from "@/lib/observability";
 import { getAudioStorageBackend } from "@/lib/storage/config";
 import { getReusableAudioUrl, saveReusableAudio } from "@/lib/storage/audio";
 import { AppError } from "@/lib/errors";
-import { transcribeVietnamese } from "./asr";
+import { transcribeSourceLanguage, transcribeVietnamese } from "./asr";
 import { resolvePrefetchedTranscriptForPipeline } from "./prefetchedTranscriptPolicy";
 import {
   generateEnglishSentence,
@@ -15,6 +15,7 @@ import {
 } from "./llm";
 import { PROMPT_VERSION } from "./prompts";
 import { translateTargetLanguage } from "./targetTranslation";
+import { isVietnameseToEnglish } from "./targetLanguage";
 import { getFailureDiagnostics } from "./cloudflare/providerError";
 import { getTargetTtsProfile, requestTargetSpeech } from "./aiProvider";
 import {
@@ -61,17 +62,23 @@ function createId(prefix: string) {
   return `${prefix}_${crypto.randomUUID().slice(0, 8)}`;
 }
 
+/**
+ * Direct translation for every pair except Vietnamese → English (which keeps
+ * the rule/cache/learning pipeline in runConversationPipeline).
+ */
 export async function runTargetLanguageConversationPipeline(
   input: ConversationRequest,
 ): Promise<ConversationResponse> {
   const language = input.targetLanguage;
-  if (language === "en") {
+  const sourceLanguage = input.sourceLanguage ?? "vi";
+  if (isVietnameseToEnglish({ sourceLanguage, targetLanguage: language }) ||
+      sourceLanguage === language) {
     throw new AppError("BAD_REQUEST", "Ngôn ngữ dịch không hợp lệ.", 400);
   }
   const startedAt = nowMs();
-  const asr = await measureStep(() => transcribeVietnamese(input));
+  const asr = await measureStep(() => transcribeSourceLanguage(input));
   const translation = await measureStep(() => translateTargetLanguage({
-    sourceText: asr.value, language, context: input.context,
+    sourceText: asr.value, language, sourceLanguage, context: input.context,
     childAge: input.childAge, requestId: input.requestId,
   }));
   const translatedText = translation.value.translatedText;
@@ -112,8 +119,12 @@ export async function runTargetLanguageConversationPipeline(
     conversationId: createId("conv"),
     sessionId: input.sessionId ?? createId("sess"),
     context: input.context,
-    vietnameseText: asr.value,
-    englishText: "",
+    // Legacy fields keep their language meaning; new clients read
+    // sourceText/translatedText.
+    vietnameseText: sourceLanguage === "vi" ? asr.value : "",
+    englishText: language === "en" ? translatedText : "",
+    sourceLanguage,
+    sourceText: asr.value,
     targetLanguage: language,
     translatedText,
     audioUrl: tts.value.audioUrl,
@@ -133,7 +144,7 @@ export async function runTargetLanguageConversationPipeline(
     },
   };
   logEvent("info", "target_translation_pipeline_completed", {
-    requestId: input.requestId, language, model: result.textModel,
+    requestId: input.requestId, language, sourceLanguage, model: result.textModel,
     audioSource: result.audioSource, audioReady: result.audioUrl !== null,
     latency: result.latency,
   });

@@ -11,6 +11,7 @@ import {
   uploadConversationUserAudio,
 } from "@/lib/storage/cloudinaryUserAudio";
 import { maybeLearnFromRepeatedUse } from "./adaptiveLearning";
+import { isVietnameseToEnglish } from "./targetLanguage";
 
 type PostResponseOptions = {
   userAudio?: Blob;
@@ -61,7 +62,8 @@ export function scheduleConversationPostResponseTasks(
     try {
       await appendConversationHistory(result, inputMode);
       const tasks: Array<{ name: string; work: Promise<unknown> }> = [];
-      if (!result.targetLanguage || result.targetLanguage === "en") {
+      // Rule learning reads Vietnamese and writes English; other pairs never feed it.
+      if (isVietnameseToEnglish(result)) {
         tasks.push({ name: "adaptive_learning", work: maybeLearnFromRepeatedUse(result) });
       }
       if (inputMode === "audio" && options.userAudio?.size) {

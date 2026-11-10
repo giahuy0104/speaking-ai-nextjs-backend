@@ -2,6 +2,7 @@ import { resolveFastEnglishSentence } from "@/lib/ai/llm";
 import { getEnglishAudioCacheUrl } from "@/lib/ai/tts";
 import type { PracticeContext } from "@/types/conversation";
 import { toErrorResponse } from "@/lib/errors";
+import { isVietnameseToEnglish, parseLanguagePair } from "@/lib/ai/targetLanguage";
 import { requireInstallationAccess } from "@/lib/installationAuth";
 
 export const runtime = "nodejs";
@@ -15,6 +16,8 @@ export async function POST(request: Request) {
       context?: PracticeContext;
       childAge?: number;
       sourceText?: string;
+      sourceLanguage?: unknown;
+      targetLanguage?: unknown;
     } | null;
     const sourceText = body?.sourceText?.trim() ?? "";
     const context = body?.context;
@@ -36,6 +39,10 @@ export async function POST(request: Request) {
       );
     }
     const access = await requireInstallationAccess(request, body?.clientId);
+    // The fast preview is the Vietnamese → English rule/cache path only.
+    if (!isVietnameseToEnglish(parseLanguagePair(body?.sourceLanguage, body?.targetLanguage))) {
+      return Response.json({ matched: false });
+    }
 
     const match = await resolveFastEnglishSentence(
       sourceText,

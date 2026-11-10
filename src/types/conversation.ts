@@ -1,6 +1,11 @@
 export type PracticeContext = "home" | "school" | "outside";
 
-export type TargetLanguage = "en" | "zh" | "ja" | "ko" | "fr";
+/** Languages HOMI can transcribe from and translate into. */
+export type ConversationLanguage = "vi" | "en" | "zh" | "ja" | "ko" | "fr";
+
+export type SourceLanguage = ConversationLanguage;
+
+export type TargetLanguage = ConversationLanguage;
 
 export type AsrMode =
   | "text"
@@ -149,6 +154,8 @@ export type ConversationRequest = {
   sessionId?: string;
   context: PracticeContext;
   childAge?: number;
+  /** Missing on requests from older apps; those are Vietnamese. */
+  sourceLanguage?: SourceLanguage;
   targetLanguage: TargetLanguage;
   sourceText?: string;
   audioFile?: File;
@@ -215,8 +222,14 @@ export type ConversationResponse = {
   conversationId: string;
   sessionId: string;
   context: PracticeContext;
+  /** Only filled when the source is Vietnamese. Prefer sourceText. */
   vietnameseText: string;
+  /** Only filled when the target is English. Prefer translatedText. */
   englishText: string;
+  /** Missing on records written before multilingual pairs; read as "vi". */
+  sourceLanguage?: SourceLanguage;
+  /** Transcript in sourceLanguage. Missing on older records. */
+  sourceText?: string;
   targetLanguage?: TargetLanguage;
   translatedText?: string;
   audioUrl: string | null;

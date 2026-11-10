@@ -15,13 +15,17 @@ import {
 } from "@/lib/ai/adaptiveLearning";
 import { requireAdminAccess } from "@/lib/adminAuth";
 import { toErrorResponse } from "@/lib/errors";
+import {
+  isVietnameseToEnglish,
+  withConversationLanguageFields,
+} from "@/lib/ai/targetLanguage";
 import { requireInstallationAccess } from "@/lib/installationAuth";
 import { getRequestId, logEvent, withRequestId } from "@/lib/observability";
 
 export const runtime = "nodejs";
 
 function toInstallationHistoryEntry(entry: ConversationHistoryEntry) {
-  const safeEntry = { ...entry };
+  const safeEntry = withConversationLanguageFields({ ...entry });
   delete safeEntry.userAudio;
   delete safeEntry.userAudioUrl;
 
@@ -63,7 +67,7 @@ export async function GET(request: Request) {
     ).slice(0, limit);
     const responseConversations = clientId
       ? conversations.map(toInstallationHistoryEntry)
-      : conversations;
+      : conversations.map((entry) => withConversationLanguageFields(entry));
 
     return withRequestId(
       Response.json({
@@ -194,8 +198,7 @@ export async function PATCH(request: Request) {
 
     let learning = null;
 
-    if (typeof body.qualityApproved === "boolean" &&
-        (!conversation.targetLanguage || conversation.targetLanguage === "en")) {
+    if (typeof body.qualityApproved === "boolean" && isVietnameseToEnglish(conversation)) {
       try {
         learning = body.qualityApproved
           ? await learnFromPositiveFeedback(conversation)
@@ -236,7 +239,11 @@ export async function PATCH(request: Request) {
     }
 
     return withRequestId(
-      Response.json({ conversation, learning, requestId }),
+      Response.json({
+        conversation: conversation && withConversationLanguageFields(conversation),
+        learning,
+        requestId,
+      }),
       requestId,
     );
   } catch (error) {

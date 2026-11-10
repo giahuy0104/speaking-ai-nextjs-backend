@@ -97,11 +97,11 @@ export function ConversationHistoryPanel({
                     </span>
                   </td>
                   <td className="py-3 pr-3 font-medium text-slate-950">
-                    {item.vietnameseText}
+                    {item.sourceText ?? item.vietnameseText}
                   </td>
                   <td className="py-3 pr-3 text-blue-700">
                     <span className="mr-1 text-xs uppercase text-slate-500">
-                      {item.targetLanguage ?? "en"}
+                      {item.sourceLanguage ?? "vi"} → {item.targetLanguage ?? "en"}
                     </span>
                     {item.translatedText ?? item.englishText}
                   </td>
@@ -142,7 +142,8 @@ export function ConversationHistoryPanel({
                       >
                         {pick("Sai ý", "意思错误")}
                       </button>
-                      {(item.targetLanguage ?? "en") === "en" &&
+                      {(item.sourceLanguage ?? "vi") === "vi" &&
+                      (item.targetLanguage ?? "en") === "en" &&
                       ["openai", "cloudflare", "text_cache"].includes(
                         item.textSource,
                       ) ? (

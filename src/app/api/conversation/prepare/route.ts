@@ -1,6 +1,7 @@
 import type { BenchmarkMetadata, PracticeContext } from "@/types/conversation";
 import { after } from "next/server";
 import { AppError, toErrorResponse } from "@/lib/errors";
+import { isVietnameseToEnglish, parseLanguagePair } from "@/lib/ai/targetLanguage";
 import { getRequestId, logEvent, withRequestId } from "@/lib/observability";
 import { prepareWorkerConversation } from "@/lib/ai/conversationPreparation";
 import { authorizeAudioSessionRequest } from "@/lib/storage/audioSessionSecurity";
@@ -21,9 +22,16 @@ export async function POST(request: Request) {
       sourceText?: unknown;
       context?: unknown;
       childAge?: unknown;
+      sourceLanguage?: unknown;
+      targetLanguage?: unknown;
       asrLatencyMs?: unknown;
       benchmark?: BenchmarkMetadata;
     } | null;
+    // Worker prepare runs the Vietnamese → English pipeline only.
+    if (!isVietnameseToEnglish(parseLanguagePair(body?.sourceLanguage, body?.targetLanguage))) {
+      throw new AppError("BAD_REQUEST", "Cặp ngôn ngữ này chưa hỗ trợ chuẩn bị trước.", 400,
+        { reason: "language_pair_not_supported" });
+    }
     const sourceText =
       typeof body?.sourceText === "string" ? body.sourceText.trim() : "";
     const audioSessionId =

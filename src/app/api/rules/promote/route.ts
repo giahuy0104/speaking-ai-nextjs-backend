@@ -1,3 +1,4 @@
+import { isVietnameseToEnglish } from "@/lib/ai/targetLanguage";
 import { promoteEnglishRule } from "@/lib/ai/promotedRules";
 import { synthesizeEnglishAudio } from "@/lib/ai/tts";
 import {
@@ -38,6 +39,18 @@ export async function POST(request: Request) {
     return Response.json(
       { error: { code: "BAD_REQUEST", message: "Không tìm thấy lượt AI." } },
       { status: 404 },
+    );
+  }
+
+  if (!isVietnameseToEnglish(conversation)) {
+    return Response.json(
+      {
+        error: {
+          code: "BAD_REQUEST",
+          message: "Chỉ áp dụng cho lượt dịch Việt → Anh.",
+        },
+      },
+      { status: 400 },
     );
   }
 

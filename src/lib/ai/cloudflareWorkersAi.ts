@@ -323,7 +323,7 @@ async function translateAudioTranscript(checkpoint: AudioTranslationCheckpoint, 
 
 async function transcribeAudio(
   audio: File,
-  language: "en" | "vi",
+  language: string,
   options: { vadFilter?: boolean } = {},
 ): Promise<RawAudioTranscriptionResult> {
   const config = getCloudflareAudioTranslationConfig();
@@ -418,6 +418,15 @@ export async function transcribeAudioToVietnamese(
   const result = await transcribeAudio(audio, "vi", options);
   const { text, ...metadata } = result;
   return { ...metadata, vietnameseText: text };
+}
+
+/** Whisper transcription in any supported conversation source language. */
+export async function transcribeAudioInLanguage(
+  audio: File,
+  language: string,
+  options: { vadFilter?: boolean } = {},
+): Promise<RawAudioTranscriptionResult> {
+  return transcribeAudio(audio, language, options);
 }
 
 export async function transcribeAudioToEnglish(

@@ -15,6 +15,7 @@ import {
 import { removeAiEnglishText } from "./textCache";
 import { synthesizeEnglishAudio } from "./tts";
 import { normalizeVietnameseForExactMatch } from "./exactRules";
+import { isVietnameseToEnglish } from "./targetLanguage";
 
 const repeatPromotionThreshold = 3;
 const promotableTextSources = new Set(["cloudflare", "openai", "text_cache"]);
@@ -279,6 +280,8 @@ export async function migrateApprovedHistoryLearning(clientId: string) {
     .filter(
       (entry) =>
         entry.clientId === clientId &&
+        // Rules map Vietnamese to English; other pairs never become rules.
+        isVietnameseToEnglish(entry) &&
         entry.qualityApproved === true &&
         promotableTextSources.has(entry.textSource) &&
         !["promoted", "already_rule"].includes(
