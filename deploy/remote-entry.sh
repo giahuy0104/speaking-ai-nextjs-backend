@@ -4,14 +4,24 @@
 # deploy user (and CI) cannot rewrite it. Accepts ONLY:
 #   deploy <40-char-sha> [--simulate-fail]   (stdin: "<user> <token>\n" + tar.gz)
 #   rollback [tag]
+#
+# The environment comes ONLY from the forced command written by root, e.g.
+#   command="HOMI_DEPLOY_ENV=dev /opt/homi/deploy-bin/remote-entry.sh"
+# Unset = production. The client cannot choose it (SSH_ORIGINAL_COMMAND is not parsed for it).
 set -Eeuo pipefail
 
-BASE="${HOMI_BACKEND_DIR:-/opt/homi/backend}"
+fail() { echo "remote-entry: $*" >&2; exit 2; }
+
+export HOMI_DEPLOY_ENV="${HOMI_DEPLOY_ENV:-production}"
+case "$HOMI_DEPLOY_ENV" in
+  production) BASE=/opt/homi/backend ;;
+  dev) BASE=/opt/homi/backend-dev ;;
+  *) fail "unknown environment" ;;
+esac
+export HOMI_BACKEND_DIR="$BASE"
 STATE_DIR="$BASE/.deploy"
 read -r -a args <<<"${SSH_ORIGINAL_COMMAND:-}"
 cmd="${args[0]:-}"
-
-fail() { echo "remote-entry: $*" >&2; exit 2; }
 
 install_shipped_scripts() { # dir
   install -d -m 700 "$BASE/deploy"
@@ -22,10 +32,20 @@ case "$cmd" in
   deploy)
     sha="${args[1]:-}"
     [[ "$sha" =~ ^[0-9a-f]{40}$ ]] || fail "invalid sha"
-    extra=("${args[@]:2}")
-    for f in "${extra[@]}"; do
-      [[ "$f" == "--simulate-fail" ]] || fail "unsupported option"
+    # The caller states which environment it targets (--env=<name>, default production).
+    # It must match the environment bound to this SSH key, so a dev workflow that ends up
+    # with the production key (e.g. a repo-level secret fallback) is refused, and vice versa.
+    requested=production
+    extra=()
+    for f in "${args[@]:2}"; do
+      case "$f" in
+        --simulate-fail) extra+=("$f") ;;
+        --env=*) requested="${f#--env=}" ;;
+        *) fail "unsupported option" ;;
+      esac
     done
+    [[ "$requested" == "$HOMI_DEPLOY_ENV" ]] \
+      || fail "environment mismatch: workflow targets '$requested' but this key deploys '$HOMI_DEPLOY_ENV'"
 
     IFS=' ' read -r GHCR_USER GHCR_TOKEN
     [[ "$GHCR_USER" =~ ^[A-Za-z0-9-]{1,39}$ && -n "$GHCR_TOKEN" ]] || fail "bad credentials line"
@@ -41,7 +61,7 @@ case "$cmd" in
       case "$entry" in
         /* | *..*) fail "unsafe path in bundle" ;;
       esac
-      [[ "$entry" =~ ^(docker-compose\.(redis|nginx)\.yml|infra(/.*)?|deploy/?|deploy/(deploy|rollback|lib)\.sh)$ ]] \
+      [[ "$entry" =~ ^(docker-compose\.(redis|nginx|dev)\.yml|infra(/.*)?|deploy/?|deploy/(deploy|rollback|lib)\.sh)$ ]] \
         || fail "unexpected file in bundle: $entry"
     done < <(tar -tzf "$staging/bundle.tgz")
     if tar -tvzf "$staging/bundle.tgz" | grep -Eq '^[lh]'; then fail "links are not allowed in bundle"; fi

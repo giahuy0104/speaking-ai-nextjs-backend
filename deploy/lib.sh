@@ -3,23 +3,47 @@
 # Rules: never `set -x`, never print environment or secrets, never touch
 # .env.local / .env.compose, Redis volumes, host Nginx or certificates.
 
-BASE="${HOMI_BACKEND_DIR:-/opt/homi/backend}"
-STATE_DIR="$BASE/.deploy"
-LOCAL_IMAGE_REPO="speaking-ai-backend"
-GHCR_IMAGE="ghcr.io/giahuy0104/speaking-ai-nextjs-backend"
-PUBLIC_URL="${PUBLIC_URL:-https://api.hoamytech.com}"
-KEEP_TAGS=3
-SERVICES=(backend-3000 backend-3001)
-
-log() { printf '%s [deploy] %s\n' "$(date -u +%FT%TZ)" "$*"; }
+log() { printf '%s [deploy:%s] %s\n' "$(date -u +%FT%TZ)" "${DEPLOY_ENV:-?}" "$*"; }
 die() { log "ERROR: $*" >&2; exit 1; }
+
+# Environment profile. Set only by the root-owned forced command in authorized_keys
+# (or by hand on the VPS); unset means production, i.e. the original behaviour.
+DEPLOY_ENV="${HOMI_DEPLOY_ENV:-production}"
+case "$DEPLOY_ENV" in
+  production)
+    BASE="${HOMI_BACKEND_DIR:-/opt/homi/backend}"
+    LOCAL_IMAGE_REPO="speaking-ai-backend"
+    PUBLIC_URL="${PUBLIC_URL:-https://api.hoamytech.com}"
+    SERVICES=(backend-3000 backend-3001)
+    COMPOSE_FILES=(docker-compose.redis.yml docker-compose.nginx.yml)
+    DRIFT_PATHS=(docker-compose.redis.yml docker-compose.nginx.yml infra/nginx/nginx.conf infra/redis)
+    ENSURE_UP=()
+    ;;
+  dev)
+    BASE="${HOMI_BACKEND_DIR:-/opt/homi/backend-dev}"
+    # Separate image repo so dev pruning can never delete production rollback images.
+    LOCAL_IMAGE_REPO="speaking-ai-backend-dev"
+    PUBLIC_URL="${PUBLIC_URL:-https://api-dev.hoamytech.com}"
+    SERVICES=(backend)
+    COMPOSE_FILES=(docker-compose.dev.yml)
+    DRIFT_PATHS=(docker-compose.dev.yml infra/nginx/nginx.dev.conf infra/redis)
+    # First CI deploy: nginx depends on a healthy backend, so start it once if absent.
+    ENSURE_UP=(nginx)
+    ;;
+  *) die "unknown HOMI_DEPLOY_ENV: $DEPLOY_ENV" ;;
+esac
+STATE_DIR="$BASE/.deploy"
+GHCR_IMAGE="ghcr.io/giahuy0104/speaking-ai-nextjs-backend"
+KEEP_TAGS=3
 is_sha() { [[ "${1:-}" =~ ^[0-9a-f]{40}$ ]]; }
 is_tag() { [[ "${1:-}" =~ ^[A-Za-z0-9_][A-Za-z0-9_.-]{0,127}$ ]]; }
 
 # Mirrors /usr/local/bin/homi-backend on the VPS: only .env.compose supplies substitutions
 # (.env.local is the bind-mounted app secret and is never interpolated here).
 compose() {
-  docker compose --project-directory "$BASE" --env-file "$BASE/.env.compose"     -f "$BASE/docker-compose.redis.yml" -f "$BASE/docker-compose.nginx.yml" "$@"
+  local args=() f
+  for f in "${COMPOSE_FILES[@]}"; do args+=(-f "$BASE/$f"); done
+  docker compose --project-directory "$BASE" --env-file "$BASE/.env.compose" "${args[@]}" "$@"
 }
 
 read_state() { cat "$STATE_DIR/$1" 2>/dev/null || true; }
@@ -28,7 +52,7 @@ write_state() { printf '%s\n' "$2" >"$STATE_DIR/$1.tmp" && mv "$STATE_DIR/$1.tmp
 # Image tag currently used by a running backend (e.g. "local" before the first CI deploy).
 running_tag() {
   local id image
-  id="$(compose ps -q "${1:-backend-3000}" 2>/dev/null | head -n1)"
+  id="$(compose ps -q "${1:-${SERVICES[0]}}" 2>/dev/null | head -n1)"
   [[ -n "$id" ]] || return 0
   image="$(docker inspect --format '{{.Config.Image}}' "$id" 2>/dev/null || true)"
   [[ "$image" == "$LOCAL_IMAGE_REPO":* ]] && printf '%s' "${image#"$LOCAL_IMAGE_REPO":}"
@@ -91,6 +115,11 @@ switch_to() { # tag
   for svc in "${SERVICES[@]}"; do
     log "recreating $svc with $LOCAL_IMAGE_REPO:$1"
     compose up -d --no-build --no-deps --wait --wait-timeout 120 "$svc"
+  done
+  for svc in "${ENSURE_UP[@]}"; do
+    [[ -n "$(compose ps -q --status running "$svc" 2>/dev/null)" ]] && continue
+    log "starting missing $svc"
+    compose up -d --no-build --no-deps --wait --wait-timeout 60 "$svc"
   done
 }
 
