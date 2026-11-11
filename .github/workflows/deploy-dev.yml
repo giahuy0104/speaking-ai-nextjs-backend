@@ -112,7 +112,8 @@ jobs:
           chmod 644 ~/.ssh/known_hosts
           # Fail early with a clear message; print only the PUBLIC fingerprint / shape.
           if ! ssh-keygen -y -f ~/.ssh/deploy_key > /tmp/deploy_key.pub 2>/dev/null; then
-            shape="secret_len=${#DEPLOY_SSH_KEY} lines=$(printf '%s\n' "$DEPLOY_SSH_KEY" | wc -l) has_begin=$(printf '%s' "$DEPLOY_SSH_KEY" | grep -c 'BEGIN OPENSSH PRIVATE KEY') has_end=$(printf '%s' "$DEPLOY_SSH_KEY" | grep -c 'END OPENSSH PRIVATE KEY') is_public_key=$(printf '%s' "$DEPLOY_SSH_KEY" | grep -c '^ssh-')"
+            # `|| true`: grep -c exits 1 on zero matches, which would abort under bash -e.
+            shape="secret_len=${#DEPLOY_SSH_KEY} lines=$(printf '%s\n' "$DEPLOY_SSH_KEY" | wc -l) has_begin=$(printf '%s' "$DEPLOY_SSH_KEY" | grep -c 'BEGIN OPENSSH PRIVATE KEY' || true) has_end=$(printf '%s' "$DEPLOY_SSH_KEY" | grep -c 'END OPENSSH PRIVATE KEY' || true) is_public_key=$(printf '%s' "$DEPLOY_SSH_KEY" | grep -c '^ssh-' || true)"
             echo "::error::DEPLOY_SSH_KEY (environment: development) is not a valid private key [$shape]"
             exit 1
           fi
