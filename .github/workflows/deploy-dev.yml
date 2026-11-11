@@ -87,6 +87,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     # Secrets of THIS environment; DEPLOY_SSH_KEY must be the dev-only key.
+    # `--env=dev` below makes the VPS refuse the run if the production key is used instead.
     environment: development
     steps:
       - uses: actions/checkout@v4
@@ -119,7 +120,7 @@ jobs:
                 -o StrictHostKeyChecking=yes -o UserKnownHostsFile="$HOME/.ssh/known_hosts" \
                 -o ServerAliveInterval=30 \
                 -p "${DEPLOY_PORT:-22}" "$DEPLOY_USER@$DEPLOY_HOST" \
-                "deploy $TARGET_SHA"
+                "deploy $TARGET_SHA --env=dev"
       - name: Cleanup SSH material
         if: always()
         run: rm -f ~/.ssh/deploy_key ~/.ssh/known_hosts

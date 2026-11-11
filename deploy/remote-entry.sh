@@ -32,10 +32,20 @@ case "$cmd" in
   deploy)
     sha="${args[1]:-}"
     [[ "$sha" =~ ^[0-9a-f]{40}$ ]] || fail "invalid sha"
-    extra=("${args[@]:2}")
-    for f in "${extra[@]}"; do
-      [[ "$f" == "--simulate-fail" ]] || fail "unsupported option"
+    # The caller states which environment it targets (--env=<name>, default production).
+    # It must match the environment bound to this SSH key, so a dev workflow that ends up
+    # with the production key (e.g. a repo-level secret fallback) is refused, and vice versa.
+    requested=production
+    extra=()
+    for f in "${args[@]:2}"; do
+      case "$f" in
+        --simulate-fail) extra+=("$f") ;;
+        --env=*) requested="${f#--env=}" ;;
+        *) fail "unsupported option" ;;
+      esac
     done
+    [[ "$requested" == "$HOMI_DEPLOY_ENV" ]] \
+      || fail "environment mismatch: workflow targets '$requested' but this key deploys '$HOMI_DEPLOY_ENV'"
 
     IFS=' ' read -r GHCR_USER GHCR_TOKEN
     [[ "$GHCR_USER" =~ ^[A-Za-z0-9-]{1,39}$ && -n "$GHCR_TOKEN" ]] || fail "bad credentials line"

@@ -27,12 +27,17 @@ RAM dự kiến thêm: ~1 GB backend + ~0,5 GB Redis/nginx. Kiểm tra `free -h`
 
 **1. DNS:** bản ghi `A` `api-dev` → IP VPS (nếu dùng Cloudflare proxy: tạm để *DNS only* khi chạy certbot).
 
-**2. Thư mục dev** (root-owned như production):
+**2. Thư mục dev** (root-owned như production).
+
+`SRC` = bản checkout repo trên VPS (chỗ đã chạy `bootstrap-vps.sh` lần đầu), cập nhật về
+`can-bang-tai` mới nhất. **Không** dùng `/opt/homi/backend/deploy`: CI chỉ đặt vào đó
+`deploy.sh`/`rollback.sh`/`lib.sh`, không có `docker-compose.dev.yml` hay `bootstrap-vps.sh`.
 ```bash
+SRC=/duong-dan/toi/repo        # ví dụ /root/speaking-ai-nextjs-backend
+git -C "$SRC" fetch origin && git -C "$SRC" checkout can-bang-tai && git -C "$SRC" pull --ff-only
 install -d -m 700 /opt/homi/backend-dev
-cd /opt/homi/backend   # repo đã có trên VPS, đã pull bản mới
-cp docker-compose.dev.yml /opt/homi/backend-dev/
-cp -r infra /opt/homi/backend-dev/
+cp "$SRC/docker-compose.dev.yml" /opt/homi/backend-dev/
+cp -r "$SRC/infra" /opt/homi/backend-dev/
 ```
 
 **3. File môi trường dev** — KHÔNG copy nguyên `.env.local` production:
@@ -63,14 +68,18 @@ docker compose --env-file .env.compose -f docker-compose.dev.yml up -d redis red
 
 **5. Key CI cho dev** (trên máy bạn: `ssh-keygen -t ed25519 -f homi-actions-dev -C github-actions-homi-dev -N ""`):
 ```bash
-cd /opt/homi/backend
-sudo bash deploy/bootstrap-vps.sh --env dev "$(cat homi-actions-dev.pub)"
+sudo bash "$SRC/deploy/bootstrap-vps.sh" --env dev "$(cat homi-actions-dev.pub)"
 ```
-Key production trong `authorized_keys` được giữ nguyên.
+Key production trong `authorized_keys` được giữ nguyên. Lệnh này cũng cài `remote-entry.sh` mới
+(dùng chung cho cả hai key); trước bước này mọi lượt `Deploy dev` đều bị VPS từ chối — đúng ý muốn.
+
+Mỗi workflow khai báo môi trường đích (`Deploy dev` gửi `--env=dev`, production không gửi gì);
+VPS từ chối nếu không khớp với key. Vì vậy dù `development` thiếu `DEPLOY_SSH_KEY` và GitHub
+lấy nhầm key production ở cấp repository, code nhánh `dev` cũng **không** lên production.
 
 **6. Nginx host + HTTPS:**
 ```bash
-cp deploy/nginx-host-api-dev.conf.example /etc/nginx/sites-available/api-dev.hoamytech.com
+cp "$SRC/deploy/nginx-host-api-dev.conf.example" /etc/nginx/sites-available/api-dev.hoamytech.com
 ln -s /etc/nginx/sites-available/api-dev.hoamytech.com /etc/nginx/sites-enabled/
 nginx -t && systemctl reload nginx
 certbot --nginx -d api-dev.hoamytech.com
@@ -94,5 +103,7 @@ Kiểm tra: `curl -fsS https://api-dev.hoamytech.com/api/ready`.
 - Log: `cd /opt/homi/backend-dev && docker compose --env-file .env.compose -f docker-compose.dev.yml logs --tail=100 backend nginx`
 - Tag đang chạy: `cat /opt/homi/backend-dev/.deploy/current_tag`
 - Rollback dev: `HOMI_DEPLOY_ENV=dev /opt/homi/backend-dev/deploy/rollback.sh [tag]`
+- Khởi động lại tay: luôn kèm tag đang chạy (`.env.compose` chỉ có `local`, image đó không tồn tại):
+  `BACKEND_IMAGE_TAG=$(cat .deploy/current_tag) docker compose --env-file .env.compose -f docker-compose.dev.yml up -d`
 - Tắt dev để trả RAM: `docker compose --env-file .env.compose -f docker-compose.dev.yml stop`
   (không ảnh hưởng production).
