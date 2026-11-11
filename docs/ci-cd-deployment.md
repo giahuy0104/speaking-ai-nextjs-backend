@@ -1,5 +1,7 @@
 # CI/CD: GitHub Actions → VPS (nhánh `can-bang-tai`)
 
+> Môi trường dev (`dev` → `api-dev.hoamytech.com`): xem [dev-environment.md](dev-environment.md).
+
 Luồng: PR vào `can-bang-tai` chạy `Verify deployment` (lint, test tích hợp, build production
 của image `web` và `worker`). Push/merge vào `can-bang-tai` chạy `Deploy production`:
 `guard` → `verify` → `build-push` (image GHCR tag = commit SHA) → `deploy` (SSH vào VPS).

@@ -1,0 +1,125 @@
+name: Deploy dev
+
+# Push/merge into `dev` deploys that commit to the DEV stack (api-dev.hoamytech.com).
+# Production (can-bang-tai -> api.hoamytech.com) is untouched: different environment,
+# SSH key (forced to HOMI_DEPLOY_ENV=dev), VPS directory, containers and image repo.
+on:
+  push:
+    branches: [dev]
+  workflow_dispatch:
+    inputs:
+      sha:
+        description: "Full 40-char commit SHA already on dev (empty = branch head)"
+        required: false
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: homi-deploy-dev
+  cancel-in-progress: false
+
+env:
+  IMAGE: ghcr.io/giahuy0104/speaking-ai-nextjs-backend
+  TARGET_SHA: ${{ inputs.sha || github.sha }}
+
+jobs:
+  guard:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Only deploy dev
+        run: |
+          if [ "$GITHUB_REF" != "refs/heads/dev" ]; then
+            echo "::error::Dev deploy is only allowed from dev (ref: $GITHUB_REF)"; exit 1
+          fi
+          if ! printf '%s' "$TARGET_SHA" | grep -Eq '^[0-9a-f]{40}$'; then
+            echo "::error::TARGET_SHA must be a full 40-char lowercase commit SHA"; exit 1
+          fi
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Commit must belong to dev
+        run: |
+          git cat-file -e "$TARGET_SHA^{commit}"
+          git merge-base --is-ancestor "$TARGET_SHA" "origin/dev" \
+            || { echo "::error::$TARGET_SHA is not on dev"; exit 1; }
+
+  verify:
+    needs: guard
+    uses: ./.github/workflows/verify.yml
+    with:
+      ref: ${{ inputs.sha || github.sha }}
+
+  build-push:
+    needs: verify
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.TARGET_SHA }}
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Build and push web image (tag = commit SHA)
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          target: web
+          push: true
+          tags: ${{ env.IMAGE }}:${{ env.TARGET_SHA }}
+          labels: |
+            org.opencontainers.image.revision=${{ env.TARGET_SHA }}
+            org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  deploy:
+    needs: build-push
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    # Secrets of THIS environment; DEPLOY_SSH_KEY must be the dev-only key.
+    environment: development
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+      - name: Prepare SSH (pinned host key, dev key)
+        env:
+          DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+          DEPLOY_KNOWN_HOSTS: ${{ secrets.DEPLOY_KNOWN_HOSTS }}
+        run: |
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$DEPLOY_SSH_KEY" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          printf '%s\n' "$DEPLOY_KNOWN_HOSTS" > ~/.ssh/known_hosts
+          chmod 644 ~/.ssh/known_hosts
+      - name: Deploy ${{ env.TARGET_SHA }} to dev
+        env:
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_PORT: ${{ secrets.DEPLOY_PORT }}
+          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+          GHCR_USER: ${{ github.actor }}
+          GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          {
+            printf '%s %s\n' "$GHCR_USER" "$GHCR_TOKEN"
+            tar -czf - docker-compose.dev.yml infra \
+              deploy/deploy.sh deploy/rollback.sh deploy/lib.sh
+          } | ssh -i ~/.ssh/deploy_key \
+                -o BatchMode=yes -o IdentitiesOnly=yes \
+                -o StrictHostKeyChecking=yes -o UserKnownHostsFile="$HOME/.ssh/known_hosts" \
+                -o ServerAliveInterval=30 \
+                -p "${DEPLOY_PORT:-22}" "$DEPLOY_USER@$DEPLOY_HOST" \
+                "deploy $TARGET_SHA"
+      - name: Cleanup SSH material
+        if: always()
+        run: rm -f ~/.ssh/deploy_key ~/.ssh/known_hosts

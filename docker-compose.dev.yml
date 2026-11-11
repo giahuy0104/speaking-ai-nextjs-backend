@@ -1,0 +1,119 @@
+# DEV stack for api-dev.hoamytech.com. Fully separate from production:
+# own Compose project, network, Redis containers/volumes, image repo and port.
+# Lives in /opt/homi/backend-dev on the VPS (root-owned, copied by hand like prod).
+#   docker compose --env-file .env.compose -f docker-compose.dev.yml up -d
+name: speaking-ai-dev
+
+x-redis: &redis
+  image: redis:7.4-alpine
+  restart: unless-stopped
+  environment:
+    REDISCLI_AUTH: "${CLOUDFLARE_POOL_REDIS_PASSWORD:?Set CLOUDFLARE_POOL_REDIS_PASSWORD in .env.compose}"
+  command: ["sh", "-c", 'exec redis-server /usr/local/etc/redis/redis.conf --requirepass "$$REDISCLI_AUTH"']
+  healthcheck:
+    test: ["CMD", "redis-cli", "ping"]
+    interval: 5s
+    timeout: 3s
+    retries: 10
+    start_period: 5s
+  cpus: 0.25
+  logging:
+    driver: json-file
+    options: { max-size: "5m", max-file: "2" }
+
+services:
+  # Service names must stay redis / redis-cache / redis-jobs: runtime-config.mjs
+  # builds the Redis URLs from these hostnames when APP_RUNTIME=compose.
+  # No host ports are published (prod uses 16379-16381 on loopback).
+  redis:
+    <<: *redis
+    volumes:
+      - ./infra/redis/redis.conf:/usr/local/etc/redis/redis.conf:ro
+      - redis-data:/data
+    mem_limit: 192m
+
+  redis-cache:
+    <<: *redis
+    volumes:
+      - ./infra/redis/cache.conf:/usr/local/etc/redis/redis.conf:ro
+    mem_limit: 96m
+
+  redis-jobs:
+    <<: *redis
+    volumes:
+      - ./infra/redis/jobs.conf:/usr/local/etc/redis/redis.conf:ro
+      - audio-jobs-data:/data
+    mem_limit: 192m
+
+  backend:
+    image: speaking-ai-backend-dev:${BACKEND_IMAGE_TAG:-local}
+    pull_policy: never
+    restart: unless-stopped
+    init: true
+    secrets:
+      - app_env
+    environment:
+      APP_RUNTIME: compose
+      APP_ENV_FILE: /run/secrets/app_env
+      PERSISTENCE_BACKEND: postgres
+      CLOUDFLARE_POOL_STORE: redis
+      AUDIO_TRANSLATION_JOB_SHARED_DIRECTORY: /app/data/audio-translation-jobs
+      AUDIO_TRANSLATION_JOB_STORAGE: local
+      PORT: "3000"
+      AUDIO_STREAM_NODE: "3000"
+    expose:
+      - "3000"
+    volumes:
+      - audio-job-files:/app/data/audio-translation-jobs
+    depends_on:
+      redis:
+        condition: service_healthy
+      redis-cache:
+        condition: service_healthy
+      redis-jobs:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:' + process.env.PORT + '/api/health', { signal: AbortSignal.timeout(3000) }).then(r => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))"]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+      start_period: 20s
+    stop_grace_period: 75s
+    mem_limit: 1g
+    cpus: 0.75
+    logging:
+      driver: json-file
+      options: { max-size: "10m", max-file: "3" }
+
+  nginx:
+    image: nginx:1.30-alpine
+    restart: unless-stopped
+    ports:
+      # Host Nginx (TLS for api-dev.hoamytech.com) proxies to this port. Prod uses 8080.
+      - "127.0.0.1:${DEV_NGINX_HTTP_PORT:-8081}:80"
+    volumes:
+      - ./infra/nginx/nginx.dev.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      backend:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1/healthz"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+    stop_signal: SIGQUIT
+    stop_grace_period: 75s
+    mem_limit: 64m
+    cpus: 0.25
+    logging:
+      driver: json-file
+      options: { max-size: "10m", max-file: "3" }
+
+secrets:
+  app_env:
+    file: ./.env.local
+
+volumes:
+  redis-data:
+  audio-jobs-data:
+  audio-job-files:
