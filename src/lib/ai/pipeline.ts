@@ -58,6 +58,28 @@ export type PreparedConversationPipeline = {
   preparationMs: number;
 };
 
+/**
+ * Provider refusals that will not clear on an immediate retry (auth, billing,
+ * rate limit). After one, multilingual TTS is skipped for a cooldown.
+ */
+const targetSpeechCooldownStatuses = new Set([401, 402, 403, 429]);
+let targetSpeechUnavailableUntil = 0;
+
+function targetSpeechCooldownMs() {
+  const configured = Number(process.env.TARGET_TTS_FAILURE_COOLDOWN_MS);
+  return Number.isFinite(configured) && configured >= 0 ? configured : 5 * 60_000;
+}
+
+/** TARGET_TTS_ENABLED=false voices every non-vi→en pair with device TTS (no xai/grok-tts call). */
+function targetSpeechEnabled() {
+  return process.env.TARGET_TTS_ENABLED?.trim().toLowerCase() !== "false";
+}
+
+/** Test hook: forget a previous provider refusal. */
+export function resetTargetSpeechCooldown() {
+  targetSpeechUnavailableUntil = 0;
+}
+
 function createId(prefix: string) {
   return `${prefix}_${crypto.randomUUID().slice(0, 8)}`;
 }
@@ -95,10 +117,19 @@ export async function runTargetLanguageConversationPipeline(
     try {
       const cachedUrl = await getReusableAudioUrl(descriptor);
       if (cachedUrl) return { audioUrl: cachedUrl, source: "cache" as const };
+      if (!targetSpeechEnabled() || Date.now() < targetSpeechUnavailableUntil) {
+        // The provider just refused for billing/quota/auth; device TTS answers
+        // immediately instead of waiting ~2s for the same refusal.
+        return { audioUrl: null, source: "device_tts" as const };
+      }
       const audio = await requestTargetSpeech(translatedText, language, { parentRequestId: input.requestId });
       const audioUrl = await saveReusableAudio(descriptor, audio);
       return { audioUrl, source: "cloudflare_tts" as const };
     } catch (error) {
+      const upstreamStatus = getFailureDiagnostics(error).upstreamStatus;
+      if (typeof upstreamStatus === "number" && targetSpeechCooldownStatuses.has(upstreamStatus)) {
+        targetSpeechUnavailableUntil = Date.now() + targetSpeechCooldownMs();
+      }
       logEvent("warn", "target_translation_audio_unavailable", {
         requestId: input.requestId,
         language,

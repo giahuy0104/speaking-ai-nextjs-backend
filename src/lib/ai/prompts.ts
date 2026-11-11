@@ -50,10 +50,23 @@ export function buildTargetLanguageInstruction(
   const pivotRule = language === "en" || sourceLanguage === "en"
     ? "Do not answer the child, add information or change the meaning."
     : "Do not answer the child, add information, change the meaning, or translate through English.";
+  // Vietnamese sources are repaired before this step; the vi → X prompt stays unchanged.
+  const extraRules = [
+    sourceLanguage === "vi" ? "" : `The text comes from speech recognition and may contain a misheard word. Translate only what is written; if one word does not fit, translate it as literally as possible. Never add objects, pictures, people, opinions or details that are not in the text.`,
+    language === "vi" ? `Vietnamese pronouns: the child's "I/me/我/私/나/je" is "con"; the person addressed ("you/你/您/あなた/너/tu/vous") is "bạn", or the kinship term the text names (mẹ, bố, ông, bà, cô, thầy...). "You" is never "con". Do not add "con thấy", "ạ" or other words the source does not say.
+Examples:
+你吃饭了吗 → Bạn ăn cơm chưa?
+我饿了 → Con đói rồi.
+妈妈，你去哪里？ → Mẹ ơi, mẹ đi đâu vậy?
+Do you want to play with me? → Bạn có muốn chơi với con không?
+阿辉太帅了 → Anh Huy đẹp trai quá.
+你好，这里有人吗？ → Xin chào, ở đây có ai không?
+我想买一个粉色的杯子 → Con muốn mua một cái cốc màu hồng.` : "",
+  ].filter(Boolean).join("\n");
   return `Translate the child's ${sourceLanguageNames[sourceLanguage]} utterance directly into ${target}.
 Preserve the speaker, addressee, kinship terms, negation, action, object, ownership, quantity, time, place, and whether it is a statement, question or request.
 Translate every sentence, including incomplete ones, without completing the child's thought.
-${pivotRule}
+${pivotRule}${extraRules ? `\n${extraRules}` : ""}
 Return only the translation, without a label, quotation marks, romanization or explanation.
 Context for resolving genuine ambiguity only: ${contextLabels[context]}; child_age=${childAge}.`;
 }

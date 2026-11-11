@@ -8,7 +8,7 @@ Module._load = function (specifier, ...args) {
   return load.call(this, specifier, ...args);
 };
 const { normalizeTargetTranslation, targetTranslationIssue, translateTargetLanguage } = await import("./targetTranslation.ts");
-const { runTargetLanguageConversationPipeline } = await import("./pipeline.ts");
+const { runTargetLanguageConversationPipeline, resetTargetSpeechCooldown } = await import("./pipeline.ts");
 const originalEnv = { ...process.env };
 const originalFetch = globalThis.fetch;
 const originalInfo = console.info;
@@ -19,6 +19,7 @@ const sourceText = "Con khát nước. Mẹ cho con uống nước nhé.";
 const input = { sourceText, language: "fr", context: "home", childAge: 6, requestId: "target-regression-request" };
 
 beforeEach(() => {
+  resetTargetSpeechCooldown();
   process.env.CLOUDFLARE_ACCOUNT_ID = "test-account";
   process.env.CLOUDFLARE_WORKERS_AI_API_TOKEN = "private-test-token";
   process.env.CLOUDFLARE_POOL_ROUTE_LEGACY_ACCOUNT = "false";

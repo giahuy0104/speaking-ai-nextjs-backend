@@ -31,12 +31,19 @@ export function targetTranslationIssue(text: string, language: TranslationLangua
   if (language === "zh" && !/[\u3400-\u9fff]/u.test(text)) return "missing_target_script";
   if (language === "ja" && !/[\u3040-\u30ff\u3400-\u9fff]/u.test(text)) return "missing_target_script";
   if (language === "ko" && !/[\uac00-\ud7af]/u.test(text)) return "missing_target_script";
-  if ((language === "en" || language === "fr" || language === "vi") &&
-      /\p{L}/u.test(text) && !/\p{Script=Latin}/u.test(text)) {
-    return "missing_target_script";
+  if (language === "en" || language === "fr" || language === "vi") {
+    if (/\p{L}/u.test(text) && !/\p{Script=Latin}/u.test(text)) return "missing_target_script";
+    // Source characters left untranslated, e.g. "Anh Huy quá帅 rồi".
+    if (/[぀-ヿ㐀-鿿가-힯]/u.test(text)) return "untranslated_source_script";
   }
   return undefined;
 }
+
+const latinRetryRule = (name: string) =>
+  `Your previous answer was not entirely ${name}. Write every word in ${name}; no Chinese, Japanese or Korean characters.`;
+const leakRetryRules: Partial<Record<TranslationLanguage, string>> = {
+  vi: latinRetryRule("Vietnamese"), en: latinRetryRule("English"), fr: latinRetryRule("French"),
+};
 
 function completionIssue(completion: CloudflareTextCompletionMetadata | undefined) {
   return completion?.finishReason === "length" ? "output_truncated"
@@ -70,20 +77,30 @@ export async function translateTargetLanguage(input: {
   let output: { rawLength: number; normalizedLength: number; hadLineBreaks: boolean; normalizationApplied: boolean } | undefined;
   try {
     model = getCloudflareTextConfig().model;
-    const result = await translateVietnameseWithCloudflare(
-      input.sourceText,
-      buildTargetLanguageInstruction(input.language, input.context, input.childAge, sourceLanguage),
-      maxCompletionTokens,
-      { parentRequestId: input.requestId, onCompletion: (metadata) => { completion = metadata; } },
-    );
-    const translatedText = normalizeTargetTranslation(result.englishText);
-    output = {
-      rawLength: result.englishText.length,
-      normalizedLength: translatedText.length,
-      hadLineBreaks: /[\r\n\u2028\u2029]/u.test(result.englishText),
-      normalizationApplied: translatedText !== result.englishText,
+    const instruction = buildTargetLanguageInstruction(input.language, input.context, input.childAge, sourceLanguage);
+    const translateOnce = async (retry: boolean) => {
+      const result = await translateVietnameseWithCloudflare(
+        input.sourceText,
+        retry ? `${instruction}\n${leakRetryRules[input.language]}` : instruction,
+        maxCompletionTokens,
+        { parentRequestId: input.requestId, onCompletion: (metadata) => { completion = metadata; } },
+      );
+      const translatedText = normalizeTargetTranslation(result.englishText);
+      output = {
+        rawLength: result.englishText.length,
+        normalizedLength: translatedText.length,
+        hadLineBreaks: /[\r\n\u2028\u2029]/u.test(result.englishText),
+        normalizationApplied: translatedText !== result.englishText,
+      };
+      const reason = completionIssue(completion) ?? targetTranslationIssue(translatedText, input.language);
+      return { result, translatedText, reason };
     };
-    const reason = completionIssue(completion) ?? targetTranslationIssue(translatedText, input.language);
+    let { result, translatedText, reason } = await translateOnce(false);
+    // Leftover source characters get one retry; a wholly wrong script still fails at once.
+    if (reason === "untranslated_source_script") {
+      logEvent("warn", "target_translation_script_retry", { ...fields, reason });
+      ({ result, translatedText, reason } = await translateOnce(true));
+    }
     if (reason) {
       throw attachFailureDiagnostics(new AppError(
         "LLM_FAILED", "Bản dịch AI chưa hoàn chỉnh hoặc không đúng định dạng. Vui lòng thử lại.", 502,

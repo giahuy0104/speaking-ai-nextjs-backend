@@ -14,7 +14,7 @@ const {
 } = await import("./targetLanguage.ts");
 const { buildTargetLanguageInstruction } = await import("./prompts.ts");
 const { targetTranslationIssue } = await import("./targetTranslation.ts");
-const { runTargetLanguageConversationPipeline } = await import("./pipeline.ts");
+const { runTargetLanguageConversationPipeline, resetTargetSpeechCooldown } = await import("./pipeline.ts");
 const { isKnownSilenceHallucination } = await import("./asr.ts");
 
 const originalEnv = { ...process.env };
@@ -25,6 +25,7 @@ let logs;
 let calls;
 
 beforeEach(() => {
+  resetTargetSpeechCooldown();
   process.env.CLOUDFLARE_ACCOUNT_ID = "test-account";
   process.env.CLOUDFLARE_WORKERS_AI_API_TOKEN = "private-test-token";
   process.env.CLOUDFLARE_POOL_ROUTE_LEGACY_ACCOUNT = "false";
@@ -179,4 +180,65 @@ test("known Whisper silence captions are rejected, real short phrases are not", 
   assert.equal(isKnownSilenceHallucination("Thanks for watching!"), true);
   assert.equal(isKnownSilenceHallucination("Thank you"), false);
   assert.equal(isKnownSilenceHallucination("お水が飲みたい"), false);
+});
+
+test("after a 402 from the TTS provider, later turns skip it and use device TTS", async () => {
+  providerReturning("Con muốn uống nước.");
+  const turn = () => runTargetLanguageConversationPipeline({
+    sourceText: "I want water", sourceLanguage: "en", targetLanguage: "vi",
+    context: "home", childAge: 6, asrMode: "text",
+  });
+  const first = await turn();
+  assert.equal(first.audioSource, "device_tts");
+  assert.equal(calls.length, 2, "first turn: text + one TTS attempt");
+  const second = await turn();
+  assert.equal(second.audioSource, "device_tts");
+  assert.equal(second.translatedText, "Con muốn uống nước.");
+  assert.equal(calls.length, 3, "second turn: text only, TTS skipped during cooldown");
+});
+
+test("Vietnamese output with leftover CJK is retried once with a script reminder", async () => {
+  assert.equal(targetTranslationIssue("Anh Huy quá帅 rồi", "vi"), "untranslated_source_script");
+  const answers = ["Anh Huy quá帅 rồi", "Anh Huy đẹp trai quá"];
+  globalThis.fetch = async (url, init) => {
+    const body = JSON.parse(init.body);
+    calls.push({ url: String(url), body });
+    return String(url).endsWith("chat/completions")
+      ? Response.json({ choices: [{ message: { content: answers.shift() }, finish_reason: "stop" }] })
+      : Response.json({ errors: [{ code: 2021 }] }, { status: 402 });
+  };
+  const result = await runTargetLanguageConversationPipeline({
+    sourceText: "阿辉太帅了", sourceLanguage: "zh", targetLanguage: "vi",
+    context: "home", childAge: 6, asrMode: "android_streaming",
+  });
+  assert.equal(result.translatedText, "Anh Huy đẹp trai quá");
+  const textCalls = calls.filter(call => call.url.endsWith("chat/completions"));
+  assert.equal(textCalls.length, 2);
+  const retryPrompt = textCalls[1].body.messages.map(message => message.content).join("\n");
+  assert.match(retryPrompt, /not entirely Vietnamese/);
+});
+
+test("prompts for spoken non-Vietnamese sources handle mishearing and Vietnamese pronouns", () => {
+  const zhToVi = buildTargetLanguageInstruction("vi", "home", 6, "zh");
+  assert.match(zhToVi, /misheard word/);
+  assert.match(zhToVi, /Never add objects/);
+  assert.match(zhToVi, /"You" is never "con"/);
+  assert.match(zhToVi, /你吃饭了吗 → Bạn ăn cơm chưa?/);
+  const zhToEn = buildTargetLanguageInstruction("en", "home", 6, "zh");
+  assert.match(zhToEn, /misheard/);
+  assert.doesNotMatch(zhToEn, /"con"/);
+  const viToJa = buildTargetLanguageInstruction("ja", "home", 6);
+  assert.doesNotMatch(viToJa, /misheard|"con"/);
+});
+
+test("TARGET_TTS_ENABLED=false never calls the multilingual TTS provider", async () => {
+  process.env.TARGET_TTS_ENABLED = "false";
+  providerReturning("Con muốn uống nước.");
+  const result = await runTargetLanguageConversationPipeline({
+    sourceText: "I want water", sourceLanguage: "en", targetLanguage: "vi",
+    context: "home", childAge: 6, asrMode: "text",
+  });
+  assert.equal(result.audioSource, "device_tts");
+  assert.equal(result.latency.ttsMs < 50, true);
+  assert.deepEqual(calls.map(call => call.url.endsWith("chat/completions")), [true], "text only, no TTS call");
 });
