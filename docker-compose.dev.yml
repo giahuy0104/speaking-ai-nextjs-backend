@@ -16,7 +16,8 @@ x-redis: &redis
     timeout: 3s
     retries: 10
     start_period: 5s
-  cpus: 0.25
+  # The pool store client destroys itself when a command takes over 1s.
+  cpus: 0.5
   logging:
     driver: json-file
     options: { max-size: "5m", max-file: "2" }
@@ -61,6 +62,17 @@ services:
       CLOUDFLARE_POOL_STORE: redis
       AUDIO_TRANSLATION_JOB_SHARED_DIRECTORY: /app/data/audio-translation-jobs
       AUDIO_TRANSLATION_JOB_STORAGE: local
+      # Burst intake for the jobs path (accept 1000 submissions in ~1s, process
+      # from the queue). These override .env.local: start.mjs never overwrites
+      # variables that are already set.
+      # Uploads buffered per instance = MAX_IN_FLIGHT + MAX_QUEUED.
+      CLOUDFLARE_POOL_MAX_IN_FLIGHT: "100"
+      CLOUDFLARE_POOL_MAX_QUEUED: "500"
+      CLOUDFLARE_POOL_MAX_BUFFERED_BYTES: "134217728"
+      # 1000 is the ceiling enforced in audioTranslationJobs.ts.
+      AUDIO_TRANSLATION_JOB_MAX_PENDING: "1000"
+      # Raised from 10 so a small token pool can drive a load test.
+      AUDIO_TRANSLATION_JOB_MAX_PER_CLIENT: "100"
       PORT: "3000"
       AUDIO_STREAM_NODE: "3000"
     expose:
@@ -82,7 +94,8 @@ services:
       start_period: 20s
     stop_grace_period: 75s
     mem_limit: 1g
-    cpus: 0.75
+    # The VPS has 4 cores shared with production; keep the two dev backends under 3.
+    cpus: 1.5
     logging:
       driver: json-file
       options: { max-size: "10m", max-file: "3" }
@@ -113,6 +126,9 @@ services:
       CLOUDFLARE_POOL_STORE: redis
       AUDIO_TRANSLATION_JOB_SHARED_DIRECTORY: /app/data/audio-translation-jobs
       AUDIO_TRANSLATION_JOB_STORAGE: local
+      # Match the Cloudflare text concurrency (8 per account x 2 accounts).
+      # Higher only produces provider 429s; the code caps this at 20.
+      AUDIO_TRANSLATION_JOB_WORKER_CONCURRENCY: "16"
     volumes:
       - audio-job-files:/app/data/audio-translation-jobs
     depends_on:
@@ -124,7 +140,7 @@ services:
         condition: service_healthy
     stop_grace_period: 75s
     mem_limit: 512m
-    cpus: 0.5
+    cpus: 1
     logging:
       driver: json-file
       options: { max-size: "10m", max-file: "3" }
@@ -149,8 +165,9 @@ services:
       retries: 3
     stop_signal: SIGQUIT
     stop_grace_period: 75s
-    mem_limit: 64m
-    cpus: 0.25
+    # Buffers every upload body before proxying; 64m / 0.25 CPU starved under a burst.
+    mem_limit: 256m
+    cpus: 1
     logging:
       driver: json-file
       options: { max-size: "10m", max-file: "3" }
