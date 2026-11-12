@@ -85,6 +85,39 @@ services:
       driver: json-file
       options: { max-size: "10m", max-file: "3" }
 
+  # Durable BullMQ worker; needs AUDIO_TRANSLATION_JOBS_ENABLED=true in .env.local.
+  #   docker compose --env-file .env.compose -f docker-compose.dev.yml --profile jobs up -d audio-worker
+  audio-worker:
+    image: speaking-ai-audio-worker-dev:${BACKEND_IMAGE_TAG:-local}
+    pull_policy: never
+    profiles: [jobs]
+    restart: unless-stopped
+    init: true
+    secrets:
+      - app_env
+    environment:
+      APP_RUNTIME: compose
+      APP_ENV_FILE: /run/secrets/app_env
+      PERSISTENCE_BACKEND: postgres
+      CLOUDFLARE_POOL_STORE: redis
+      AUDIO_TRANSLATION_JOB_SHARED_DIRECTORY: /app/data/audio-translation-jobs
+      AUDIO_TRANSLATION_JOB_STORAGE: local
+    volumes:
+      - audio-job-files:/app/data/audio-translation-jobs
+    depends_on:
+      redis:
+        condition: service_healthy
+      redis-cache:
+        condition: service_healthy
+      redis-jobs:
+        condition: service_healthy
+    stop_grace_period: 75s
+    mem_limit: 512m
+    cpus: 0.5
+    logging:
+      driver: json-file
+      options: { max-size: "10m", max-file: "3" }
+
   nginx:
     image: nginx:1.30-alpine
     restart: unless-stopped

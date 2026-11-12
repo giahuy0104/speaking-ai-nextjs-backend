@@ -107,3 +107,26 @@ Kiểm tra: `curl -fsS https://api-dev.hoamytech.com/api/ready`.
   `BACKEND_IMAGE_TAG=$(cat .deploy/current_tag) docker compose --env-file .env.compose -f docker-compose.dev.yml up -d`
 - Tắt dev để trả RAM: `docker compose --env-file .env.compose -f docker-compose.dev.yml stop`
   (không ảnh hưởng production).
+
+## Hàng đợi job BullMQ (worker)
+
+Bật trên dev từ 2026-11-12: `AUDIO_TRANSLATION_JOBS_ENABLED='true'` trong `.env.local` dev và
+service `audio-worker` (profile `jobs`) trong `docker-compose.dev.yml`. Client dùng
+`POST /api/audio/jobs` hoặc header `Prefer: respond-async` trên `/api/audio/translate` → 202 + `jobId`,
+rồi poll `GET /api/audio/jobs/<jobId>`.
+
+`Deploy dev` build cả image worker (GHCR, tag `<sha>-worker`). `deploy.sh` pull về thành
+`speaking-ai-audio-worker-dev:<sha>`, và **chỉ khi `audio-worker` đang chạy** thì recreate nó sau
+backend rồi kiểm tra: đúng image, vẫn chạy sau 15 giây, không restart. Lỗi → tự rollback cả backend
+lẫn worker. Worker đang tắt thì deploy không bật lên (image vẫn được pull sẵn). `rollback.sh` cũng
+chuyển worker nếu có image của tag đích; thiếu image thì giữ worker cũ và ghi NOTICE.
+
+Bật worker bằng tay (lần đầu, hoặc sau khi đã tắt):
+```bash
+cd /opt/homi/backend-dev
+BACKEND_IMAGE_TAG=$(cat .deploy/current_tag) docker compose --env-file .env.compose -f docker-compose.dev.yml --profile jobs up -d --no-deps audio-worker
+```
+Tag trước khi có CI worker (`efade07…`) được build tay trên VPS.
+Worker không có cổng HTTP; kiểm tra bằng heartbeat:
+`docker exec speaking-ai-dev-redis-jobs-1 redis-cli --no-auth-warning keys 'speaking-ai-audio-jobs:worker:*'`.
+Tắt: đặt lại cờ `false`, `docker compose … stop audio-worker` và recreate `backend`.
