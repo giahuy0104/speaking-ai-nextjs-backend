@@ -4,7 +4,7 @@ name: Verify deployment
 # the same job through deploy.yml (workflow_call), so it is not duplicated here.
 on:
   pull_request:
-    branches: [can-bang-tai]
+    branches: [can-bang-tai, dev]
   workflow_dispatch:
   workflow_call:
     inputs:

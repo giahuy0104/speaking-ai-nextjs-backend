@@ -8,6 +8,7 @@ import { getRequestId, logEvent, withRequestId } from "@/lib/observability";
 import { requireInstallationAccess } from "@/lib/installationAuth";
 import { readBoundedAudioFormData } from "@/lib/ai/cloudflare/upload";
 import { audioTranslationService } from "@/lib/ai/audioTranslationService";
+import { isEagerTranslateTtsEnabled, startEagerEnglishAudio } from "@/lib/ai/tts";
 import { createDeadline } from "@/lib/ai/cloudflare/deadline";
 import { clientAbortSignal } from "@/lib/ai/cloudflare/abortDiagnostics";
 import { getFailureDiagnostics } from "@/lib/ai/cloudflare/providerError";
@@ -198,12 +199,15 @@ export async function handleAudioTranslation(request: Request, options: { forceA
       elapsedMs: Math.round(performance.now() - startedAt),
     });
 
+    const englishAudio = startEagerTranslationAudio(result.englishText, requestId);
+
     return withRequestId(
       Response.json({
         requestId,
         sourceLanguage,
         targetLanguage: "en",
         ...result,
+        ...(englishAudio ? { audioUrl: englishAudio.audioUrl, audioCacheReady: englishAudio.cacheReady } : {}),
       }, { headers: { "X-Audio-Cache": cacheStatus, "Cache-Control": "private, no-store" } }),
       requestId,
     );
@@ -234,6 +238,23 @@ export async function handleAudioTranslation(request: Request, options: { forceA
     return withRequestId(response, requestId);
   } finally {
     upload?.release();
+  }
+}
+
+/**
+ * Starts English TTS while the translation response travels to the client, so
+ * the follow-up audio request joins synthesis that is already running. TTS
+ * problems never change the translation result.
+ */
+function startEagerTranslationAudio(englishText: string | undefined, requestId: string) {
+  if (!englishText || !isEagerTranslateTtsEnabled()) return null;
+  try {
+    return startEagerEnglishAudio(englishText, {
+      onBackgroundError: (error) => logEvent("warn", "audio_translation_eager_tts_failed", { requestId, error }),
+    });
+  } catch (error) {
+    logEvent("warn", "audio_translation_eager_tts_unavailable", { requestId, error });
+    return null;
   }
 }
 

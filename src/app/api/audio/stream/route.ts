@@ -82,7 +82,7 @@ export async function GET(request: Request) {
         latencyMs: Math.round(performance.now() - startedAt),
         eagerBootstrapJoined: Boolean(bootstrap),
       });
-      return withRequestId(activeStream, requestId);
+      return withRequestId(unbuffered(activeStream), requestId);
     }
     try {
       const result = await cacheFillClaim.completion;
@@ -191,5 +191,15 @@ export async function GET(request: Request) {
     "Server-Timing",
     `cache;dur=${cacheLookupMs}, tts-headers;dur=${upstreamHeadersMs}`,
   );
-  return withRequestId(streamResponse, requestId);
+  return withRequestId(unbuffered(streamResponse), requestId);
+}
+
+/**
+ * Audio bytes must reach the player as soon as the provider emits them. Nginx
+ * (both the host TLS proxy and the load balancer) honours this header and
+ * disables response buffering for this response only.
+ */
+function unbuffered(response: Response) {
+  response.headers.set("X-Accel-Buffering", "no");
+  return response;
 }

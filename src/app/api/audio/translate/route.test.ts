@@ -25,6 +25,8 @@ process.env.CLOUDFLARE_AUDIO_TRANSLATION_POOL_ENABLED = 'true';
 process.env.CLOUDFLARE_POOL_STORE = 'memory';
 process.env.AUDIO_TRANSLATION_CACHE_ENABLED = 'false';
 process.env.AUDIO_TRANSLATION_JOBS_ENABLED = 'false';
+process.env.AUDIO_TRANSLATE_EAGER_TTS = scenario.startsWith('eager-tts') ? 'true' : 'false';
+process.env.AUDIO_STREAM_NODE = scenario === 'eager-tts-node' ? '3001' : '';
 process.env.CLOUDFLARE_POOL_A_TOKEN = 'dedicated-secret-token';
 process.env.CLOUDFLARE_ACCOUNTS_JSON = JSON.stringify([{
   alias:'audio-a',accountId:'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb',apiTokenEnv:'CLOUDFLARE_POOL_A_TOKEN',enabled:true,
@@ -150,6 +152,20 @@ async function result(response) {
       const response=await POST(req);return {...await result(response),retryAfter:response.headers.get('retry-after')};
     }));
     output={responses,asrPeak,textPeak};
+  } else if (scenario.startsWith('eager-tts')) {
+    const providerFetch = globalThis.fetch;
+    globalThis.fetch = async (url, init) => {
+      // Record the background TTS call but never resolve it, so the test
+      // never writes synthesized audio into the repository's public folder.
+      if (String(url).includes('whisper') || String(url).includes('chat/completions')) return providerFetch(url, init);
+      calls.push({url:String(url)});
+      return new Promise(() => {});
+    };
+    const response = await result(await POST(request()));
+    const providerCallsAtResponse = calls.length;
+    // TTS starts after the response; give the background probe time to run.
+    for (let i=0;calls.length<=providerCallsAtResponse && i<100;i++) await new Promise(resolve=>setTimeout(resolve,5));
+    output = {response,providerCallsAtResponse};
   } else {
     delete process.env.CLOUDFLARE_WORKERS_AI_API_TOKEN;
     output = {response:await result(await POST(request()))};
@@ -167,6 +183,7 @@ type HarnessResult = {
   calls: Array<{ url: string; authorization?: string }>;
   asrPeak: number;
   textPeak: number;
+  providerCallsAtResponse: number;
   logs: Array<Record<string, unknown>>;
 };
 
@@ -213,6 +230,30 @@ test("route pool success preserves contract and skips text for English source", 
   assert.ok(calls[0].url.includes("/accounts/bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb/"));
   assert.equal(calls[0].authorization, "Bearer dedicated-secret-token");
   assert.ok(!JSON.stringify(response).includes("audio-a"));
+});
+
+test("eager TTS returns a stream audioUrl and starts synthesis after the response", () => {
+  const { response, calls, providerCallsAtResponse } = run("eager-tts");
+  assert.equal(response.status, 200);
+  assert.equal(response.body.englishText, "I feel better.");
+  assert.equal(response.body.audioUrl, "/api/audio/stream?text=I%20feel%20better.");
+  assert.equal(response.body.audioCacheReady, false);
+  // Only ASR ran before the response; TTS ran in the background afterwards.
+  assert.equal(providerCallsAtResponse, 1);
+  assert.equal(calls.length, 2);
+  assert.ok(!calls[1].url.includes("whisper"));
+});
+
+test("eager TTS stream URL carries the instance node key for the load balancer", () => {
+  const { response } = run("eager-tts-node");
+  assert.equal(response.status, 200);
+  assert.equal(response.body.audioUrl, "/api/audio/stream?text=I%20feel%20better.&node=3001");
+});
+
+test("route without eager TTS keeps the text-only success contract", () => {
+  const { response } = run("pool");
+  assert.equal(response.body.audioUrl, undefined);
+  assert.equal(response.body.audioCacheReady, undefined);
 });
 
 test("route pool configuration and Redis outages fail safely without legacy inference", () => {

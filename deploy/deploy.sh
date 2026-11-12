@@ -32,10 +32,9 @@ log "target=$sha previous=${previous:-none}"
 incoming="${HOMI_INCOMING:-}"
 if [[ -n "$incoming" && -d "$incoming" ]]; then
   drift=0
-  for f in docker-compose.redis.yml docker-compose.nginx.yml; do
-    cmp -s "$incoming/$f" "$BASE/$f" || drift=1
+  for f in "${DRIFT_PATHS[@]}"; do
+    diff -rq "$incoming/$f" "$BASE/$f" >/dev/null 2>&1 || drift=1
   done
-  diff -rq "$incoming/infra" "$BASE/infra" >/dev/null 2>&1 || drift=1
   ((drift)) && log "NOTICE: compose/infra in the repo differ from the VPS copies (left untouched; apply manually as root if intended)"
 fi
 
