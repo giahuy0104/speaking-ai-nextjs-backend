@@ -1,12 +1,15 @@
 import { randomInt, randomUUID } from "node:crypto";
 import { setTimeout as delay } from "node:timers/promises";
 import { assertExecutionActive, attemptSignal, remainingMs, withSignal } from "./deadline";
-import { getFailureDiagnostics, PoolError, ProviderFault } from "./providerError";
+import { getFailureDiagnostics, isPoolFailure, isTransientPoolFailure, PoolError, ProviderFault } from "./providerError";
 import { operationTask, quotaRules } from "./quotaPolicy";
 import { emitTelemetry, type TelemetrySink } from "./telemetry";
 import type { AdmissionOutcome, AdmissionStore, CloudflareAccount, CloudflareDispatcher, PoolConfig } from "./types";
 
 type AdmissionLane = { tickets: symbol[]; wakeups: Set<() => void> };
+
+/** Short cooldown for the failed task/model on one account after a transient fault. */
+const TRANSIENT_COOLDOWN_MS = 1_000;
 
 export class AccountDispatcher implements CloudflareDispatcher {
   private cursor: number;
@@ -150,16 +153,27 @@ export class AccountDispatcher implements CloudflareDispatcher {
     const rotated = [...eligible.slice(offset), ...eligible.slice(0, offset)];
     const attempted = new Set<string>();
     let lastFault: ProviderFault | undefined;
+    // The transient failure that triggered a retry. If the retry cannot run,
+    // the caller sees this original cause instead of a later capacity error.
+    let retriedFailure: unknown;
     for (let stageAttempt = 0; stageAttempt < this.config.maxAttemptsPerStage; stageAttempt++) {
       assertExecutionActive(context, this.clock());
-      if (context.attempts.used >= context.attempts.max) throw lastFault ?? new PoolError("attempt_budget");
-      if (remainingMs(context, this.clock()) < this.config.minAttemptMs) throw lastFault ?? new PoolError("timeout", 504);
+      if (context.attempts.used >= context.attempts.max) throw lastFault ?? retriedFailure ?? new PoolError("attempt_budget");
+      if (remainingMs(context, this.clock()) < this.config.minAttemptMs) throw lastFault ?? retriedFailure ?? new PoolError("timeout", 504);
       const { account, permit, waitedMs } = await this.acquire(input,
-        rotated.filter(account => !attempted.has(account.identity)), base, lastFault);
+        rotated.filter(account => !attempted.has(account.identity)), base, lastFault).catch((error: unknown) => {
+        if (retriedFailure !== undefined && error instanceof PoolError &&
+          (error.reason === "capacity" || error.reason === "queue_full" || error.reason === "queue_timeout")) {
+          throw retriedFailure;
+        }
+        throw error;
+      });
       attempted.add(account.identity);
       const startedAt = this.clock();
       let outcome: AdmissionOutcome = {};
       let retry = false;
+      let transientCooldown = false;
+      let attemptError: unknown;
       try {
         assertExecutionActive(context, this.clock());
         if (remainingMs(context, this.clock()) < this.config.minAttemptMs) throw lastFault ?? new PoolError("timeout", 504);
@@ -174,6 +188,7 @@ export class AccountDispatcher implements CloudflareDispatcher {
           attempt: context.attempts.used, providerElapsedMs: this.clock() - startedAt, status: "success" });
         return result;
       } catch (error) {
+        attemptError = error;
         // A failed half-open probe must not reopen the account to a burst.
         // A cancelled probe is eligible for another single probe immediately.
         if (permit.probe && (error instanceof PoolError || error instanceof ProviderFault &&
@@ -192,6 +207,22 @@ export class AccountDispatcher implements CloudflareDispatcher {
             retry = stageAttempt + 1 < this.config.maxAttemptsPerStage && context.attempts.used < context.attempts.max;
           }
         }
+        if (this.config.retryTransientFaults === true && isPoolFailure(error) && isTransientPoolFailure(error)) {
+          // Rest only the failed task/model on this account, so its other work
+          // continues and new requests prefer a healthy account meanwhile.
+          // Callers pinned to one account (legacy admission) keep V1 behaviour.
+          if (!outcome.cooldownMs && !outcome.disable && !input.accountIdentity) {
+            const scopeKeys = permit.ruleKeys.filter(key => key !== "account");
+            if (scopeKeys.length) {
+              outcome = { cooldownMs: TRANSIENT_COOLDOWN_MS, scopeKeys };
+              transientCooldown = true;
+            }
+          }
+          // Never repeat on the account that just failed; budget and deadline still apply.
+          retry = stageAttempt + 1 < this.config.maxAttemptsPerStage && context.attempts.used < context.attempts.max &&
+            rotated.some(candidate => !attempted.has(candidate.identity));
+          if (retry) retriedFailure = error;
+        }
         const diagnostics = getFailureDiagnostics(error);
         emitTelemetry(this.sink, "cloudflare_pool_attempt_completed", { ...base, accountAlias: account.alias,
           attempt: context.attempts.used, providerElapsedMs: this.clock() - startedAt,
@@ -205,7 +236,8 @@ export class AccountDispatcher implements CloudflareDispatcher {
         try {
           await withSignal(AbortSignal.timeout(1_000), () => this.store.complete(permit, outcome));
           if (outcome.cooldownMs || outcome.disable) emitTelemetry(this.sink, "cloudflare_pool_cooldown",
-            { ...base, accountAlias: account.alias, safeReason: outcome.disable ? "credentials" : "rate_limited" });
+            { ...base, accountAlias: account.alias,
+              safeReason: outcome.disable ? "credentials" : transientCooldown ? "transient" : "rate_limited" });
         } catch {
           // An uncertain completion never triggers another inference. The lease
           // expires automatically and a successful answer stays successful.
@@ -214,7 +246,9 @@ export class AccountDispatcher implements CloudflareDispatcher {
         }
         this.wakeAdmissions();
       }
-      if (!retry) throw lastFault ?? new PoolError("store_unavailable");
+      // Reached only when a planned retry was cancelled by an uncertain completion:
+      // report the failure that prompted the retry, not the store problem.
+      if (!retry) throw attemptError ?? lastFault ?? new PoolError("store_unavailable");
     }
     throw lastFault ?? new PoolError("capacity", 429);
   }

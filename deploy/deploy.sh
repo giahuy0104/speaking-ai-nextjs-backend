@@ -27,6 +27,7 @@ flock -n 9 || die "another deploy/rollback is already running"
 previous="$(read_state current_tag)"
 [[ -n "$previous" ]] || previous="$(running_tag)"
 log "target=$sha previous=${previous:-none}"
+detect_active_workers
 
 # --- Config drift check (report only: CI never writes compose/nginx/redis files on the VPS) ---
 incoming="${HOMI_INCOMING:-}"
@@ -50,6 +51,14 @@ log "pulling $GHCR_IMAGE:$sha"
 docker pull --quiet "$GHCR_IMAGE:$sha" >/dev/null
 docker tag "$GHCR_IMAGE:$sha" "$LOCAL_IMAGE_REPO:$sha"
 docker rmi "$GHCR_IMAGE:$sha" >/dev/null 2>&1 || true
+# Pulled even while the worker is stopped, so it can be started by hand at this tag.
+if [[ -n "$LOCAL_WORKER_REPO" ]]; then
+  worker_ref="$GHCR_IMAGE:$sha$WORKER_TAG_SUFFIX"
+  log "pulling $worker_ref"
+  docker pull --quiet "$worker_ref" >/dev/null
+  docker tag "$worker_ref" "$LOCAL_WORKER_REPO:$sha"
+  docker rmi "$worker_ref" >/dev/null 2>&1 || true
+fi
 rm -rf "$docker_cfg"
 unset DOCKER_CONFIG
 

@@ -153,7 +153,14 @@ export async function translateAudioToEnglish(
 
   if (execution) {
     payload = await execution.dispatcher.execute(
-      { context: execution, operation: "audio_translation_asr", model },
+      {
+        context: execution,
+        operation: "audio_translation_asr",
+        model,
+        // Without a per-attempt cap one hung ASR call consumes the whole request
+        // deadline. ~2x the loaded p95 (~4s) leaves time to retry another account.
+        timeoutMs: positiveInteger("CLOUDFLARE_ASR_ATTEMPT_TIMEOUT_MS", 8_000),
+      },
       async ({ account, signal }) => {
         await options.beforeProviderCall?.("asr");
         let response: Response | undefined;

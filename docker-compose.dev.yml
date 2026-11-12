@@ -45,14 +45,16 @@ services:
       - audio-jobs-data:/data
     mem_limit: 192m
 
-  backend:
+  # Two backends like production. Names/ports must match infra/nginx/nginx.dev.conf
+  # (upstreams + "/api/audio/stream:<node>" keys) and SERVICES in deploy/lib.sh.
+  backend-3000: &backend
     image: speaking-ai-backend-dev:${BACKEND_IMAGE_TAG:-local}
     pull_policy: never
     restart: unless-stopped
     init: true
     secrets:
       - app_env
-    environment:
+    environment: &backend-environment
       APP_RUNTIME: compose
       APP_ENV_FILE: /run/secrets/app_env
       PERSISTENCE_BACKEND: postgres
@@ -85,6 +87,48 @@ services:
       driver: json-file
       options: { max-size: "10m", max-file: "3" }
 
+  backend-3001:
+    <<: *backend
+    environment:
+      <<: *backend-environment
+      PORT: "3001"
+      AUDIO_STREAM_NODE: "3001"
+    expose:
+      - "3001"
+
+  # Durable BullMQ worker; needs AUDIO_TRANSLATION_JOBS_ENABLED=true in .env.local.
+  #   docker compose --env-file .env.compose -f docker-compose.dev.yml --profile jobs up -d audio-worker
+  audio-worker:
+    image: speaking-ai-audio-worker-dev:${BACKEND_IMAGE_TAG:-local}
+    pull_policy: never
+    profiles: [jobs]
+    restart: unless-stopped
+    init: true
+    secrets:
+      - app_env
+    environment:
+      APP_RUNTIME: compose
+      APP_ENV_FILE: /run/secrets/app_env
+      PERSISTENCE_BACKEND: postgres
+      CLOUDFLARE_POOL_STORE: redis
+      AUDIO_TRANSLATION_JOB_SHARED_DIRECTORY: /app/data/audio-translation-jobs
+      AUDIO_TRANSLATION_JOB_STORAGE: local
+    volumes:
+      - audio-job-files:/app/data/audio-translation-jobs
+    depends_on:
+      redis:
+        condition: service_healthy
+      redis-cache:
+        condition: service_healthy
+      redis-jobs:
+        condition: service_healthy
+    stop_grace_period: 75s
+    mem_limit: 512m
+    cpus: 0.5
+    logging:
+      driver: json-file
+      options: { max-size: "10m", max-file: "3" }
+
   nginx:
     image: nginx:1.30-alpine
     restart: unless-stopped
@@ -94,7 +138,9 @@ services:
     volumes:
       - ./infra/nginx/nginx.dev.conf:/etc/nginx/nginx.conf:ro
     depends_on:
-      backend:
+      backend-3000:
+        condition: service_healthy
+      backend-3001:
         condition: service_healthy
     healthcheck:
       test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1/healthz"]

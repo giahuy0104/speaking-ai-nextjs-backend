@@ -81,6 +81,20 @@ jobs:
             org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
+      # Same GHCR repo, "<sha>-worker" tag: no extra package or permission needed.
+      # deploy.sh pulls it and recreates audio-worker only while that worker is running.
+      - name: Build and push worker image (tag = commit SHA + -worker)
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          target: worker
+          push: true
+          tags: ${{ env.IMAGE }}:${{ env.TARGET_SHA }}-worker
+          labels: |
+            org.opencontainers.image.revision=${{ env.TARGET_SHA }}
+            org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
 
   deploy:
     needs: build-push
