@@ -28,7 +28,7 @@ case "$DEPLOY_ENV" in
     # Separate image repo so dev pruning can never delete production rollback images.
     LOCAL_IMAGE_REPO="speaking-ai-backend-dev"
     PUBLIC_URL="${PUBLIC_URL:-https://api-dev.hoamytech.com}"
-    SERVICES=(backend)
+    SERVICES=(backend-3000 backend-3001)
     COMPOSE_FILES=(docker-compose.dev.yml)
     DRIFT_PATHS=(docker-compose.dev.yml infra/nginx/nginx.dev.conf infra/redis)
     # First CI deploy: nginx depends on a healthy backend, so start it once if absent.

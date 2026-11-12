@@ -9,7 +9,7 @@ Chạy trên **cùng VPS** với production nhưng tách hẳn:
 | GitHub environment | `production` | `development` |
 | Thư mục VPS | `/opt/homi/backend` | `/opt/homi/backend-dev` |
 | Compose project | `speaking-ai-cloudflare` | `speaking-ai-dev` |
-| Backend | `backend-3000`, `backend-3001` | `backend` (1 instance) |
+| Backend | `backend-3000`, `backend-3001` | `backend-3000`, `backend-3001` (giống prod) |
 | Nginx nội bộ | `127.0.0.1:8080` | `127.0.0.1:8081` |
 | Redis | 3 container, cổng 16379–16381 | 3 container riêng, không mở cổng ra host |
 | Image trên VPS | `speaking-ai-backend:<sha>` | `speaking-ai-backend-dev:<sha>` |
@@ -93,14 +93,14 @@ certbot --nginx -d api-dev.hoamytech.com
 ```bash
 git checkout -b dev origin/can-bang-tai && git push -u origin dev
 ```
-Workflow `Deploy dev` tự chạy. Lần đầu nó dựng `backend` rồi tự bật `nginx` dev.
+Workflow `Deploy dev` tự chạy. Lần đầu nó dựng `backend-3000`, `backend-3001` rồi tự bật `nginx` dev.
 Kiểm tra: `curl -fsS https://api-dev.hoamytech.com/api/ready`.
 
 ## Hằng ngày
 
 - Code mới → PR vào `dev` (chạy Verify) → merge → tự deploy lên `api-dev`.
 - Test xong → PR `dev` → `can-bang-tai` → production.
-- Log: `cd /opt/homi/backend-dev && docker compose --env-file .env.compose -f docker-compose.dev.yml logs --tail=100 backend nginx`
+- Log: `cd /opt/homi/backend-dev && docker compose --env-file .env.compose -f docker-compose.dev.yml logs --tail=100 backend-3000 backend-3001 nginx`
 - Tag đang chạy: `cat /opt/homi/backend-dev/.deploy/current_tag`
 - Rollback dev: `HOMI_DEPLOY_ENV=dev /opt/homi/backend-dev/deploy/rollback.sh [tag]`
 - Khởi động lại tay: luôn kèm tag đang chạy (`.env.compose` chỉ có `local`, image đó không tồn tại):
@@ -129,4 +129,4 @@ BACKEND_IMAGE_TAG=$(cat .deploy/current_tag) docker compose --env-file .env.comp
 Tag trước khi có CI worker (`efade07…`) được build tay trên VPS.
 Worker không có cổng HTTP; kiểm tra bằng heartbeat:
 `docker exec speaking-ai-dev-redis-jobs-1 redis-cli --no-auth-warning keys 'speaking-ai-audio-jobs:worker:*'`.
-Tắt: đặt lại cờ `false`, `docker compose … stop audio-worker` và recreate `backend`.
+Tắt: đặt lại cờ `false`, `docker compose … stop audio-worker` và recreate `backend-3000`, `backend-3001`.
