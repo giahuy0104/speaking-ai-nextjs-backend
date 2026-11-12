@@ -6,6 +6,23 @@ import type { CloudflareTask } from "./types";
 type Metadata = { task: CloudflareTask; model: string; timeoutMs: number; stream?: boolean; parentRequestId?: string };
 type Runtime = { acquireLegacyExecution: typeof acquireLegacyExecution };
 
+const CLOUDFLARE_API_ORIGIN = "https://api.cloudflare.com";
+const inferencePrefix = (accountId: string) => `/client/v4/accounts/${accountId}/ai/`;
+
+/**
+ * Legacy callers build URLs for the legacy account. Point the URL at the account
+ * the dispatcher granted; any other origin or account is a configuration fault.
+ */
+function inferenceUrlFor(url: string, legacyAccountId: string, grantedAccountId: string): string {
+  const target = new URL(url);
+  const source = inferencePrefix(legacyAccountId);
+  if (target.origin !== CLOUDFLARE_API_ORIGIN || !target.pathname.toLowerCase().startsWith(source)) {
+    throw new PoolError("configuration");
+  }
+  if (grantedAccountId === legacyAccountId) return url;
+  return `${CLOUDFLARE_API_ORIGIN}${inferencePrefix(grantedAccountId)}${target.pathname.slice(source.length)}${target.search}`;
+}
+
 /** Only inference calls use this transport. Storage downloads do not consume AI quota. */
 export function createLegacyCloudflareFetch(runtime: Runtime = { acquireLegacyExecution }) {
   return async (url: string, init: RequestInit, metadata: Metadata): Promise<Response> => {
@@ -28,16 +45,15 @@ export function createLegacyCloudflareFetch(runtime: Runtime = { acquireLegacyEx
     let delivered = false;
     let rejectedResponse: Response | undefined;
     const execution = handle.execution;
+    const legacyAccountId = handle.legacyAccountId;
     const dispatch = execution.dispatcher.execute({ context: execution, operation: `legacy_${metadata.task}`,
       model: metadata.model, timeoutMs: metadata.timeoutMs, accountIdentity: handle.accountIdentity }, async ({ account, signal }) => {
-      const target = new URL(url);
-      if (target.origin !== "https://api.cloudflare.com" ||
-          !target.pathname.startsWith(`/client/v4/accounts/${account.accountId}/ai/`)) throw new PoolError("configuration");
+      const requestUrl = inferenceUrlFor(url, legacyAccountId, account.accountId);
       let response: Response | undefined;
       try {
         const headers = new Headers(init.headers);
         headers.set("Authorization", `Bearer ${account.apiToken}`);
-        response = await fetch(url, { ...init, headers, signal });
+        response = await fetch(requestUrl, { ...init, headers, signal });
         if (!metadata.stream || !response.ok || !response.body) {
           const bytes = await response.arrayBuffer();
           const buffered = new Response(bytes.byteLength ? bytes : null, {

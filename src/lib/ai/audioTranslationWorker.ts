@@ -53,8 +53,10 @@ export async function startAudioTranslationWorker() {
         } finally { session.release(); }
       } catch (error) {
         const safe = isPoolFailure(error) ? publicPoolError(error) : error;
-        // Only retry a confirmed admission rejection. Network/provider timeout
-        // may still be running upstream and is never automatically repeated.
+        // Only retry the job on a confirmed admission rejection. Inside one job,
+        // the dispatcher may already have retried a transient provider fault once
+        // on another account (CLOUDFLARE_POOL_RETRY_TRANSIENT); the job itself never
+        // repeats inference that may still be running or billed upstream.
         const reason = safe instanceof AppError ? safe.details?.reason : undefined;
         const retryable = ["capacity", "queue_full", "queue_timeout"].includes(String(reason)) &&
           job.attemptsMade + 1 < 3 && Date.now() < job.data.expiresAt;

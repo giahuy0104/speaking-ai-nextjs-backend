@@ -5,19 +5,21 @@ import { createLegacyCloudflareFetch } from "./legacyAdmission";
 import { createPoolRuntime } from "./runtime";
 import { MemoryAdmissionStore } from "./memoryAdmissionStore";
 import { parsePoolConfig } from "./accountConfig";
-import { ASR_MODEL, poolEnv } from "./poolTestFixtures";
+import { ASR_MODEL, poolEnv, TEXT_MODEL } from "./poolTestFixtures";
 import { quotaRules } from "./quotaPolicy";
 import { getFailureDiagnostics } from "./providerError";
 import type { TelemetrySink } from "./telemetry";
 
 const tts = "@cf/deepgram/aura-1";
-function setup(overrides: Record<string, string> = {}, telemetry: TelemetrySink | null = () => {}) {
+function setup(overrides: Record<string, string> = {}, telemetry: TelemetrySink | null = () => {}, secondAccountHasLegacyModels = false) {
   const env: NodeJS.ProcessEnv = { ...poolEnv(), CLOUDFLARE_POOL_SHARE_LEGACY_ACCOUNT: "true", CLOUDFLARE_ACCOUNT_ID: "a".repeat(32),
     CLOUDFLARE_POOL_MAX_WAIT_MS: "50", CLOUDFLARE_POOL_MIN_ATTEMPT_MS: "1", ...overrides };
   const accounts = JSON.parse(env.CLOUDFLARE_ACCOUNTS_JSON!);
-  accounts[0].capabilities.tts = [tts, "xai/grok-tts"];
-  accounts[0].capabilities.text.push("@cf/qwen/qwen3-30b-a3b-fp8");
-  accounts[0].limits.tts = { rpm: 60, burst: 10, maxConcurrent: 2 };
+  for (const account of secondAccountHasLegacyModels ? accounts : accounts.slice(0, 1)) {
+    account.capabilities.tts = [tts, "xai/grok-tts"];
+    account.capabilities.text.push("@cf/qwen/qwen3-30b-a3b-fp8");
+    account.limits.tts = { rpm: 60, burst: 10, maxConcurrent: 2 };
+  }
   accounts[0].limits.accountMaxConcurrent = 1;
   env.CLOUDFLARE_ACCOUNTS_JSON = JSON.stringify(accounts);
   const store = new MemoryAdmissionStore();
@@ -206,4 +208,63 @@ test("all legacy ASR, text and TTS callers use shared admission and preserve the
   assert.equal((await speech.response.arrayBuffer()).byteLength, 2);
   assert.equal((await provider.requestTargetSpeech("Bonjour.", "fr")).byteLength, 2);
   assert.equal(inferences, 8);
+});
+
+const BALANCED = { CLOUDFLARE_POOL_ROUTE_LEGACY_ACCOUNT: "true", CLOUDFLARE_POOL_BALANCE_LEGACY_CALLS: "true" };
+const legacyUrl = (path: string, accountId = "a".repeat(32)) => `https://api.cloudflare.com/client/v4/accounts/${accountId}/ai/${path}`;
+type LegacyCall = { task: "asr" | "text" | "tts"; model: string; path: string };
+const LEGACY_CALLS: LegacyCall[] = [
+  { task: "tts", model: tts, path: `run/${tts}` },
+  { task: "asr", model: ASR_MODEL, path: `run/${ASR_MODEL}` },
+  { task: "text", model: TEXT_MODEL, path: "v1/chat/completions" },
+];
+
+/** Sends `count` sequential legacy calls and returns the account ID each one reached. */
+async function accountsReached(s: ReturnType<typeof setup>, call: LegacyCall, count = 4) {
+  const reached: string[] = [];
+  globalThis.fetch = async (input, init) => {
+    const accountId = /\/accounts\/([a-f0-9]{32})\/ai\//.exec(String(input))?.[1];
+    assert.ok(accountId, "inference URL keeps the account path");
+    assert.equal(String(input), legacyUrl(call.path, accountId));
+    assert.equal(new Headers(init?.headers).get("Authorization"), `Bearer test-token-${accountId[0]}`);
+    reached.push(accountId);
+    return Response.json({ result: { text: "ok" } });
+  };
+  for (let index = 0; index < count; index++) {
+    const response = await s.fetch(legacyUrl(call.path), { headers: { Authorization: "Bearer obsolete" } },
+      { task: call.task, model: call.model, timeoutMs: 1000 });
+    assert.equal(response.status, 200);
+  }
+  return [...new Set(reached)].sort();
+}
+
+test("balanced legacy ASR, text and TTS reach both accounts with each account's own URL and token", async t => {
+  const original = globalThis.fetch; t.after(() => { globalThis.fetch = original; });
+  const s = setup(BALANCED, () => {}, true); t.after(() => s.runtime.close());
+  for (const call of LEGACY_CALLS) {
+    assert.deepEqual(await accountsReached(s, call), ["a".repeat(32), "b".repeat(32)], call.task);
+  }
+});
+
+test("balanced legacy calls stay on the legacy account for models the second account does not declare", async t => {
+  const original = globalThis.fetch; t.after(() => { globalThis.fetch = original; });
+  const s = setup(BALANCED); t.after(() => s.runtime.close());
+  assert.deepEqual(await accountsReached(s, LEGACY_CALLS[0]), ["a".repeat(32)]);
+  assert.deepEqual(await accountsReached(s, LEGACY_CALLS[1]), ["a".repeat(32), "b".repeat(32)]);
+});
+
+test("legacy calls stay pinned to the legacy account unless balancing is enabled", async t => {
+  const original = globalThis.fetch; t.after(() => { globalThis.fetch = original; });
+  const s = setup({ CLOUDFLARE_POOL_ROUTE_LEGACY_ACCOUNT: "true" }, () => {}, true); t.after(() => s.runtime.close());
+  for (const call of LEGACY_CALLS) assert.deepEqual(await accountsReached(s, call), ["a".repeat(32)], call.task);
+});
+
+test("balanced legacy calls refuse an inference URL that is not for the legacy account", async t => {
+  const original = globalThis.fetch; t.after(() => { globalThis.fetch = original; });
+  const s = setup(BALANCED, () => {}, true); t.after(() => s.runtime.close());
+  let calls = 0; globalThis.fetch = async () => { calls++; return Response.json({}); };
+  for (const target of [legacyUrl(`run/${tts}`, "c".repeat(32)), `https://example.com/client/v4/accounts/${"a".repeat(32)}/ai/run/${tts}`]) {
+    await assert.rejects(s.fetch(target, {}, { task: "tts", model: tts, timeoutMs: 1000 }), { code: "TTS_FAILED" });
+  }
+  assert.equal(calls, 0);
 });

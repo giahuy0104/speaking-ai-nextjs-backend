@@ -60,6 +60,7 @@ export function configureDeployment(env, role = "web") {
   const routeLegacy = flag(env, "CLOUDFLARE_POOL_ROUTE_LEGACY_ACCOUNT");
   if ((cache || jobs || sharedLegacy) && !pool) fail("CLOUDFLARE_AUDIO_TRANSLATION_POOL_ENABLED", "required_by_enabled_features");
   if (routeLegacy && !sharedLegacy) fail("CLOUDFLARE_POOL_ROUTE_LEGACY_ACCOUNT", "requires_shared_legacy_quota");
+  if (flag(env, "CLOUDFLARE_POOL_BALANCE_LEGACY_CALLS") && !routeLegacy) fail("CLOUDFLARE_POOL_BALANCE_LEGACY_CALLS", "requires_legacy_routing");
   if (role === "worker" && !jobs) fail("AUDIO_TRANSLATION_JOBS_ENABLED", "required_for_worker");
   // Preserve the explicit Compose load-test migration; never silently share legacy quota.
   if (flag(env, "CLOUDFLARE_POOL_ALLOW_LEGACY_ACCOUNT_LOCAL_TEST")) {

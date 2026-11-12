@@ -117,6 +117,11 @@ export function parsePoolConfig(env: PoolEnvironment = process.env): PoolConfig 
   if (routingValue && routingValue !== "true" && routingValue !== "false") fail("invalid_legacy_routing_flag");
   const routeLegacyAccount = routingValue === "true";
   if (routeLegacyAccount && !shareLegacyAccount) fail("legacy_routing_requires_shared_quota");
+  // Stage 3: unpin legacy callers so they can use every account that declares the model.
+  const balancingValue = env.CLOUDFLARE_POOL_BALANCE_LEGACY_CALLS?.trim().toLowerCase();
+  if (balancingValue && balancingValue !== "true" && balancingValue !== "false") fail("invalid_legacy_balancing_flag");
+  const balanceLegacyCalls = balancingValue === "true";
+  if (balanceLegacyCalls && !routeLegacyAccount) fail("legacy_balancing_requires_routing");
   if (shareLegacyAccount && allowLegacyAccountLocalTest) fail("conflicting_shared_account_flags");
   if (allowLegacyAccountLocalTest && env.NODE_ENV && env.NODE_ENV !== "development" && env.NODE_ENV !== "test") {
     fail("local_shared_account_requires_development");
@@ -237,18 +242,26 @@ export function parsePoolConfig(env: PoolEnvironment = process.env): PoolConfig 
   const maxAttemptsPerStage = envInteger(env, "CLOUDFLARE_POOL_MAX_ATTEMPTS_PER_STAGE", 2, 2);
   const maxAttemptsPerRequest = envInteger(env, "CLOUDFLARE_POOL_MAX_ATTEMPTS_PER_REQUEST", 3, 3);
   const minAttemptMs = envInteger(env, "CLOUDFLARE_POOL_MIN_ATTEMPT_MS", 250, 30_000);
+  // Retry an attempt timeout, network failure or HTTP 5xx once on another account.
+  // A cancelled fetch may still be billed upstream; "false" restores V1 behaviour.
+  const retryTransientValue = env.CLOUDFLARE_POOL_RETRY_TRANSIENT?.trim().toLowerCase();
+  if (retryTransientValue && retryTransientValue !== "true" && retryTransientValue !== "false") fail("invalid_feature_flag");
+  const retryTransientFaults = retryTransientValue !== "false";
   const suppliedVersion = env.CLOUDFLARE_POOL_CONFIG_VERSION?.trim();
   if (suppliedVersion && !/^[a-zA-Z0-9._-]{1,64}$/.test(suppliedVersion)) fail("invalid_config_version");
   const configVersion = suppliedVersion || createHash("sha256").update(JSON.stringify({
     accounts: accounts.map(({ identity, alias, enabled, capabilities, limits }) => ({ identity, alias, enabled, capabilities, limits })),
     store, namespace, maxAttemptsPerStage, maxAttemptsPerRequest, maxWaitMs, maxInFlight, maxQueued, maxBufferedBytes, minAttemptMs, textBacklogThreshold,
+    retryTransientFaults,
     allowLegacyAccountLocalTest,
     shareLegacyAccount,
     routeLegacyAccount,
+    balanceLegacyCalls,
   })).digest("hex").slice(0, 16);
   return Object.freeze({
     accounts: Object.freeze(accounts), store, redisUrl, namespace, configVersion,
-    ...(legacyAccount ? { legacyAccountIdentity: legacyAccount.identity, routeLegacyAccount } : {}),
+    ...(legacyAccount ? { legacyAccountIdentity: legacyAccount.identity, routeLegacyAccount, balanceLegacyCalls } : {}),
     maxAttemptsPerStage, maxAttemptsPerRequest, maxWaitMs, maxInFlight, maxQueued, maxBufferedBytes, minAttemptMs, textBacklogThreshold,
+    retryTransientFaults,
   });
 }

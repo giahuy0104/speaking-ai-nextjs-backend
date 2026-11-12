@@ -156,6 +156,9 @@ export async function handleAudioTranslation(request: Request, options: { forceA
       requestId,
       onState: state => { requestStage = state; },
       onSharedWork: leaderId => { sharedWorkRequestId = leaderId; },
+      onSharedWorkRetry: error => logEvent("info", "audio_translation_shared_work_retry", {
+        requestId, ...(sharedWorkRequestId ? { sharedWorkRequestId } : {}), ...getFailureDiagnostics(error),
+      }),
       onWorkCancelled: () => logEvent("info", "audio_translation_work_cancelled", {
         requestId, requestStage, failureSource: "backend", abortCause: "no_subscribers",
         providerCallStarted: providerAttempts > 0,

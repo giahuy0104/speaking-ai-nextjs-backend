@@ -5,7 +5,8 @@ import { AccountDispatcher } from "./dispatcher";
 import { createDeadline } from "./deadline";
 import { MemoryAdmissionStore } from "./memoryAdmissionStore";
 import { PoolError, ProviderFault } from "./providerError";
-import { ASR_MODEL, poolConfig, TEXT_MODEL } from "./poolTestFixtures";
+import { ASR_MODEL, poolConfig, poolEnv, TEXT_MODEL } from "./poolTestFixtures";
+import { parsePoolConfig } from "./accountConfig";
 import type { AdmissionStore, CloudflareExecutionContext, PoolConfig } from "./types";
 
 function harness(store: AdmissionStore = new MemoryAdmissionStore(), config: PoolConfig = poolConfig()) {
@@ -28,14 +29,115 @@ test("429 retries another account once and text retries cannot repeat completed 
   await assert.rejects(dispatcher.execute({ context, operation: "audio_translation_text", model: TEXT_MODEL }, async () => "extra"), { reason: "attempt_budget" });
 });
 
-test("timeouts, network, input, credentials and callback errors do not retry", async () => {
+test("with transient retry disabled, timeouts, network, input, credentials and callback errors do not retry", async () => {
   for (const error of [new ProviderFault("timeout"), new ProviderFault("network_error"),
     new ProviderFault("provider_error", 400), new ProviderFault("provider_error", 503),
     new ProviderFault("credentials", 401), new Error("callback failed")]) {
+    const { dispatcher, context } = harness(undefined, { ...poolConfig(), retryTransientFaults: false }); let calls = 0;
+    await assert.rejects(dispatcher.execute({ context, operation: "audio_translation_asr", model: ASR_MODEL }, async () => { calls++; throw error; }), e => e === error);
+    assert.equal(calls, 1);
+  }
+});
+
+test("transient retry is on by default and can be disabled by configuration", () => {
+  assert.equal(poolConfig().retryTransientFaults, true);
+  assert.equal(parsePoolConfig({ ...poolEnv(), CLOUDFLARE_POOL_RETRY_TRANSIENT: "false" }).retryTransientFaults, false);
+  assert.throws(() => parsePoolConfig({ ...poolEnv(), CLOUDFLARE_POOL_RETRY_TRANSIENT: "sometimes" }));
+});
+
+test("input, credential, unknown-cause timeout and callback errors still do not retry", async () => {
+  for (const error of [new ProviderFault("timeout"), new ProviderFault("provider_error", 400),
+    new ProviderFault("provider_error", 422), new ProviderFault("credentials", 401),
+    new ProviderFault("invalid_response"), new ProviderFault("cancelled"), new Error("callback failed")]) {
     const { dispatcher, context } = harness(); let calls = 0;
     await assert.rejects(dispatcher.execute({ context, operation: "audio_translation_asr", model: ASR_MODEL }, async () => { calls++; throw error; }), e => e === error);
     assert.equal(calls, 1);
   }
+});
+
+test("network failures and HTTP 5xx retry once on the other account", async () => {
+  for (const error of [new ProviderFault("network_error"), new ProviderFault("provider_error", 503),
+    new ProviderFault("provider_error", 500)]) {
+    const { dispatcher, context } = harness(); const accounts: string[] = [];
+    assert.equal(await dispatcher.execute({ context, operation: "audio_translation_text", model: TEXT_MODEL }, async ({ account }) => {
+      accounts.push(account.alias); if (accounts.length === 1) throw error; return "English";
+    }), "English");
+    assert.equal(accounts.length, 2);
+    assert.notEqual(accounts[0], accounts[1]);
+  }
+});
+
+test("a hung text attempt times out and the retry on the other account succeeds without repeating ASR", async () => {
+  const { dispatcher, context, events } = harness(); let asr = 0; const accounts: string[] = [];
+  assert.equal(await dispatcher.execute({ context, operation: "audio_translation_asr", model: ASR_MODEL }, async () => { asr++; return "source"; }), "source");
+  assert.equal(await dispatcher.execute({ context, operation: "audio_translation_text", model: TEXT_MODEL, timeoutMs: 20 },
+    async ({ account, signal }) => {
+      accounts.push(account.alias);
+      if (accounts.length === 1) { await delay(200, undefined, { signal }).catch(() => undefined); return "late"; }
+      return "English";
+    }), "English");
+  assert.equal(asr, 1);
+  assert.deepEqual(accounts.length, 2);
+  assert.notEqual(accounts[0], accounts[1]);
+  assert.equal(context.attempts.used, 3);
+  assert.match(JSON.stringify(events), /"safeReason":"timeout"/);
+});
+
+test("both accounts failing returns the provider error after exactly one retry", async () => {
+  const { dispatcher, context } = harness(); let calls = 0;
+  await assert.rejects(dispatcher.execute({ context, operation: "audio_translation_text", model: TEXT_MODEL }, async () => {
+    calls++; throw new ProviderFault("provider_error", 503);
+  }), { reason: "provider_error", status: 503 });
+  assert.equal(calls, 2);
+});
+
+test("a transient retry never reuses the failed account and respects the request attempt budget", async () => {
+  const single = { ...poolConfig(), accounts: [poolConfig().accounts[0]] };
+  const one = harness(undefined, single); let calls = 0;
+  await assert.rejects(one.dispatcher.execute({ context: one.context, operation: "audio_translation_text", model: TEXT_MODEL }, async () => {
+    calls++; throw new ProviderFault("network_error");
+  }), { reason: "network_error" });
+  assert.equal(calls, 1);
+
+  const spent = harness(); calls = 0;
+  spent.context.attempts.used = spent.context.attempts.max - 1;
+  await assert.rejects(spent.dispatcher.execute({ context: spent.context, operation: "audio_translation_text", model: TEXT_MODEL }, async () => {
+    calls++; throw new ProviderFault("provider_error", 502);
+  }), { reason: "provider_error" });
+  assert.equal(calls, 1);
+});
+
+test("an uncertain completion cancels the retry but still reports the original timeout", async () => {
+  const store = new MemoryAdmissionStore(); store.complete = async () => { throw new Error("store down"); };
+  const { dispatcher, context } = harness(store); let calls = 0;
+  await assert.rejects(dispatcher.execute({ context, operation: "audio_translation_text", model: TEXT_MODEL, timeoutMs: 5 },
+    async () => { calls++; await delay(30); }), { reason: "timeout" });
+  assert.equal(calls, 1);
+});
+
+test("callers pinned to one account keep V1 behaviour: no transient cooldown", async () => {
+  const { dispatcher, context } = harness();
+  const accountIdentity = poolConfig().accounts[0].identity;
+  await assert.rejects(dispatcher.execute({ context, operation: "audio_translation_text", model: TEXT_MODEL, accountIdentity },
+    async () => { throw new ProviderFault("provider_error", 503); }), { reason: "provider_error" });
+  const fresh: CloudflareExecutionContext = { ...context, ...createDeadline(1000), attempts: { used: 0, max: 3 } };
+  assert.equal(await dispatcher.execute({ context: fresh, operation: "audio_translation_text", model: TEXT_MODEL, accountIdentity },
+    async () => "ok"), "ok");
+});
+
+test("a transient fault cools only the failed task/model on that account, briefly", async () => {
+  let now = Date.now(); const store = new MemoryAdmissionStore(() => now);
+  const config = { ...poolConfig(), accounts: [poolConfig().accounts[0]] };
+  const dispatcher = new AccountDispatcher(config, store, undefined, () => now);
+  const context = (): CloudflareExecutionContext => ({ requestId: "cooldown", workload: "audio-translate",
+    ...createDeadline(5000, undefined, now), attempts: { used: 0, max: 3 }, dispatcher });
+  await assert.rejects(dispatcher.execute({ context: context(), operation: "audio_translation_text", model: TEXT_MODEL },
+    async () => { throw new ProviderFault("provider_error", 503); }), { reason: "provider_error" });
+  // ASR on the same account is unaffected.
+  assert.equal(await dispatcher.execute({ context: context(), operation: "audio_translation_asr", model: ASR_MODEL }, async () => "asr"), "asr");
+  // Text on that account rests for about a second, then admits again.
+  now += 1_001;
+  assert.equal(await dispatcher.execute({ context: context(), operation: "audio_translation_text", model: TEXT_MODEL }, async () => "text"), "text");
 });
 
 test("client abort before admission makes zero calls and body read shares attempt deadline", async () => {
@@ -43,8 +145,9 @@ test("client abort before admission makes zero calls and body read shares attemp
   const cancelled = new AbortController(); cancelled.abort();
   await assert.rejects(dispatcher.execute({ context: { ...context, signal: cancelled.signal }, operation: "audio_translation_asr", model: ASR_MODEL }, async () => { calls++; }), { reason: "cancelled" });
   assert.equal(calls, 0);
+  // The attempt timeout is transient, so the other account gets one bounded retry.
   await assert.rejects(dispatcher.execute({ context, operation: "audio_translation_asr", model: ASR_MODEL, timeoutMs: 5 }, async () => { calls++; await delay(30); }), { reason: "timeout" });
-  assert.equal(calls, 1);
+  assert.equal(calls, 2);
 });
 
 test("deadline never resets on retry and too little time prevents additional inference", async () => {

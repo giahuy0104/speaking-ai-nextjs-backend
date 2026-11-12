@@ -112,7 +112,11 @@ export function createPoolRuntime(options: RuntimeOptions = {}) {
           emitTelemetry(sink, "cloudflare_pool_queued", { ...base, queueDepth }));
         const handle = session(input, timing, slot, workload);
         emitTelemetry(sink, "cloudflare_pool_request_admitted", { ...base, admissionWaitMs: slot.waitedMs });
-        return { ...handle, accountIdentity: current.legacyAccountIdentity };
+        // The caller built its URL for the legacy account; keep that ID so a
+        // balanced attempt can rewrite it to the account the dispatcher grants.
+        const legacyAccountId = current.accounts.find(account => account.identity === current.legacyAccountIdentity)!.accountId;
+        return { ...handle, legacyAccountId,
+          accountIdentity: current.balanceLegacyCalls ? undefined : current.legacyAccountIdentity };
       } catch (error) {
         emitTelemetry(sink, "cloudflare_pool_unavailable", { ...base, safeReason: error instanceof PoolError ? error.reason : "configuration" });
         throw error;

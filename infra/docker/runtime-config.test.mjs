@@ -80,3 +80,12 @@ test("actual startup loads an optional env file and preserves service variable p
     assert.equal(missing.status, 0, missing.stderr); assert.match(missing.stdout, /deployment_configuration_valid/);
   } finally { rmSync(root, { recursive: true, force: true }); }
 });
+test("legacy account balancing requires legacy routing and a true/false value", () => {
+  const shared = { CLOUDFLARE_POOL_SHARE_LEGACY_ACCOUNT: "true", CLOUDFLARE_POOL_ROUTE_LEGACY_ACCOUNT: "true" };
+  const env = pooled({ ...shared, CLOUDFLARE_POOL_BALANCE_LEGACY_CALLS: "TRUE" });
+  configureDeployment(env); assert.equal(env.CLOUDFLARE_POOL_BALANCE_LEGACY_CALLS, "true");
+  assert.throws(() => configureDeployment(pooled({ ...shared, CLOUDFLARE_POOL_ROUTE_LEGACY_ACCOUNT: "false",
+    CLOUDFLARE_POOL_BALANCE_LEGACY_CALLS: "true" })), /CLOUDFLARE_POOL_BALANCE_LEGACY_CALLS.*requires_legacy_routing/);
+  assert.throws(() => configureDeployment(pooled({ ...shared, CLOUDFLARE_POOL_BALANCE_LEGACY_CALLS: "yes" })),
+    /CLOUDFLARE_POOL_BALANCE_LEGACY_CALLS.*use_true_or_false/);
+});
