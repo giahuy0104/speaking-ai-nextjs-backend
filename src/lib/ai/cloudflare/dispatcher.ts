@@ -145,10 +145,12 @@ export class AccountDispatcher implements CloudflareDispatcher {
     const base = { requestId: context.requestId, workload: context.workload, stage: operation,
       model, configVersion: this.config.configVersion,
       ...(context.parentRequestId ? { parentRequestId: context.parentRequestId } : {}) };
+    // A stage-level pin (legacy callers) wins over an execution-level pin (dedicated job worker).
+    const pinnedIdentity = input.accountIdentity ?? context.accountIdentity;
     const eligible = this.config.accounts.filter(a => a.enabled && a.capabilities[task]?.includes(model) &&
-      (!input.accountIdentity || a.identity === input.accountIdentity) &&
-      (a.identity !== this.config.legacyAccountIdentity || this.config.routeLegacyAccount || input.accountIdentity === a.identity));
-    if (!eligible.length && input.accountIdentity) throw new PoolError("configuration");
+      (!pinnedIdentity || a.identity === pinnedIdentity) &&
+      (a.identity !== this.config.legacyAccountIdentity || this.config.routeLegacyAccount || pinnedIdentity === a.identity));
+    if (!eligible.length && pinnedIdentity) throw new PoolError("configuration");
     const offset = this.cursor++ % Math.max(1, eligible.length);
     const rotated = [...eligible.slice(offset), ...eligible.slice(0, offset)];
     const attempted = new Set<string>();
@@ -211,7 +213,7 @@ export class AccountDispatcher implements CloudflareDispatcher {
           // Rest only the failed task/model on this account, so its other work
           // continues and new requests prefer a healthy account meanwhile.
           // Callers pinned to one account (legacy admission) keep V1 behaviour.
-          if (!outcome.cooldownMs && !outcome.disable && !input.accountIdentity) {
+          if (!outcome.cooldownMs && !outcome.disable && !pinnedIdentity) {
             const scopeKeys = permit.ruleKeys.filter(key => key !== "account");
             if (scopeKeys.length) {
               outcome = { cooldownMs: TRANSIENT_COOLDOWN_MS, scopeKeys };

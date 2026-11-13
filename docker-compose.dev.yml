@@ -109,9 +109,13 @@ services:
     expose:
       - "3001"
 
-  # Durable BullMQ worker; needs AUDIO_TRANSLATION_JOBS_ENABLED=true in .env.local.
-  #   docker compose --env-file .env.compose -f docker-compose.dev.yml --profile jobs up -d audio-worker
-  audio-worker:
+  # Durable BullMQ workers; need AUDIO_TRANSLATION_JOBS_ENABLED=true in .env.local.
+  # One worker per Cloudflare account: all four pull from the same queue, but each
+  # sends every call to the account named in AUDIO_TRANSLATION_JOB_WORKER_ACCOUNT.
+  # A worker refuses to start if its account is missing or disabled in
+  # CLOUDFLARE_ACCOUNTS_JSON. Names must match WORKER_SERVICES in deploy/lib.sh.
+  #   docker compose --env-file .env.compose -f docker-compose.dev.yml --profile jobs up -d audio-worker-a audio-worker-b audio-worker-c audio-worker-d
+  audio-worker-a: &audio-worker
     image: speaking-ai-audio-worker-dev:${BACKEND_IMAGE_TAG:-local}
     pull_policy: never
     profiles: [jobs]
@@ -119,16 +123,17 @@ services:
     init: true
     secrets:
       - app_env
-    environment:
+    environment: &audio-worker-environment
       APP_RUNTIME: compose
       APP_ENV_FILE: /run/secrets/app_env
       PERSISTENCE_BACKEND: postgres
       CLOUDFLARE_POOL_STORE: redis
       AUDIO_TRANSLATION_JOB_SHARED_DIRECTORY: /app/data/audio-translation-jobs
       AUDIO_TRANSLATION_JOB_STORAGE: local
-      # Match the Cloudflare text concurrency (8 per account x 2 accounts).
-      # Higher only produces provider 429s; the code caps this at 20.
-      AUDIO_TRANSLATION_JOB_WORKER_CONCURRENCY: "16"
+      # Match one account's text concurrency (limits.text.maxConcurrent = 8).
+      # Higher only makes jobs wait for a permit inside the worker.
+      AUDIO_TRANSLATION_JOB_WORKER_CONCURRENCY: "8"
+      AUDIO_TRANSLATION_JOB_WORKER_ACCOUNT: audio-a
     volumes:
       - audio-job-files:/app/data/audio-translation-jobs
     depends_on:
@@ -139,11 +144,30 @@ services:
       redis-jobs:
         condition: service_healthy
     stop_grace_period: 75s
-    mem_limit: 512m
-    cpus: 1
+    # Four workers share the 4-core VPS with production; each is I/O bound.
+    mem_limit: 256m
+    cpus: 0.5
     logging:
       driver: json-file
       options: { max-size: "10m", max-file: "3" }
+
+  audio-worker-b:
+    <<: *audio-worker
+    environment:
+      <<: *audio-worker-environment
+      AUDIO_TRANSLATION_JOB_WORKER_ACCOUNT: audio-b
+
+  audio-worker-c:
+    <<: *audio-worker
+    environment:
+      <<: *audio-worker-environment
+      AUDIO_TRANSLATION_JOB_WORKER_ACCOUNT: audio-c
+
+  audio-worker-d:
+    <<: *audio-worker
+    environment:
+      <<: *audio-worker-environment
+      AUDIO_TRANSLATION_JOB_WORKER_ACCOUNT: audio-d
 
   nginx:
     image: nginx:1.30-alpine
