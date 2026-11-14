@@ -84,6 +84,8 @@ export type CloudflareExecutionContext = Readonly<{
   attempts: AttemptBudget;
   /** Shared by request admission and both stages; waiting never resets the deadline. */
   admissionWait?: { usedMs: number };
+  /** Pins every stage of this execution to one account (a job worker dedicated to it). */
+  accountIdentity?: string;
   dispatcher: CloudflareDispatcher;
 }>;
 

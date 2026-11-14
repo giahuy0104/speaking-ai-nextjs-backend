@@ -82,7 +82,7 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
       # Same GHCR repo, "<sha>-worker" tag: no extra package or permission needed.
-      # deploy.sh pulls it and recreates audio-worker only while that worker is running.
+      # deploy.sh pulls it and recreates only the audio-worker-* services that are running.
       - name: Build and push worker image (tag = commit SHA + -worker)
         uses: docker/build-push-action@v6
         with:

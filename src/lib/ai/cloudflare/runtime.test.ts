@@ -118,3 +118,26 @@ test("upload reservations cap counts and bytes before parsing and are released i
   const off = createPoolRuntime({ env: { CLOUDFLARE_AUDIO_TRANSLATION_POOL_ENABLED: "false", CLOUDFLARE_POOL_MAX_BUFFERED_BYTES: "broken" } });
   assert.equal(off.reserveAudioTranslationUpload({ requestId: "off", requestBytes: 1 }), undefined);
 });
+
+test("an account alias pins the execution to that account; unknown or disabled aliases are configuration errors", async () => {
+  const runtime = createPoolRuntime({ env: poolEnv(), storeFactory: () => new MemoryAdmissionStore() });
+  const pinned = (await runtime.acquireAudioTranslationExecution({ requestId: "pinned", accountAlias: "audio-b" }))!;
+  const used: string[] = [];
+  for (let call = 0; call < 2; call++) {
+    await pinned.execution.dispatcher.execute({ context: pinned.execution, operation: "audio_translation_asr", model: ASR_MODEL },
+      async ({ account }) => { used.push(account.alias); });
+  }
+  assert.deepEqual(used, ["audio-b", "audio-b"]);
+  pinned.release();
+  await assert.rejects(runtime.acquireAudioTranslationExecution({ requestId: "unknown", accountAlias: "audio-z" }), { reason: "configuration" });
+  await runtime.close();
+
+  const env = poolEnv();
+  env.CLOUDFLARE_ACCOUNTS_JSON = JSON.stringify(JSON.parse(env.CLOUDFLARE_ACCOUNTS_JSON!).map(
+    (account: { alias: string }) => account.alias === "audio-b" ? { ...account, enabled: false } : account));
+  const withDisabled = createPoolRuntime({ env, storeFactory: () => new MemoryAdmissionStore() });
+  await assert.rejects(withDisabled.acquireAudioTranslationExecution({ requestId: "disabled", accountAlias: "audio-b" }), { reason: "configuration" });
+  const unpinned = (await withDisabled.acquireAudioTranslationExecution({ requestId: "unpinned" }))!;
+  assert.equal(unpinned.execution.accountIdentity, undefined);
+  unpinned.release(); await withDisabled.close();
+});

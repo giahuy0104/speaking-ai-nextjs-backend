@@ -34,8 +34,9 @@ case "$DEPLOY_ENV" in
     # First CI deploy: nginx depends on a healthy backend, so start it once if absent.
     ENSURE_UP=(nginx)
     # BullMQ worker (Compose profile "jobs"). Updated only while it is already running,
-    # so turning jobs off (flag false + `stop audio-worker`) survives later deploys.
-    WORKER_SERVICES=(audio-worker)
+    # so turning jobs off (flag false + stopping the workers) survives later deploys.
+    # One worker per Cloudflare account; names match docker-compose.dev.yml.
+    WORKER_SERVICES=(audio-worker-a audio-worker-b audio-worker-c audio-worker-d)
     LOCAL_WORKER_REPO="speaking-ai-audio-worker-dev"
     PROFILE_ARGS=(--profile jobs)
     ;;

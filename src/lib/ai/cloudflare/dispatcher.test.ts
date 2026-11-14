@@ -420,3 +420,31 @@ test("cancelling the head wakes its successor and returns all queue places", asy
   assert.equal(contexts.get("next-a")!.attempts.used, 0);
   assert.equal(contexts.get("next-b")!.attempts.used, 0);
 });
+
+test("an execution pinned to one account runs every stage there and never retries on another account", async () => {
+  const { dispatcher, context } = harness();
+  const pinnedAccount = poolConfig().accounts[1];
+  const pinned: CloudflareExecutionContext = { ...context, accountIdentity: pinnedAccount.identity };
+  const used: string[] = [];
+  for (const [operation, model] of [["audio_translation_asr", ASR_MODEL], ["audio_translation_text", TEXT_MODEL]] as const) {
+    await dispatcher.execute({ context: pinned, operation, model }, async ({ account }) => { used.push(account.alias); return "ok"; });
+  }
+  assert.deepEqual(used, [pinnedAccount.alias, pinnedAccount.alias]);
+
+  const failing: CloudflareExecutionContext = { ...pinned, ...createDeadline(1000), attempts: { used: 0, max: 3 } };
+  let calls = 0;
+  await assert.rejects(dispatcher.execute({ context: failing, operation: "audio_translation_text", model: TEXT_MODEL },
+    async ({ account }) => { calls++; assert.equal(account.alias, pinnedAccount.alias); throw new ProviderFault("provider_error", 503); }),
+    { reason: "provider_error" });
+  assert.equal(calls, 1);
+});
+
+test("a provider 429 on a pinned execution is reported as rate limited instead of moving to another account", async () => {
+  const { dispatcher, context } = harness();
+  const pinnedAccount = poolConfig().accounts[0];
+  const pinned: CloudflareExecutionContext = { ...context, accountIdentity: pinnedAccount.identity };
+  const used: string[] = [];
+  await assert.rejects(dispatcher.execute({ context: pinned, operation: "audio_translation_asr", model: ASR_MODEL },
+    async ({ account }) => { used.push(account.alias); throw new ProviderFault("rate_limited", 429); }), { reason: "rate_limited" });
+  assert.deepEqual(used, [pinnedAccount.alias]);
+});
