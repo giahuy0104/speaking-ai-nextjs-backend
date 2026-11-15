@@ -2,7 +2,7 @@ import { createHash, randomUUID } from "node:crypto";
 import { Queue, createNodeRedisClient } from "bullmq";
 import { createClient } from "redis";
 import { AppError } from "../appError";
-import { cacheEnabled, translationCacheKey } from "./audioTranslationCache";
+import { cacheEnabled, sharedTextCacheEnabled, translationCacheKey } from "./audioTranslationCache";
 import { redisEndpointIdentity } from "./cloudflare/redisClient";
 import { storeJobAudio, type JobAudio } from "./audioTranslationJobStorage";
 import type { AudioTranslationCheckpoint, AudioTranslationResult } from "./cloudflareWorkersAi";
@@ -24,7 +24,7 @@ export function jobRedisUrl() {
   if (!value || !/^[a-zA-Z0-9:_-]{1,100}$/.test(prefix())) throw unavailable();
   try {
     const endpoint = redisEndpointIdentity(value);
-    for (const other of [process.env.CLOUDFLARE_POOL_REDIS_URL, cacheEnabled() ? process.env.AUDIO_TRANSLATION_CACHE_REDIS_URL : undefined]) {
+    for (const other of [process.env.CLOUDFLARE_POOL_REDIS_URL, cacheEnabled() || sharedTextCacheEnabled() ? process.env.AUDIO_TRANSLATION_CACHE_REDIS_URL : undefined]) {
       if (other && endpoint === redisEndpointIdentity(other)) throw unavailable();
     }
   } catch { throw unavailable(); }

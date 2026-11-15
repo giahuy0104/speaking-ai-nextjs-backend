@@ -47,6 +47,7 @@ export async function startAudioTranslationWorker() {
               await job.updateData({ ...job.data, providerAttempts: session.execution.attempts.used,
                 phase: stage === "asr" ? "asr_inflight" : "text_inflight" });
             },
+            onProviderFallback: fallback => console.info(JSON.stringify({ event: "audio_translation_provider_fallback", jobId: job.id, ...fallback })),
             async onCheckpoint(checkpoint) {
               await job.updateData({ ...job.data, checkpoint, phase: "ready_text", providerAttempts: session.execution.attempts.used });
               await job.updateProgress({ stage: "text_translation" });
@@ -78,7 +79,14 @@ export async function startAudioTranslationWorker() {
         const reason = safe instanceof AppError ? safe.details?.reason : undefined;
         const retryable = ["capacity", "queue_full", "queue_timeout"].includes(String(reason)) &&
           job.attemptsMade + 1 < 3 && Date.now() < job.data.expiresAt;
-        if (retryable) throw new Error("admission_busy");
+        if (retryable) {
+          // An earlier provider in the fallback order may have marked this job in-flight
+          // before Cloudflare rejected at admission. Every call of this attempt has
+          // settled, so clear the marker or the retry is refused as a crashed inference.
+          await job.updateData({ ...job.data, phase: job.data.checkpoint ? "ready_text" : undefined,
+            ...(providerAttempts ? { providerAttempts: providerAttempts.used } : {}) });
+          throw new Error("admission_busy");
+        }
         terminal = true;
         throw new UnrecoverableError(safe instanceof AppError ? safe.code : "job_failed");
       } finally {

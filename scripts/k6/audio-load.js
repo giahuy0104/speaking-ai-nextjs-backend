@@ -65,7 +65,9 @@ const cacheHit = new Rate("audio_cache_hit");
 const failures = new Counter("audio_flow_failures");
 
 function scenario() {
-  const base = { preAllocatedVUs: Math.min(MAX_VUS, Math.max(10, RATE * 2)), maxVUs: MAX_VUS, timeUnit: "1s", exec: "audioFlow" };
+  // Let in-flight flows finish: a job can be polled for JOB_TIMEOUT_S after the last start.
+  const gracefulStop = `${(MODE === "jobs" ? JOB_TIMEOUT_S : 40) + 30}s`;
+  const base = { preAllocatedVUs: Math.min(MAX_VUS, Math.max(10, RATE * 2)), maxVUs: MAX_VUS, timeUnit: "1s", exec: "audioFlow", gracefulStop };
   if (PROFILE === "constant") return { ...base, executor: "constant-arrival-rate", rate: RATE, duration: DURATION };
   return { ...base, executor: "ramping-arrival-rate", startRate: 1,
     stages: [{ target: RATE, duration: DURATION }, { target: RATE, duration: DURATION }, { target: 0, duration: "10s" }] };

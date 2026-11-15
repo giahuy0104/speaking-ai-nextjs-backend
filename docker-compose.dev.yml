@@ -62,6 +62,8 @@ services:
       CLOUDFLARE_POOL_STORE: redis
       AUDIO_TRANSLATION_JOB_SHARED_DIRECTORY: /app/data/audio-translation-jobs
       AUDIO_TRANSLATION_JOB_STORAGE: local
+      # One translation per sentence for every client (skips the text model on repeats).
+      AUDIO_TRANSLATION_SHARED_TEXT_CACHE_ENABLED: "true"
       # Burst intake for the jobs path (accept 1000 submissions in ~1s, process
       # from the queue). These override .env.local: start.mjs never overwrites
       # variables that are already set.
@@ -130,6 +132,8 @@ services:
       CLOUDFLARE_POOL_STORE: redis
       AUDIO_TRANSLATION_JOB_SHARED_DIRECTORY: /app/data/audio-translation-jobs
       AUDIO_TRANSLATION_JOB_STORAGE: local
+      # One translation per sentence for every client (skips the text model on repeats).
+      AUDIO_TRANSLATION_SHARED_TEXT_CACHE_ENABLED: "true"
       # Match one account's text concurrency (limits.text.maxConcurrent = 8).
       # Higher only makes jobs wait for a permit inside the worker.
       AUDIO_TRANSLATION_JOB_WORKER_CONCURRENCY: "8"

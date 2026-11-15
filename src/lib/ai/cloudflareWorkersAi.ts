@@ -3,7 +3,10 @@ import { translateVietnameseWithCloudflare, CloudflareTextProviderError } from "
 import { isEnglishAudioTranslation, isSuspiciousAudioTranscript } from "./audioTranslationQuality";
 import { assertVietnameseTranscriptIsUsable } from "./vietnameseTranscriptValidation";
 import type { CloudflareExecutionContext } from "./cloudflare/types";
-import { audioTranslationCache, audioTranslationInstructions, cacheEnabled, translationCacheKey } from "./audioTranslationCache";
+import {
+  AUDIO_TRANSLATION_MAX_TOKENS, audioTranslationCache, audioTranslationInstructions, cacheEnabled, sharedTextCacheEnabled,
+  sharedTextCacheKey, sharedTextCacheTtlSeconds, translationCacheKey,
+} from "./audioTranslationCache";
 import { trimPcmWav } from "../audio/trimPcmWav";
 import { timeoutSignal } from "./cloudflare/abortDiagnostics";
 import { fetchLegacyCloudflare } from "./cloudflare/legacyAdmission";
@@ -21,6 +24,9 @@ import {
   classifyCloudflareTranscriptionResponse,
   type CloudflareWorkersAiEnvelope,
 } from "./cloudflareWorkersAiRequest";
+import {
+  resolveAudioProviders, toDeepInfraAppError, transcribeWithDeepInfra, translateWithDeepInfra, type AudioProvider,
+} from "./deepInfra";
 
 const DEFAULT_MODEL = "@cf/openai/whisper-large-v3-turbo";
 const DEFAULT_TIMEOUT_MS = 6_000;
@@ -43,10 +49,23 @@ export type AudioTranslationOptions = {
   execution?: CloudflareExecutionContext;
   preparedAudio?: ArrayBuffer;
   cacheScope?: string;
+  /** Sentence-level translation cache; defaults to the Redis-backed one. */
+  textCache?: Pick<typeof audioTranslationCache, "get" | "set">;
   checkpoint?: AudioTranslationCheckpoint;
   onCheckpoint?: (checkpoint: AudioTranslationCheckpoint) => void | Promise<void>;
   beforeProviderCall?: (stage: "asr" | "text") => Promise<void>;
+  /** Called when a stage moves on to its next provider (for logging only). */
+  onProviderFallback?: (event: ProviderFallbackEvent) => void;
 };
+
+export type ProviderFallbackEvent = Readonly<{
+  stage: "asr" | "text";
+  from: AudioProvider;
+  to: AudioProvider;
+  status?: number;
+  reason?: unknown;
+  upstreamStatus?: unknown;
+}>;
 
 export type AudioTranscriptionResult = {
   vietnameseText: string;
@@ -126,6 +145,35 @@ export async function translateAudioToEnglish(
     }
     return translateAudioTranscript(options.checkpoint, options);
   }
+  const asrProviders = resolveAudioProviders("asr");
+  // Batch translation must tolerate provider queueing under load. Keep the
+  // interactive ASR budget independent, and stay below the route's 35s limit.
+  const timeoutMs = Math.min(30_000, positiveInteger("CLOUDFLARE_AUDIO_TRANSLATION_TIMEOUT_MS", 20_000));
+  const signal = options.execution?.signal ?? timeoutSignal(timeoutMs, "request_deadline");
+  const startedAt = performance.now();
+  const originalAudio = options.preparedAudio ?? await audio.arrayBuffer();
+  const providerAudio = process.env.AUDIO_TRANSLATION_TRIM_WAV === "true" ? trimPcmWav(originalAudio).bytes : originalAudio;
+  const run: AsrRun = { audio, providerAudio, sourceLanguage, signal, startedAt, timeoutMs, options };
+  // Only the ASR call falls back; transcript checks below run once on the result.
+  const transcription = await withProviderFallback("asr", asrProviders, signal, options, provider =>
+    provider === "deepinfra" ? transcribeAudioWithDeepInfra(run) : transcribeAudioWithCloudflare(run));
+  return completeAudioTranscription({ ...transcription, sourceLanguage, startedAt, signal, options });
+}
+
+type AsrRun = {
+  audio: File;
+  providerAudio: ArrayBuffer;
+  sourceLanguage: string;
+  signal: AbortSignal;
+  startedAt: number;
+  timeoutMs: number;
+  options: AudioTranslationOptions;
+};
+
+type ProviderTranscription = { provider: AudioProvider; sourceText: string; segments: unknown[]; model: string };
+
+async function transcribeAudioWithCloudflare(run: AsrRun): Promise<ProviderTranscription> {
+  const { providerAudio, sourceLanguage, signal, startedAt, timeoutMs, options } = run;
   const execution = options.execution;
   // Pooled requests resolve the same model without requiring legacy secrets.
   const legacyConfig = execution ? undefined : getCloudflareAudioTranslationConfig();
@@ -133,16 +181,6 @@ export async function translateAudioToEnglish(
   if (!/^@cf\/[a-z0-9._-]+\/[a-z0-9._-]+$/i.test(model)) {
     throw new AppError("ASR_FAILED", "Model Cloudflare Workers AI không hợp lệ.", 500);
   }
-  // Batch translation must tolerate provider queueing under load. Keep the
-  // interactive ASR budget independent, and stay below the route's 35s limit.
-  const timeoutMs = Math.min(
-    30_000,
-    positiveInteger("CLOUDFLARE_AUDIO_TRANSLATION_TIMEOUT_MS", 20_000),
-  );
-  const signal = execution?.signal ?? timeoutSignal(timeoutMs, "request_deadline");
-  const startedAt = performance.now();
-  const originalAudio = options.preparedAudio ?? await audio.arrayBuffer();
-  const providerAudio = process.env.AUDIO_TRANSLATION_TRIM_WAV === "true" ? trimPcmWav(originalAudio).bytes : originalAudio;
   const body = buildCloudflareAudioTranslationBody(
     providerAudio,
     sourceLanguage,
@@ -260,22 +298,91 @@ export async function translateAudioToEnglish(
     );
   }
 
+  return { provider: "cloudflare", sourceText, segments: Array.isArray(result?.segments) ? result.segments : [], model };
+}
+
+type CompletedTranscription = ProviderTranscription & {
+  sourceLanguage: string;
+  startedAt: number;
+  signal: AbortSignal;
+  options: AudioTranslationOptions;
+};
+
+/** Provider-independent transcript checks, checkpoint and hand-off to translation. */
+async function completeAudioTranscription(input: CompletedTranscription): Promise<AudioTranslationResult> {
+  const { provider, sourceText, segments, sourceLanguage, model, startedAt, signal, options } = input;
   if (!sourceText) {
     throw new AppError("ASR_LOW_CONFIDENCE", "Không nghe rõ lời nói trong audio. Vui lòng ghi âm lại.", 422,
-      { provider: "cloudflare", reason: "empty_transcript" });
+      { provider, reason: "empty_transcript" });
   }
   if (sourceLanguage === "vi") {
-    assertVietnameseTranscriptIsUsable(sourceText, Array.isArray(result?.segments) ? result.segments : []);
+    assertVietnameseTranscriptIsUsable(sourceText, segments);
   }
   if (isSuspiciousAudioTranscript(sourceText)) {
     throw new AppError("ASR_LOW_CONFIDENCE", "Không nghe rõ nội dung audio. Vui lòng ghi âm lại.", 422,
-      { provider: "cloudflare", reason: "suspicious_transcript" });
+      { provider, reason: "suspicious_transcript" });
   }
   const asrMs = Math.round(performance.now() - startedAt);
   const checkpoint: AudioTranslationCheckpoint = { sourceText, sourceLanguage, model, asrMs,
-    policyKey: translationCacheKey("checkpoint", sourceLanguage, "text", ""), providerAttempts: execution?.attempts.used ?? 1 };
+    policyKey: translationCacheKey("checkpoint", sourceLanguage, "text", ""),
+    providerAttempts: options.execution?.attempts.used ?? 1 };
   await options.onCheckpoint?.(checkpoint);
   return translateAudioTranscript(checkpoint, options, signal);
+}
+
+/**
+ * DeepInfra Whisper call. The caller's admission session (if any) is still acquired
+ * and bounds concurrency - the job worker still requires the Cloudflare pool - but
+ * this call never takes a Cloudflare account permit.
+ */
+async function transcribeAudioWithDeepInfra(run: AsrRun): Promise<ProviderTranscription> {
+  const { audio, providerAudio, sourceLanguage, signal, startedAt, options } = run;
+  await options.beforeProviderCall?.("asr");
+  try {
+    const transcription = await transcribeWithDeepInfra(new Blob([providerAudio], { type: audio.type }), audio.name,
+      sourceLanguage, { signal });
+    return { provider: "deepinfra", sourceText: transcription.text, segments: transcription.segments, model: transcription.model };
+  } catch (error) {
+    throw toDeepInfraAppError(error, "asr", performance.now() - startedAt);
+  }
+}
+
+/**
+ * A provider outage, overload, timeout or misconfiguration moves on to the next
+ * provider. Unclear speech (4xx) and an expired request never do: another
+ * provider would only add cost or outlive the caller's deadline.
+ */
+function shouldFallBack(error: unknown) {
+  if (isPoolFailure(error)) return true;
+  return error instanceof AppError && (error.code === "ASR_FAILED" || error.code === "LLM_FAILED") &&
+    (error.status === 429 || error.status >= 500);
+}
+
+async function withProviderFallback<T>(
+  stage: "asr" | "text",
+  providers: readonly AudioProvider[],
+  signal: AbortSignal,
+  options: AudioTranslationOptions,
+  run: (provider: AudioProvider) => Promise<T>,
+): Promise<T> {
+  for (const [index, provider] of providers.entries()) {
+    try {
+      return await run(provider);
+    } catch (error) {
+      const next = providers[index + 1];
+      if (!next || signal.aborted || !shouldFallBack(error)) throw error;
+      // Telemetry must never turn a working fallback into a failure.
+      try {
+        options.onProviderFallback?.({
+          stage, from: provider, to: next,
+          ...(error instanceof AppError
+            ? { status: error.status, reason: error.details?.reason, upstreamStatus: error.details?.upstreamStatus }
+            : { reason: getFailureDiagnostics(error).failureSource }),
+        });
+      } catch { /* best-effort */ }
+    }
+  }
+  throw new AppError(stage === "asr" ? "ASR_FAILED" : "LLM_FAILED", "Chưa cấu hình nhà cung cấp AI.", 500);
 }
 
 async function translateAudioTranscript(checkpoint: AudioTranslationCheckpoint, options: AudioTranslationOptions, inheritedSignal?: AbortSignal): Promise<AudioTranslationResult> {
@@ -283,37 +390,26 @@ async function translateAudioTranscript(checkpoint: AudioTranslationCheckpoint, 
   const execution = options.execution;
   const signal = execution?.signal ?? inheritedSignal ?? timeoutSignal(20_000, "request_deadline");
   const startedAt = performance.now();
-  const textCacheKey = options.cacheScope && cacheEnabled()
-    ? translationCacheKey(options.cacheScope, sourceLanguage, "text", sourceText) : undefined;
-  const cachedText = textCacheKey && sourceLanguage !== "en" ? await audioTranslationCache.get(textCacheKey) : null;
+  const textCache = options.textCache ?? audioTranslationCache;
+  // Shared: one entry per sentence for every client, so no client scope is needed.
+  const sharedText = sharedTextCacheEnabled();
+  const textCacheKey = sharedText ? sharedTextCacheKey(sourceLanguage, sourceText)
+    : options.cacheScope && cacheEnabled() ? translationCacheKey(options.cacheScope, sourceLanguage, "text", sourceText) : undefined;
+  const cachedText = textCacheKey && sourceLanguage !== "en" ? await textCache.get(textCacheKey) : null;
   let englishText = cachedText?.englishText ?? sourceText;
   const translationStartedAt = performance.now();
   let textModel: string | undefined = cachedText?.textModel;
+  const textProviders = resolveAudioProviders("text");
   if (sourceLanguage !== "en" && !cachedText) {
-    try {
-      const translated = await translateVietnameseWithCloudflare(
-        sourceText,
-        audioTranslationInstructions(sourceLanguage),
-        256,
-        { signal, execution, beforeProviderCall: options.beforeProviderCall ? () => options.beforeProviderCall!("text") : undefined },
-      );
-      englishText = translated.englishText.trim();
-      textModel = translated.model;
-    } catch (error) {
-      if (error instanceof AppError) throw error;
-      if (execution && isPoolFailure(error)) {
-        throw publicPoolError(error, "text_translation");
-      }
-      const reason = error instanceof CloudflareTextProviderError ? error.reason : "unknown_error";
-      throw attachFailureDiagnostics(new AppError("LLM_FAILED", "Dịch vụ dịch văn bản tạm thời gặp lỗi. Vui lòng thử lại.",
-        reason === "timeout" || signal.aborted ? 504 : error instanceof CloudflareTextProviderError && error.status === 429 ? 429 : 502,
-        { provider: "cloudflare", stage: "text_translation", reason, elapsedMs: Math.round(performance.now() - startedAt) }),
-      getFailureDiagnostics(error));
-    }
+    const text: TextRun = { sourceText, instructions: audioTranslationInstructions(sourceLanguage), signal, startedAt, options };
+    const translated = await withProviderFallback("text", textProviders, signal, options, provider =>
+      provider === "deepinfra" ? translateTextWithDeepInfra(text) : translateTextWithCloudflare(text));
+    englishText = translated.englishText;
+    textModel = translated.model;
   }
   if (!isEnglishAudioTranslation(englishText)) {
     throw new AppError("LLM_FAILED", "Dịch vụ chưa trả về bản dịch tiếng Anh hợp lệ.", 502,
-      { provider: "cloudflare", reason: "invalid_translation_language" });
+      { provider: textProviders[0], reason: "invalid_translation_language" });
   }
   const translated: AudioTranslationResult = {
     englishText,
@@ -324,8 +420,62 @@ async function translateAudioTranscript(checkpoint: AudioTranslationCheckpoint, 
     wordCount: englishText.split(/\s+/).length,
     model,
   };
-  if (textCacheKey && !cachedText && sourceLanguage !== "en") await audioTranslationCache.set(textCacheKey, translated);
+  if (textCacheKey && !cachedText && sourceLanguage !== "en") {
+    // The shared write runs for all traffic: never let a slow cache delay the response.
+    // set() swallows its own failures.
+    if (sharedText) void textCache.set(textCacheKey, translated, sharedTextCacheTtlSeconds());
+    else await textCache.set(textCacheKey, translated);
+  }
   return translated;
+}
+
+type TextRun = {
+  sourceText: string;
+  instructions: string;
+  signal: AbortSignal;
+  startedAt: number;
+  options: AudioTranslationOptions;
+};
+
+/** Validated inside each provider so a non-English answer can fall back to the next one. */
+function requireEnglishTranslation(text: string, provider: AudioProvider) {
+  const englishText = text.trim();
+  if (!isEnglishAudioTranslation(englishText)) {
+    throw new AppError("LLM_FAILED", "Dịch vụ chưa trả về bản dịch tiếng Anh hợp lệ.", 502,
+      { provider, reason: "invalid_translation_language" });
+  }
+  return englishText;
+}
+
+async function translateTextWithDeepInfra(run: TextRun): Promise<{ englishText: string; model: string }> {
+  const { sourceText, instructions, signal, startedAt, options } = run;
+  await options.beforeProviderCall?.("text");
+  try {
+    const translated = await translateWithDeepInfra(sourceText, instructions, AUDIO_TRANSLATION_MAX_TOKENS, { signal });
+    return { englishText: requireEnglishTranslation(translated.englishText, "deepinfra"), model: translated.model };
+  } catch (error) {
+    throw toDeepInfraAppError(error, "text", performance.now() - startedAt);
+  }
+}
+
+async function translateTextWithCloudflare(run: TextRun): Promise<{ englishText: string; model: string }> {
+  const { sourceText, instructions, signal, startedAt, options } = run;
+  const execution = options.execution;
+  try {
+    const translated = await translateVietnameseWithCloudflare(sourceText, instructions, AUDIO_TRANSLATION_MAX_TOKENS,
+      { signal, execution, beforeProviderCall: options.beforeProviderCall ? () => options.beforeProviderCall!("text") : undefined });
+    return { englishText: requireEnglishTranslation(translated.englishText, "cloudflare"), model: translated.model };
+  } catch (error) {
+    if (error instanceof AppError) throw error;
+    if (execution && isPoolFailure(error)) {
+      throw publicPoolError(error, "text_translation");
+    }
+    const reason = error instanceof CloudflareTextProviderError ? error.reason : "unknown_error";
+    throw attachFailureDiagnostics(new AppError("LLM_FAILED", "Dịch vụ dịch văn bản tạm thời gặp lỗi. Vui lòng thử lại.",
+      reason === "timeout" || signal.aborted ? 504 : error instanceof CloudflareTextProviderError && error.status === 429 ? 429 : 502,
+      { provider: "cloudflare", stage: "text_translation", reason, elapsedMs: Math.round(performance.now() - startedAt) }),
+    getFailureDiagnostics(error));
+  }
 }
 
 async function transcribeAudio(
