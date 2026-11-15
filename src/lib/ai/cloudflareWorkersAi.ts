@@ -8,7 +8,7 @@ import {
   sharedTextCacheKey, sharedTextCacheTtlSeconds, translationCacheKey,
 } from "./audioTranslationCache";
 import { trimPcmWav } from "../audio/trimPcmWav";
-import { timeoutSignal } from "./cloudflare/abortDiagnostics";
+import { combineAbortSignals, timeoutSignal } from "./cloudflare/abortDiagnostics";
 import { fetchLegacyCloudflare } from "./cloudflare/legacyAdmission";
 import {
   attachFailureDiagnostics,
@@ -54,7 +54,7 @@ export type AudioTranslationOptions = {
   checkpoint?: AudioTranslationCheckpoint;
   onCheckpoint?: (checkpoint: AudioTranslationCheckpoint) => void | Promise<void>;
   beforeProviderCall?: (stage: "asr" | "text") => Promise<void>;
-  /** Called when a stage moves on to its next provider (for logging only). */
+  /** Called when a stage starts its next provider, after an error or a slow answer (for logging only). */
   onProviderFallback?: (event: ProviderFallbackEvent) => void;
 };
 
@@ -62,6 +62,8 @@ export type ProviderFallbackEvent = Readonly<{
   stage: "asr" | "text";
   from: AudioProvider;
   to: AudioProvider;
+  /** "error": the previous provider failed. "slow": it had not answered within the hedge delay. */
+  trigger: "error" | "slow";
   status?: number;
   reason?: unknown;
   upstreamStatus?: unknown;
@@ -154,9 +156,11 @@ export async function translateAudioToEnglish(
   const originalAudio = options.preparedAudio ?? await audio.arrayBuffer();
   const providerAudio = process.env.AUDIO_TRANSLATION_TRIM_WAV === "true" ? trimPcmWav(originalAudio).bytes : originalAudio;
   const run: AsrRun = { audio, providerAudio, sourceLanguage, signal, startedAt, timeoutMs, options };
-  // Only the ASR call falls back; transcript checks below run once on the result.
-  const transcription = await withProviderFallback("asr", asrProviders, signal, options, provider =>
-    provider === "deepinfra" ? transcribeAudioWithDeepInfra(run) : transcribeAudioWithCloudflare(run));
+  // Only the ASR call falls back or is hedged; transcript checks below run once on the winner.
+  const transcription = await runProviders("asr", asrProviders, signal, options, (provider, cancel) => {
+    const call = { ...run, signal: combineAbortSignals([signal, cancel]) };
+    return provider === "deepinfra" ? transcribeAudioWithDeepInfra(call) : transcribeAudioWithCloudflare(call);
+  });
   return completeAudioTranscription({ ...transcription, sourceLanguage, startedAt, signal, options });
 }
 
@@ -199,7 +203,11 @@ async function transcribeAudioWithCloudflare(run: AsrRun): Promise<ProviderTrans
         // deadline. ~2x the loaded p95 (~4s) leaves time to retry another account.
         timeoutMs: positiveInteger("CLOUDFLARE_ASR_ATTEMPT_TIMEOUT_MS", 8_000),
       },
-      async ({ account, signal }) => {
+      async ({ account, signal: attemptSignal }) => {
+        // run.signal also carries a hedge cancellation; the pool reports that as "cancelled".
+        const signal = combineAbortSignals([attemptSignal, run.signal]);
+        // A hedge admitted after the other provider already answered must not mark the job in-flight again.
+        if (signal.aborted) throw networkFault(signal.reason, signal);
         await options.beforeProviderCall?.("asr");
         let response: Response | undefined;
         let payload: CloudflareWorkersAiEnvelope | null;
@@ -358,31 +366,99 @@ function shouldFallBack(error: unknown) {
     (error.status === 429 || error.status >= 500);
 }
 
-async function withProviderFallback<T>(
+/** AUDIO_ASR_HEDGE_MS / AUDIO_TEXT_HEDGE_MS; 0 (default) disables hedging for that stage. */
+function hedgeDelayMs(stage: "asr" | "text") {
+  return positiveInteger(stage === "asr" ? "AUDIO_ASR_HEDGE_MS" : "AUDIO_TEXT_HEDGE_MS", 0);
+}
+
+function reportProviderSwitch(options: AudioTranslationOptions, event: ProviderFallbackEvent) {
+  // Telemetry must never turn a working fallback into a failure.
+  try { options.onProviderFallback?.(event); } catch { /* best-effort */ }
+}
+
+function failureFields(error: unknown) {
+  return error instanceof AppError
+    ? { status: error.status, reason: error.details?.reason, upstreamStatus: error.details?.upstreamStatus }
+    : { reason: getFailureDiagnostics(error).failureSource };
+}
+
+/**
+ * Runs a stage on its providers in priority order. The next provider starts when
+ * the current one fails with a provider fault (fallback) or, when a hedge delay is
+ * set, when it has not answered in time (hedge). The first success wins and every
+ * other call still running is cancelled. If all fail, a non-fallback error (such as
+ * a 4xx) is reported first, otherwise the error of the last provider.
+ */
+function runProviders<T>(
   stage: "asr" | "text",
   providers: readonly AudioProvider[],
   signal: AbortSignal,
   options: AudioTranslationOptions,
-  run: (provider: AudioProvider) => Promise<T>,
+  call: (provider: AudioProvider, cancel: AbortSignal) => Promise<T>,
 ): Promise<T> {
-  for (const [index, provider] of providers.entries()) {
-    try {
-      return await run(provider);
-    } catch (error) {
-      const next = providers[index + 1];
-      if (!next || signal.aborted || !shouldFallBack(error)) throw error;
-      // Telemetry must never turn a working fallback into a failure.
-      try {
-        options.onProviderFallback?.({
-          stage, from: provider, to: next,
-          ...(error instanceof AppError
-            ? { status: error.status, reason: error.details?.reason, upstreamStatus: error.details?.upstreamStatus }
-            : { reason: getFailureDiagnostics(error).failureSource }),
-        });
-      } catch { /* best-effort */ }
+  const hedgeMs = hedgeDelayMs(stage);
+  return new Promise<T>((resolve, reject) => {
+    const controllers: AbortController[] = [];
+    const errors: unknown[] = [];
+    let started = 0;
+    let running = 0;
+    let settled = false;
+    let hedgeTimer: ReturnType<typeof setTimeout> | undefined;
+
+    const finish = (complete: () => void) => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(hedgeTimer);
+      for (const controller of controllers) {
+        if (!controller.signal.aborted) controller.abort(new DOMException("Another provider answered first.", "AbortError"));
+      }
+      complete();
+    };
+    const fail = () => {
+      const hardError = errors.find(error => error !== undefined && !shouldFallBack(error));
+      const lastError = [...errors].reverse().find(error => error !== undefined);
+      reject(hardError ?? lastError ?? new AppError(stage === "asr" ? "ASR_FAILED" : "LLM_FAILED", "Chưa cấu hình nhà cung cấp AI.", 500));
+    };
+    const scheduleHedge = () => {
+      clearTimeout(hedgeTimer);
+      if (hedgeMs <= 0 || started >= providers.length) return;
+      hedgeTimer = setTimeout(() => {
+        if (settled || started >= providers.length || signal.aborted) return;
+        reportProviderSwitch(options, { stage, from: providers[started - 1], to: providers[started], trigger: "slow" });
+        start();
+      }, hedgeMs);
+    };
+    const start = () => {
+      const index = started++;
+      const controller = new AbortController();
+      controllers.push(controller);
+      running++;
+      scheduleHedge();
+      call(providers[index], controller.signal).then(
+        value => finish(() => resolve(value)),
+        (error: unknown) => {
+          running--;
+          if (settled) return;
+          errors[index] = error;
+          const canFallBack = !signal.aborted && shouldFallBack(error);
+          if (canFallBack && started < providers.length) {
+            reportProviderSwitch(options, { stage, from: providers[index], to: providers[started], trigger: "error", ...failureFields(error) });
+            start();
+            return;
+          }
+          // Another provider is still working on this request: let it answer.
+          if (running > 0 && !signal.aborted) return;
+          finish(fail);
+        },
+      );
+    };
+
+    if (!providers.length) {
+      fail();
+      return;
     }
-  }
-  throw new AppError(stage === "asr" ? "ASR_FAILED" : "LLM_FAILED", "Chưa cấu hình nhà cung cấp AI.", 500);
+    start();
+  });
 }
 
 async function translateAudioTranscript(checkpoint: AudioTranslationCheckpoint, options: AudioTranslationOptions, inheritedSignal?: AbortSignal): Promise<AudioTranslationResult> {
@@ -402,8 +478,10 @@ async function translateAudioTranscript(checkpoint: AudioTranslationCheckpoint, 
   const textProviders = resolveAudioProviders("text");
   if (sourceLanguage !== "en" && !cachedText) {
     const text: TextRun = { sourceText, instructions: audioTranslationInstructions(sourceLanguage), signal, startedAt, options };
-    const translated = await withProviderFallback("text", textProviders, signal, options, provider =>
-      provider === "deepinfra" ? translateTextWithDeepInfra(text) : translateTextWithCloudflare(text));
+    const translated = await runProviders("text", textProviders, signal, options, (provider, cancel) => {
+      const call = { ...text, signal: combineAbortSignals([signal, cancel]) };
+      return provider === "deepinfra" ? translateTextWithDeepInfra(call) : translateTextWithCloudflare(call);
+    });
     englishText = translated.englishText;
     textModel = translated.model;
   }

@@ -26,6 +26,27 @@ DEEPINFRA_ASR_TIMEOUT_MS=5000     # chừa thời gian cho Cloudflare trong hạ
 | `DEEPINFRA_TEXT_TIMEOUT_MS` | `6000` | Mỗi lượt gọi dịch |
 | `DEEPINFRA_TEXT_REASONING_EFFORT` | (trống) | `none`…`high`; chỉ gửi khi đặt |
 | `DEEPINFRA_BASE_URL` | `https://api.deepinfra.com/v1/openai` | Chỉ chấp nhận https |
+| `DEEPINFRA_KEEPALIVE_MS` | `50000` | Giữ kết nối rảnh tới DeepInfra (xem bên dưới) |
+| `AUDIO_ASR_HEDGE_MS` | `0` (tắt) | Gửi song song ASR sang nhà cung cấp kế tiếp nếu chưa có kết quả sau N ms |
+| `AUDIO_TEXT_HEDGE_MS` | `0` (tắt) | Như trên cho bước dịch |
+
+## Giữ kết nối tới DeepInfra
+
+DeepInfra cách VPS khoảng 250 ms mỗi vòng mạng; mở một kết nối HTTPS mới tốn thêm khoảng 0,5–0,6 s. Đo ngày 15/11/2026: DeepInfra giữ kết nối rảnh ít nhất 60 s (đóng trước 100 s), nhưng `fetch` mặc định của Node đóng sau 4 s, nên gần như mỗi lượt nói của người dùng phải kết nối lại.
+
+Backend gọi DeepInfra bằng `fetch` của thư viện `undici` với một `Agent` riêng giữ kết nối 50 s (`DEEPINFRA_KEEPALIVE_MS`). Khi kết nối đã mở sẵn: ASR khoảng 0,36 s, dịch khoảng 0,5 s (so với 1,4 s và 1,15 s khi phải mở kết nối mới). Cloudflare và Neon vẫn dùng `fetch` mặc định.
+
+## Gửi song song (hedge)
+
+Khi đặt `AUDIO_ASR_HEDGE_MS` hoặc `AUDIO_TEXT_HEDGE_MS` > 0: nếu nhà cung cấp đầu (DeepInfra) chưa trả lời sau khoảng thời gian đó, backend gọi thêm nhà cung cấp kế tiếp (Cloudflare) song song. Bên nào trả kết quả hợp lệ trước thì dùng, bên còn lại bị huỷ.
+
+- Gợi ý theo p90 của bài test 500 người dùng: `AUDIO_ASR_HEDGE_MS=2000`, `AUDIO_TEXT_HEDGE_MS=1600`. Khoảng 10% request sẽ gọi thêm Cloudflare.
+- Nếu Cloudflare (bên gọi thêm) lỗi trong khi DeepInfra vẫn đang chạy, backend tiếp tục chờ DeepInfra.
+- Lượt Cloudflare bị huỷ được pool ghi nhận là `cancelled`: không làm tài khoản bị cooldown, nhưng vẫn tính vào số lượt thử của request và có thể vẫn bị Cloudflare tính phí.
+- Lượt gọi thêm cần chỗ trong pool Cloudflare; nếu pool đang chờ hàng, lượt đó có thể chưa kịp chạy trước khi DeepInfra trả lời. Khi được vào muộn như vậy, nó tự huỷ, không gọi Cloudflare và không ghi lại trạng thái job.
+- Trong chế độ pool, lượt gọi thêm dùng một lượt thử của request (`CLOUDFLARE_POOL_MAX_ATTEMPTS_PER_REQUEST`); nếu giá trị này nhỏ, lượt gọi thêm có thể làm hết lượt thử dành cho việc thử lại.
+- Worker không hạ trạng thái job khi đã có checkpoint ASR hoặc kết quả, nên lượt gọi song song đến muộn không làm mất tiến độ.
+- Log `audio_translation_provider_fallback` có thêm trường `trigger`: `error` (bên trước lỗi) hoặc `slow` (gửi song song vì chậm).
 
 ## Khi nào chuyển sang Cloudflare
 

@@ -1,3 +1,6 @@
+// The body classes must come from the same undici as `fetch`: it recognises FormData
+// with an instanceof check, and Node's global FormData would be sent as "[object FormData]".
+import { Agent, FormData as UndiciFormData, fetch as undiciFetch } from "undici";
 import { AppError } from "../appError";
 import { combineAbortSignals, timeoutSignal } from "./cloudflare/abortDiagnostics";
 
@@ -17,6 +20,8 @@ const DEFAULT_TEXT_MODEL = "deepseek-ai/DeepSeek-V4-Flash-0731";
 // ~2x the loaded Whisper p95, leaving room inside the 20s request deadline.
 const DEFAULT_ASR_TIMEOUT_MS = 8_000;
 const DEFAULT_TEXT_TIMEOUT_MS = 6_000;
+const DEFAULT_KEEPALIVE_MS = 50_000;
+const CONNECT_TIMEOUT_MS = 5_000;
 const MODEL_PATTERN = /^[A-Za-z0-9._-]+\/[A-Za-z0-9._-]+$/;
 const REASONING_EFFORTS = new Set(["none", "minimal", "low", "medium", "high"]);
 const REASONING_BLOCK = /<think>[\s\S]*?<\/think>/gi;
@@ -84,8 +89,10 @@ function resolveBaseUrl() {
   const configured = process.env.DEEPINFRA_BASE_URL?.trim() || DEFAULT_BASE_URL;
   let url: URL;
   try { url = new URL(configured); } catch { throw new DeepInfraProviderError("invalid_base_url"); }
-  // The API key travels in a header: never send it over plain HTTP.
-  if (url.protocol !== "https:") throw new DeepInfraProviderError("invalid_base_url");
+  // The API key travels in a header: never send it over plain HTTP, except to this
+  // machine (local proxies and tests of the real transport).
+  const loopback = ["localhost", "127.0.0.1", "[::1]"].includes(url.hostname);
+  if (url.protocol !== "https:" && !(url.protocol === "http:" && loopback)) throw new DeepInfraProviderError("invalid_base_url");
   return configured.replace(/\/+$/, "");
 }
 
@@ -112,6 +119,36 @@ export function getDeepInfraConfig(): DeepInfraConfig {
   };
 }
 
+type DeepInfraRequestInit = RequestInit & { dispatcher: Agent };
+type DeepInfraTransport = (url: string, init: DeepInfraRequestInit) => Promise<Response>;
+
+// DeepInfra is ~250 ms away and a new TLS connection costs ~0.6 s. Its server keeps
+// idle connections for at least 60 s, but Node's default fetch drops them after 4 s,
+// so almost every request between two user turns reconnected. Keep them for 50 s.
+// undici's own fetch is paired with its own Agent, independent of Node's bundled copy.
+let sharedAgent: Agent | undefined;
+let transportOverride: DeepInfraTransport | undefined;
+
+function keepAliveAgent() {
+  if (!sharedAgent) {
+    const keepAliveMs = positiveInteger("DEEPINFRA_KEEPALIVE_MS", DEFAULT_KEEPALIVE_MS);
+    sharedAgent = new Agent({
+      keepAliveTimeout: keepAliveMs,
+      keepAliveMaxTimeout: keepAliveMs,
+      connect: { timeout: CONNECT_TIMEOUT_MS },
+    });
+  }
+  return sharedAgent;
+}
+
+const keepAliveTransport: DeepInfraTransport = (url, init) =>
+  undiciFetch(url, init as Parameters<typeof undiciFetch>[1]) as unknown as Promise<Response>;
+
+/** Tests route DeepInfra calls through a mocked fetch; `undefined` restores the keep-alive transport. */
+export function setDeepInfraTransportForTests(transport: DeepInfraTransport | undefined) {
+  transportOverride = transport;
+}
+
 async function postDeepInfra(
   config: DeepInfraConfig,
   path: string,
@@ -124,12 +161,12 @@ async function postDeepInfra(
   let response: Response;
   let raw: string;
   try {
-    response = await fetch(`${config.baseUrl}${path}`, {
+    response = await (transportOverride ?? keepAliveTransport)(`${config.baseUrl}${path}`, {
       method: "POST",
       headers: { Authorization: `Bearer ${config.apiKey}`, ...init.headers },
       body: init.body,
       signal,
-      cache: "no-store",
+      dispatcher: keepAliveAgent(),
     });
     // Reading the body is covered by the same deadline as the request.
     raw = await response.text();
@@ -160,14 +197,15 @@ export async function transcribeWithDeepInfra(
   options: CallOptions = {},
 ): Promise<DeepInfraTranscription> {
   const config = getDeepInfraConfig();
-  const form = new FormData();
+  const form = new UndiciFormData();
   form.append("file", audio, fileName || "audio");
   form.append("model", config.asrModel);
   form.append("language", language);
   // verbose_json carries per-segment avg_logprob / no_speech_prob for the transcript validators.
   form.append("response_format", "verbose_json");
   form.append("temperature", "0");
-  const payload = asRecord(await postDeepInfra(config, "/audio/transcriptions", { body: form },
+  // undici's FormData is a valid body for undici's fetch; the DOM typings only know the global class.
+  const payload = asRecord(await postDeepInfra(config, "/audio/transcriptions", { body: form as unknown as BodyInit },
     config.asrTimeoutMs, options.signal));
   if (!payload) throw new DeepInfraProviderError("invalid_response");
   return {
