@@ -32,11 +32,71 @@ export type InstallationRecord = {
 };
 
 type RateLimitBucket = { startedAt: number; count: number };
+type CachedInstallation = { record: InstallationRecord; expiresAt: number };
 type InstallationAuthGlobal = typeof globalThis & {
   __homiInstallationRecords?: Map<string, InstallationRecord>;
   __homiInstallationRateLimits?: Map<string, RateLimitBucket>;
+  __homiInstallationAccessCache?: Map<string, CachedInstallation>;
 };
 const authGlobal = globalThis as InstallationAuthGlobal;
+
+// Every authenticated request used to read the installation from the database.
+// Under load that query failed first (Neon "fetch failed"), so a confirmed record is
+// reused briefly. A token revoked or rotated on another backend instance may still
+// be accepted until the entry expires; writes on this instance drop it at once.
+const DEFAULT_ACCESS_CACHE_TTL_MS = 30_000;
+// Bounds how long a revocation on another instance can be ignored, whatever is configured.
+const MAX_ACCESS_CACHE_TTL_MS = 60_000;
+const MAX_ACCESS_CACHE_ENTRIES = 10_000;
+// Bumped on every installation write in this process. A storage read that overlapped
+// a write (e.g. a refresh) is not cached, so it cannot re-insert the pre-write record.
+let installationWriteGeneration = 0;
+
+function accessCacheTtlMs() {
+  const raw = process.env.INSTALLATION_ACCESS_CACHE_TTL_MS?.trim();
+  if (!raw) return DEFAULT_ACCESS_CACHE_TTL_MS;
+  const parsed = Number(raw);
+  return Number.isFinite(parsed) && parsed >= 0
+    ? Math.min(MAX_ACCESS_CACHE_TTL_MS, Math.floor(parsed))
+    : DEFAULT_ACCESS_CACHE_TTL_MS;
+}
+
+function accessCache() {
+  return (authGlobal.__homiInstallationAccessCache ??= new Map());
+}
+
+function cachedInstallation(clientId: string) {
+  const entry = accessCache().get(clientId);
+  if (!entry) return null;
+  if (entry.expiresAt > Date.now()) return entry.record;
+  accessCache().delete(clientId);
+  return null;
+}
+
+function rememberInstallation(record: InstallationRecord) {
+  const ttlMs = accessCacheTtlMs();
+  if (ttlMs === 0) return;
+  const cache = accessCache();
+  cache.delete(record.clientId);
+  // Map keeps insertion order: drop the oldest entry to bound memory.
+  if (cache.size >= MAX_ACCESS_CACHE_ENTRIES) {
+    const oldest = cache.keys().next().value;
+    if (oldest !== undefined) cache.delete(oldest);
+  }
+  cache.set(record.clientId, { record: { ...record }, expiresAt: Date.now() + ttlMs });
+}
+
+function forgetInstallation(clientId: string) {
+  installationWriteGeneration++;
+  authGlobal.__homiInstallationAccessCache?.delete(clientId);
+}
+
+function recordMatchesToken(
+  record: InstallationRecord | null,
+  claims: { tokenVersion: number; sessionId: string },
+): record is InstallationRecord {
+  return Boolean(record && record.tokenVersion === claims.tokenVersion && record.refreshSessionId === claims.sessionId);
+}
 
 function enabled(name: string, fallback = false) {
   const value = process.env[name]?.trim().toLowerCase();
@@ -127,6 +187,7 @@ async function readRecord(clientId: string) {
 }
 
 async function createRecord(record: InstallationRecord) {
+  forgetInstallation(record.clientId);
   if (isPostgresStorageEnabled()) {
     return insertRecordIfAbsent({
       namespace,
@@ -146,6 +207,7 @@ async function replaceRecord(
   clientId: string,
   mutate: (record: InstallationRecord) => InstallationRecord,
 ) {
+  forgetInstallation(clientId);
   if (isPostgresStorageEnabled()) {
     return updateRecord<InstallationRecord>({
       namespace,
@@ -163,6 +225,7 @@ async function replaceRecord(
 }
 
 async function removeRecord(clientId: string) {
+  forgetInstallation(clientId);
   if (isPostgresStorageEnabled()) {
     return deleteRecord(namespace, clientId, clientId);
   }
@@ -326,6 +389,8 @@ export async function refreshInstallation(refreshToken: string) {
     }
     return { ...current, refreshSessionId: randomUUID(), updatedAt: now };
   });
+  // A concurrent access check may have cached the pre-rotation record meanwhile.
+  forgetInstallation(record.clientId);
   if (!rotated) {
     throw new AppError(
       "DEVICE_NOT_REGISTERED",
@@ -362,12 +427,16 @@ export async function requireInstallationAccess(
     throw new AppError("UNAUTHORIZED", "Thiếu installation access token.", 401);
   }
   const claims = verifyInstallationToken(token, secureConfig.secret, "access");
-  const record = await readRecord(claims.clientId);
-  if (
-    !record ||
-    record.tokenVersion !== claims.tokenVersion ||
-    record.refreshSessionId !== claims.sessionId
-  ) {
+  // A cached record that does not match (e.g. the session was refreshed through the
+  // other backend) is re-read before rejecting, so valid tokens are never refused.
+  let record = cachedInstallation(claims.clientId);
+  if (!recordMatchesToken(record, claims)) {
+    const generationBeforeRead = installationWriteGeneration;
+    record = await readRecord(claims.clientId);
+    if (!recordMatchesToken(record, claims)) accessCache().delete(claims.clientId);
+    else if (generationBeforeRead === installationWriteGeneration) rememberInstallation(record);
+  }
+  if (!recordMatchesToken(record, claims)) {
     throw new AppError(
       "UNAUTHORIZED",
       "Installation access token đã bị thu hồi.",
@@ -392,6 +461,7 @@ export async function requireInstallationAccess(
 export async function revokeInstallation(request: Request) {
   const access = await requireInstallationAccess(request);
   await removeRecord(access.clientId);
+  forgetInstallation(access.clientId);
   return access;
 }
 
