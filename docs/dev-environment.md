@@ -108,6 +108,18 @@ Kiểm tra: `curl -fsS https://api-dev.hoamytech.com/api/ready`.
 - Tắt dev để trả RAM: `docker compose --env-file .env.compose -f docker-compose.dev.yml stop`
   (không ảnh hưởng production).
 
+## Cache bản dịch dùng chung theo câu
+
+Từ 2026-11-14: `AUDIO_TRANSLATION_SHARED_TEXT_CACHE_ENABLED: "true"` (đặt trong compose cho hai backend và các worker).
+Khi bất kỳ người dùng nào đã nói một câu, lần sau câu đó không gọi model dịch nữa, kể cả với người dùng khác.
+Chỉ lưu câu tiếng Việt và bản dịch tiếng Anh trong Redis cache (`redis-cache`, tối đa 64 MB, tự loại khoá cũ);
+không lưu giọng nói hay mã người dùng. Hai câu được coi là một khi chỉ khác khoảng trắng, dấu ngoặc kép hoặc dấu chấm cuối;
+chữ hoa/thường và dấu `?`, `!` vẫn phân biệt ("Mai đi học" khác "mai đi học"). Thời gian lưu: `AUDIO_TRANSLATION_SHARED_TEXT_CACHE_TTL_SECONDS`
+(mặc định 1 ngày, vì một bản dịch sai sẽ được trả cho mọi người dùng tới khi hết hạn). Đổi model, prompt, số token tối đa
+hoặc `AUDIO_TRANSLATION_POLICY_VERSION` làm cache cũ tự hết hiệu lực.
+Cờ này độc lập với `AUDIO_TRANSLATION_CACHE_ENABLED`; cờ kia còn bật cache theo audio của từng client kèm giới hạn
+số request đồng thời, nên không bật nó trên dev. Xoá cache khi cần: `docker exec speaking-ai-dev-redis-cache-1 redis-cli FLUSHDB`.
+
 ## Hàng đợi job BullMQ (worker)
 
 Bật trên dev từ 2026-11-12: `AUDIO_TRANSLATION_JOBS_ENABLED='true'` trong `.env.local` dev và

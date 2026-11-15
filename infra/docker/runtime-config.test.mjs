@@ -39,6 +39,14 @@ test("enabled Redis stores cannot share a host even with explicit default port o
   const env = pooled({ AUDIO_TRANSLATION_CACHE_ENABLED: "true", CLOUDFLARE_POOL_REDIS_URL: "redis://same/0", AUDIO_TRANSLATION_CACHE_REDIS_URL: "redis://same:6379/1" });
   assert.throws(() => configureDeployment(env), /requires_separate_redis_instance/);
 });
+test("the shared sentence cache alone gets the Compose cache Redis and must not share the quota Redis", () => {
+  const env = pooled({ APP_RUNTIME: "compose", AUDIO_TRANSLATION_SHARED_TEXT_CACHE_ENABLED: "true", CLOUDFLARE_POOL_REDIS_PASSWORD: "audit-only-password" });
+  configureDeployment(env);
+  assert.equal(new URL(env.AUDIO_TRANSLATION_CACHE_REDIS_URL).hostname, "redis-cache");
+  assert.equal(env.AUDIO_TRANSLATION_CACHE_ENABLED, "false");
+  const shared = pooled({ AUDIO_TRANSLATION_SHARED_TEXT_CACHE_ENABLED: "true", CLOUDFLARE_POOL_REDIS_URL: "redis://same/0", AUDIO_TRANSLATION_CACHE_REDIS_URL: "redis://same:6379/1" });
+  assert.throws(() => configureDeployment(shared), /requires_separate_redis_instance/);
+});
 test("Railway jobs require R2 while explicit Compose shared-volume jobs remain supported", () => {
   const env = pooled({ AUDIO_TRANSLATION_JOBS_ENABLED: "true", AUDIO_TRANSLATION_JOBS_REDIS_URL: "redis://jobs:6379", AUDIO_TRANSLATION_JOB_STORAGE: "local", AUDIO_TRANSLATION_JOB_SHARED_DIRECTORY: "/app/shared" });
   assert.throws(() => configureDeployment(env), /railway_requires_r2/);
@@ -88,4 +96,19 @@ test("legacy account balancing requires legacy routing and a true/false value", 
     CLOUDFLARE_POOL_BALANCE_LEGACY_CALLS: "true" })), /CLOUDFLARE_POOL_BALANCE_LEGACY_CALLS.*requires_legacy_routing/);
   assert.throws(() => configureDeployment(pooled({ ...shared, CLOUDFLARE_POOL_BALANCE_LEGACY_CALLS: "yes" })),
     /CLOUDFLARE_POOL_BALANCE_LEGACY_CALLS.*use_true_or_false/);
+});
+test("DeepInfra audio providers require their API key and reject unknown provider names", () => {
+  assert.equal(configureDeployment(fixture()).role, "web");
+  assert.throws(() => configureDeployment(fixture({ AUDIO_ASR_PROVIDER: "deepinfra" })), /DEEPINFRA_API_KEY \(required\)/);
+  assert.throws(() => configureDeployment(fixture({ AUDIO_TEXT_PROVIDER: "DeepInfra" })), /DEEPINFRA_API_KEY \(required\)/);
+  assert.throws(() => configureDeployment(fixture({ AUDIO_ASR_PROVIDER: "deepseek" })), /AUDIO_ASR_PROVIDER \(cloudflare_or_deepinfra\)/);
+  const env = fixture({ AUDIO_ASR_PROVIDER: " DeepInfra ", AUDIO_TEXT_PROVIDER: "deepinfra", DEEPINFRA_API_KEY: "audit-deepinfra-key" });
+  configureDeployment(env);
+  assert.equal(env.AUDIO_ASR_PROVIDER, "deepinfra");
+  assert.throws(() => configureDeployment(fixture({ AUDIO_TEXT_PROVIDER: "deepinfra,cloudflare" })), /DEEPINFRA_API_KEY \(required\)/);
+  assert.throws(() => configureDeployment(fixture({ AUDIO_ASR_PROVIDER: "deepinfra,openai", DEEPINFRA_API_KEY: "k" })),
+    /AUDIO_ASR_PROVIDER \(cloudflare_or_deepinfra\)/);
+  const ordered = fixture({ AUDIO_ASR_PROVIDER: " DeepInfra , cloudflare,deepinfra", DEEPINFRA_API_KEY: "audit-deepinfra-key" });
+  configureDeployment(ordered);
+  assert.equal(ordered.AUDIO_ASR_PROVIDER, "deepinfra,cloudflare");
 });

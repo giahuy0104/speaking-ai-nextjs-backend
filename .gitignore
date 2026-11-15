@@ -50,3 +50,6 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# k6 audio mixes hold real voice recordings
+scripts/k6/data/

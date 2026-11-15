@@ -175,6 +175,7 @@ export async function handleAudioTranslation(request: Request, options: { forceA
           requestStage = "asr_admission";
           return await translateAudioToEnglish(audio, sourceLanguage, { execution: session?.execution, preparedAudio: bytes, cacheScope,
             beforeProviderCall: async stage => { requestStage = stage === "asr" ? "asr" : "text_translation"; providerAttempts++; },
+            onProviderFallback: event => logEvent("warn", "audio_translation_provider_fallback", { requestId, ...event }),
             onCheckpoint: value => { checkpoint = value; requestStage = sourceLanguage === "en" ? "validation" : "text_admission"; } });
         } catch (error) {
           const safe = isPoolFailure(error) ? publicPoolError(error) : error;

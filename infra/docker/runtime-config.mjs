@@ -55,6 +55,8 @@ export function configureDeployment(env, role = "web") {
   if (audio === "vercel-blob" && !value(env, "GENERATED_AUDIO_BLOB_READ_WRITE_TOKEN") && !value(env, "BLOB_READ_WRITE_TOKEN")) fail("GENERATED_AUDIO_BLOB_READ_WRITE_TOKEN", "required");
   const pool = flag(env, "CLOUDFLARE_AUDIO_TRANSLATION_POOL_ENABLED");
   const cache = flag(env, "AUDIO_TRANSLATION_CACHE_ENABLED");
+  // Sentence-level cache shared by every client; it uses the cache Redis but not the pool.
+  const sharedTextCache = flag(env, "AUDIO_TRANSLATION_SHARED_TEXT_CACHE_ENABLED");
   const jobs = flag(env, "AUDIO_TRANSLATION_JOBS_ENABLED");
   const sharedLegacy = flag(env, "CLOUDFLARE_POOL_SHARE_LEGACY_ACCOUNT");
   const routeLegacy = flag(env, "CLOUDFLARE_POOL_ROUTE_LEGACY_ACCOUNT");
@@ -73,6 +75,16 @@ export function configureDeployment(env, role = "web") {
     env.CLOUDFLARE_ACCOUNTS_JSON = JSON.stringify(dedicated);
     env.CLOUDFLARE_POOL_ALLOW_LEGACY_ACCOUNT_LOCAL_TEST = "false";
   }
+  // Audio translate stages may run on DeepInfra; fail at startup, not on the first request.
+  // Each is a priority list, e.g. "deepinfra,cloudflare" (DeepInfra first, Cloudflare fallback).
+  const audioProviders = ["AUDIO_ASR_PROVIDER", "AUDIO_TEXT_PROVIDER"].flatMap(key => {
+    const providers = [...new Set(value(env, key).toLowerCase().split(",").map(entry => entry.trim()).filter(Boolean))];
+    if (!providers.length) providers.push("cloudflare");
+    if (providers.some(provider => provider !== "cloudflare" && provider !== "deepinfra")) fail(key, "cloudflare_or_deepinfra");
+    env[key] = providers.join(",");
+    return providers;
+  });
+  if (audioProviders.includes("deepinfra")) required(env, "DEEPINFRA_API_KEY");
   if (role === "web") {
     if (!/^[a-f0-9]{32}$/i.test(required(env, "CLOUDFLARE_ACCOUNT_ID"))) fail("CLOUDFLARE_ACCOUNT_ID", "invalid_account_id");
     required(env, "CLOUDFLARE_WORKERS_AI_API_TOKEN");
@@ -86,7 +98,7 @@ export function configureDeployment(env, role = "web") {
   const endpoints = new Set();
   const redisSettings = [
     ...(pool ? [["CLOUDFLARE_POOL_REDIS_URL", "redis"]] : []),
-    ...(cache ? [["AUDIO_TRANSLATION_CACHE_REDIS_URL", "redis-cache"]] : []),
+    ...(cache || sharedTextCache ? [["AUDIO_TRANSLATION_CACHE_REDIS_URL", "redis-cache"]] : []),
     ...(jobs ? [["AUDIO_TRANSLATION_JOBS_REDIS_URL", "redis-jobs"]] : []),
   ];
   for (const [key, host] of redisSettings) {
