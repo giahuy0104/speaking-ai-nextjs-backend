@@ -44,6 +44,9 @@ export async function startAudioTranslationWorker() {
           const result = await translateAudioToEnglish(audio, job.data.sourceLanguage, {
             execution: session.execution, cacheScope: job.data.owner, checkpoint: job.data.checkpoint,
             async beforeProviderCall(stage) {
+              // With hedging two calls can run at once; a late one must not undo progress
+              // already saved (the ASR checkpoint or the final result).
+              if (job.data.result || (stage === "asr" && job.data.checkpoint)) return;
               await job.updateData({ ...job.data, providerAttempts: session.execution.attempts.used,
                 phase: stage === "asr" ? "asr_inflight" : "text_inflight" });
             },

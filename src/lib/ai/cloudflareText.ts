@@ -174,10 +174,12 @@ export async function translateVietnameseWithCloudflare(
         timeoutMs: positiveInteger("CLOUDFLARE_TEXT_TIMEOUT_MS", DEFAULT_TEXT_TIMEOUT_MS),
       },
       async ({ account, signal: attemptSignal }) => {
-        await options.beforeProviderCall?.();
         const signal = options.signal
           ? combineAbortSignals([attemptSignal, options.signal])
           : attemptSignal;
+        // A hedged call admitted after the other provider already answered must not mark the job in-flight again.
+        if (signal.aborted) throw networkFault(signal.reason, signal);
+        await options.beforeProviderCall?.();
         let response: Response | undefined;
         let payload: CloudflareChatEnvelope | null;
         try {

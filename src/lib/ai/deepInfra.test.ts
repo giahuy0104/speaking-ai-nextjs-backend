@@ -4,6 +4,9 @@ import { AppError } from "../appError";
 import { translateAudioToEnglish } from "./cloudflareWorkersAi";
 import { translationCacheKey } from "./audioTranslationCache";
 import type { CloudflareExecutionContext } from "./cloudflare/types";
+import { getDeepInfraConfig, setDeepInfraTransportForTests, transcribeWithDeepInfra } from "./deepInfra";
+import { createServer } from "node:http";
+import type { AddressInfo } from "node:net";
 
 type Captured = { url: string; init: RequestInit };
 
@@ -21,8 +24,10 @@ function chatResponse(content: string) {
 test("DeepInfra audio translation provider", async (t) => {
   const originalEnv = { ...process.env };
   const originalFetch = globalThis.fetch;
-  t.after(() => { process.env = originalEnv; globalThis.fetch = originalFetch; });
+  t.after(() => { process.env = originalEnv; globalThis.fetch = originalFetch; setDeepInfraTransportForTests(undefined); });
   t.beforeEach(() => {
+    // Route DeepInfra through the mocked global fetch instead of the keep-alive agent.
+    setDeepInfraTransportForTests((url, init) => globalThis.fetch(url, init));
     process.env = { ...originalEnv };
     delete process.env.CLOUDFLARE_ACCOUNT_ID;
     delete process.env.CLOUDFLARE_WORKERS_AI_API_TOKEN;
@@ -194,8 +199,10 @@ const CF_CHAT = /api\.cloudflare\.com\/client\/v4\/accounts\/cf-account\/ai\/v1\
 test("DeepInfra first, Cloudflare fallback", async (t) => {
   const originalEnv = { ...process.env };
   const originalFetch = globalThis.fetch;
-  t.after(() => { process.env = originalEnv; globalThis.fetch = originalFetch; });
+  t.after(() => { process.env = originalEnv; globalThis.fetch = originalFetch; setDeepInfraTransportForTests(undefined); });
   t.beforeEach(() => {
+    // Route DeepInfra through the mocked global fetch instead of the keep-alive agent.
+    setDeepInfraTransportForTests((url, init) => globalThis.fetch(url, init));
     process.env = { ...originalEnv };
     delete process.env.DEEPINFRA_TEXT_REASONING_EFFORT;
     delete process.env.DEEPINFRA_TEXT_MODEL;
@@ -346,7 +353,7 @@ test("DeepInfra first, Cloudflare fallback", async (t) => {
     assert.equal(result.englishText, "Hello, teacher.");
     assert.equal(events.length, 1);
     assert.deepEqual({ ...(events[0] as object) }, {
-      stage: "asr", from: "deepinfra", to: "cloudflare", status: 429, reason: "rate_limited", upstreamStatus: 429,
+      stage: "asr", from: "deepinfra", to: "cloudflare", trigger: "error", status: 429, reason: "rate_limited", upstreamStatus: 429,
     });
   });
 
@@ -360,5 +367,220 @@ test("DeepInfra first, Cloudflare fallback", async (t) => {
   await t.test("rejects an unknown provider inside the list", async () => {
     process.env.AUDIO_ASR_PROVIDER = "deepinfra,deepseek";
     await assert.rejects(translateAudioToEnglish(audio, "vi"), (e: unknown) => e instanceof AppError && e.status === 500);
+  });
+});
+
+/** A provider response that arrives after `ms` unless the request is aborted first. */
+function delayed(ms: number, signal: AbortSignal | null | undefined, response: () => Response, aborted?: () => void) {
+  return new Promise<Response>((resolve, reject) => {
+    const timer = setTimeout(() => resolve(response()), ms);
+    signal?.addEventListener("abort", () => { clearTimeout(timer); aborted?.(); reject(signal.reason); }, { once: true });
+  });
+}
+
+test("real keep-alive transport sends a multipart upload", async (t) => {
+  const originalEnv = { ...process.env };
+  const received: { contentType?: string; body: string }[] = [];
+  const server = createServer((req, res) => {
+    const chunks: Buffer[] = [];
+    req.on("data", chunk => chunks.push(chunk));
+    req.on("end", () => {
+      received.push({ contentType: req.headers["content-type"], body: Buffer.concat(chunks).toString("latin1") });
+      res.setHeader("content-type", "application/json");
+      res.end(JSON.stringify({ text: "Con chào cô.", segments: [] }));
+    });
+  });
+  await new Promise<void>(resolve => server.listen(0, "127.0.0.1", resolve));
+  t.after(async () => {
+    process.env = originalEnv;
+    server.closeAllConnections();
+    await new Promise(resolve => server.close(resolve));
+  });
+  setDeepInfraTransportForTests(undefined);
+  process.env.DEEPINFRA_API_KEY = "test-deepinfra-key";
+  process.env.DEEPINFRA_BASE_URL = `http://127.0.0.1:${(server.address() as AddressInfo).port}/v1/openai`;
+
+  const result = await transcribeWithDeepInfra(new Blob([new Uint8Array([1, 2, 3])], { type: "audio/mp4" }), "cau-3.m4a", "vi");
+
+  assert.equal(result.text, "Con chào cô.");
+  assert.equal(received.length, 1);
+  assert.match(received[0].contentType ?? "", /^multipart\/form-data; boundary=/);
+  assert.match(received[0].body, /name="model"\r\n\r\nopenai\/whisper-large-v3-turbo/);
+  assert.match(received[0].body, /name="file"; filename="cau-3.m4a"/);
+});
+
+test("only loopback hosts may use plain HTTP", () => {
+  const originalEnv = { ...process.env };
+  try {
+    process.env.DEEPINFRA_API_KEY = "test-deepinfra-key";
+    process.env.DEEPINFRA_BASE_URL = "http://api.deepinfra.com/v1/openai";
+    assert.throws(() => getDeepInfraConfig(), /invalid_base_url/);
+    process.env.DEEPINFRA_BASE_URL = "http://localhost:9999/v1/openai";
+    assert.equal(getDeepInfraConfig().baseUrl, "http://localhost:9999/v1/openai");
+  } finally { process.env = originalEnv; }
+});
+
+test("keep-alive transport and hedged requests", async (t) => {
+  const originalEnv = { ...process.env };
+  const originalFetch = globalThis.fetch;
+  t.after(() => { process.env = originalEnv; globalThis.fetch = originalFetch; setDeepInfraTransportForTests(undefined); });
+  t.beforeEach(() => {
+    setDeepInfraTransportForTests((url, init) => globalThis.fetch(url, init));
+    process.env = { ...originalEnv };
+    for (const key of ["DEEPINFRA_TEXT_REASONING_EFFORT", "DEEPINFRA_TEXT_MODEL", "DEEPINFRA_ASR_MODEL", "DEEPINFRA_BASE_URL",
+      "CLOUDFLARE_WORKERS_AI_MODEL", "CLOUDFLARE_TEXT_MODEL", "AUDIO_ASR_HEDGE_MS", "AUDIO_TEXT_HEDGE_MS"]) delete process.env[key];
+    process.env.AUDIO_ASR_PROVIDER = "deepinfra,cloudflare";
+    process.env.AUDIO_TEXT_PROVIDER = "deepinfra,cloudflare";
+    process.env.DEEPINFRA_API_KEY = "test-deepinfra-key";
+    process.env.CLOUDFLARE_ACCOUNT_ID = "cf-account";
+    process.env.CLOUDFLARE_WORKERS_AI_API_TOKEN = "cf-token";
+  });
+  const audio = new File(["audio-bytes"], "speech.wav", { type: "audio/wav" });
+  const cfAsr = (text: string) => Response.json({ success: true, result: { text } });
+  const cfChat = (content: string) => Response.json({ choices: [{ message: { content } }] });
+  const keepAlive = setInterval(() => {}, 1000);
+  t.after(() => clearInterval(keepAlive));
+
+  await t.test("sends DeepInfra calls through a keep-alive dispatcher", async () => {
+    let dispatcher: unknown;
+    setDeepInfraTransportForTests((url, init) => { dispatcher = (init as { dispatcher?: unknown }).dispatcher; return globalThis.fetch(url, init); });
+    globalThis.fetch = async (url) => String(url) === ASR_URL ? asrResponse("Con chào cô.") : chatResponse("Hello, teacher.");
+    await translateAudioToEnglish(audio, "vi");
+    assert.ok(dispatcher, "DeepInfra requests must carry the keep-alive agent");
+  });
+
+  await t.test("never hedges when no hedge delay is configured", async () => {
+    const urls: string[] = [];
+    globalThis.fetch = async (url, init) => {
+      const target = String(url); urls.push(target);
+      if (target === ASR_URL) return delayed(80, init?.signal, () => asrResponse("Con chào cô."));
+      return chatResponse("Hello, teacher.");
+    };
+    const result = await translateAudioToEnglish(audio, "vi");
+    assert.equal(result.model, "openai/whisper-large-v3-turbo");
+    assert.deepEqual(urls, [ASR_URL, CHAT_URL]);
+  });
+
+  await t.test("starts Cloudflare ASR when DeepInfra is slow and cancels the slower call", async () => {
+    process.env.AUDIO_ASR_HEDGE_MS = "30";
+    let deepInfraCancelled = false;
+    const events: Array<Record<string, unknown>> = [];
+    globalThis.fetch = async (url, init) => {
+      const target = String(url);
+      if (target === ASR_URL) return delayed(500, init?.signal, () => asrResponse("Con chào cô."), () => { deepInfraCancelled = true; });
+      if (CF_ASR.test(target)) return cfAsr("Con chào cô.");
+      return chatResponse("Hello, teacher.");
+    };
+    const result = await translateAudioToEnglish(audio, "vi", { onProviderFallback: event => { events.push({ ...event }); } });
+    assert.equal(result.model, "@cf/openai/whisper-large-v3-turbo");
+    assert.equal(result.textModel, "deepseek-ai/DeepSeek-V4-Flash-0731");
+    assert.equal(deepInfraCancelled, true);
+    assert.deepEqual(events, [{ stage: "asr", from: "deepinfra", to: "cloudflare", trigger: "slow" }]);
+  });
+
+  await t.test("keeps the DeepInfra answer when it arrives before the hedge delay", async () => {
+    process.env.AUDIO_ASR_HEDGE_MS = "200";
+    const urls: string[] = [];
+    globalThis.fetch = async (url, init) => {
+      const target = String(url); urls.push(target);
+      if (target === ASR_URL) return delayed(10, init?.signal, () => asrResponse("Con chào cô."));
+      return chatResponse("Hello, teacher.");
+    };
+    await translateAudioToEnglish(audio, "vi");
+    await new Promise(resolve => setTimeout(resolve, 250));
+    assert.deepEqual(urls, [ASR_URL, CHAT_URL]);
+  });
+
+  await t.test("hedges the text step independently of ASR", async () => {
+    process.env.AUDIO_TEXT_HEDGE_MS = "30";
+    globalThis.fetch = async (url, init) => {
+      const target = String(url);
+      if (target === ASR_URL) return asrResponse("Con muốn uống nước.");
+      if (target === CHAT_URL) return delayed(500, init?.signal, () => chatResponse("I want water."));
+      return cfChat("I want to drink water.");
+    };
+    const result = await translateAudioToEnglish(audio, "vi");
+    assert.equal(result.model, "openai/whisper-large-v3-turbo");
+    assert.equal(result.englishText, "I want to drink water.");
+    assert.equal(result.textModel, "@cf/meta/llama-4-scout-17b-16e-instruct");
+  });
+
+  await t.test("waits for the slow primary when the hedge fails", async () => {
+    process.env.AUDIO_ASR_HEDGE_MS = "20";
+    globalThis.fetch = async (url, init) => {
+      const target = String(url);
+      if (target === ASR_URL) return delayed(120, init?.signal, () => asrResponse("Con chào cô."));
+      if (CF_ASR.test(target)) return Response.json({ success: false, errors: [{ code: 1 }] }, { status: 429 });
+      return chatResponse("Hello, teacher.");
+    };
+    const result = await translateAudioToEnglish(audio, "vi");
+    assert.equal(result.model, "openai/whisper-large-v3-turbo");
+    assert.equal(result.englishText, "Hello, teacher.");
+  });
+
+  await t.test("reports the Cloudflare error when both hedged calls fail", async () => {
+    process.env.AUDIO_ASR_HEDGE_MS = "20";
+    globalThis.fetch = async (url, init) => String(url) === ASR_URL
+      ? delayed(80, init?.signal, () => Response.json({}, { status: 502 }))
+      : Response.json({ success: false, errors: [{ code: 1 }] }, { status: 429 });
+    await assert.rejects(translateAudioToEnglish(audio, "vi"), (e: unknown) =>
+      e instanceof AppError && e.status === 429 && e.details?.provider === "cloudflare");
+  });
+
+  await t.test("a hedge admitted after the winner never marks the job in-flight again", async () => {
+    process.env.AUDIO_ASR_HEDGE_MS = "10";
+    delete process.env.CLOUDFLARE_ACCOUNT_ID;
+    delete process.env.CLOUDFLARE_WORKERS_AI_API_TOKEN;
+    const stages: string[] = [];
+    let cloudflareFetches = 0;
+    let releaseAdmission: () => void = () => {};
+    const admitted = new Promise<void>(resolve => { releaseAdmission = resolve; });
+    const execution = {
+      signal: new AbortController().signal,
+      attempts: { used: 0, max: 2 },
+      dispatcher: {
+        // Simulates a pool admission queue that only frees a slot after DeepInfra has answered.
+        execute: async (_request: unknown, run: (input: unknown) => Promise<unknown>) => {
+          await admitted;
+          return run({ account: { accountId: "cf-account", apiToken: "pool-token" }, signal: new AbortController().signal });
+        },
+      },
+    } as unknown as CloudflareExecutionContext;
+    globalThis.fetch = async (url, init) => {
+      const target = String(url);
+      if (target === ASR_URL) return delayed(40, init?.signal, () => asrResponse("Con chào cô."));
+      if (CF_ASR.test(target)) { cloudflareFetches++; return cfAsr("Con chào cô."); }
+      return chatResponse("Hello, teacher.");
+    };
+    const result = await translateAudioToEnglish(audio, "vi", { execution, beforeProviderCall: async stage => { stages.push(stage); } });
+    releaseAdmission();
+    await new Promise(resolve => setTimeout(resolve, 20));
+    assert.equal(result.model, "openai/whisper-large-v3-turbo");
+    assert.deepEqual(stages, ["asr", "text"]);
+    assert.equal(cloudflareFetches, 0);
+  });
+
+  await t.test("cancels the losing Cloudflare call inside the account pool", async () => {
+    process.env.AUDIO_ASR_HEDGE_MS = "20";
+    delete process.env.CLOUDFLARE_ACCOUNT_ID;
+    delete process.env.CLOUDFLARE_WORKERS_AI_API_TOKEN;
+    let cloudflareCancelled = false;
+    const execution = {
+      signal: new AbortController().signal,
+      attempts: { used: 0, max: 2 },
+      dispatcher: {
+        execute: async (_request: unknown, run: (input: unknown) => Promise<unknown>) =>
+          run({ account: { accountId: "cf-account", apiToken: "pool-token" }, signal: new AbortController().signal }),
+      },
+    } as unknown as CloudflareExecutionContext;
+    globalThis.fetch = async (url, init) => {
+      const target = String(url);
+      if (target === ASR_URL) return delayed(60, init?.signal, () => asrResponse("Con chào cô."));
+      if (CF_ASR.test(target)) return delayed(1000, init?.signal, () => cfAsr("Con chào cô."), () => { cloudflareCancelled = true; });
+      return chatResponse("Hello, teacher.");
+    };
+    const result = await translateAudioToEnglish(audio, "vi", { execution });
+    assert.equal(result.model, "openai/whisper-large-v3-turbo");
+    assert.equal(cloudflareCancelled, true);
   });
 });
