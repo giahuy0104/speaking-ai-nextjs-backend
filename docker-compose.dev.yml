@@ -96,7 +96,9 @@ services:
       start_period: 20s
     stop_grace_period: 75s
     mem_limit: 1g
-    # The VPS has 4 cores shared with production; keep the two dev backends under 3.
+    # One Node process runs JS on a single core, so throughput scales with the number
+    # of backends, not with a bigger limit. The 8-core VPS is shared with production:
+    # four dev backends x 1.5 = 6 CPU at most, only while a load test runs.
     cpus: 1.5
     logging:
       driver: json-file
@@ -110,6 +112,25 @@ services:
       AUDIO_STREAM_NODE: "3001"
     expose:
       - "3001"
+
+  # Names must match SERVICES in deploy/lib.sh and the upstreams in nginx.dev.conf.
+  backend-3002:
+    <<: *backend
+    environment:
+      <<: *backend-environment
+      PORT: "3002"
+      AUDIO_STREAM_NODE: "3002"
+    expose:
+      - "3002"
+
+  backend-3003:
+    <<: *backend
+    environment:
+      <<: *backend-environment
+      PORT: "3003"
+      AUDIO_STREAM_NODE: "3003"
+    expose:
+      - "3003"
 
   # Durable BullMQ workers; need AUDIO_TRANSLATION_JOBS_ENABLED=true in .env.local.
   # One worker per Cloudflare account: all four pull from the same queue, but each
@@ -185,6 +206,10 @@ services:
       backend-3000:
         condition: service_healthy
       backend-3001:
+        condition: service_healthy
+      backend-3002:
+        condition: service_healthy
+      backend-3003:
         condition: service_healthy
     healthcheck:
       test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1/healthz"]
