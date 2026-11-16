@@ -10,6 +10,7 @@ import {
   requestTargetSpeech,
   transcribeVietnameseAudio,
 } from "./aiProvider";
+import { setDeepInfraTransportForTests } from "./deepInfra";
 import { parseTargetLanguage } from "./targetLanguage";
 import { buildTargetLanguageInstruction } from "./prompts";
 
@@ -21,6 +22,10 @@ const environmentKeys = [
   "CLOUDFLARE_TEXT_MODEL",
   "CLOUDFLARE_TTS_MODEL",
   "CLOUDFLARE_TTS_SPEAKER",
+  "AUDIO_TARGET_TTS_PROVIDER",
+  "DEEPINFRA_API_KEY",
+  "DEEPINFRA_TTS_MODEL",
+  "DEEPINFRA_TTS_VOICE",
 ] as const;
 const originalEnvironment = Object.fromEntries(
   environmentKeys.map((key) => [key, process.env[key]]),
@@ -45,6 +50,7 @@ function configureCloudflare() {
 afterEach(() => {
   restoreEnvironment();
   globalThis.fetch = originalFetch;
+  setDeepInfraTransportForTests(undefined);
 });
 
 test("selects Cloudflare-only profiles", () => {
@@ -268,4 +274,64 @@ test("returns a clear configuration error when no AI provider exists", async () 
       error.code === "LLM_FAILED" &&
       error.status === 503,
   );
+});
+
+function configureDeepInfraSpeech(transport: Parameters<typeof setDeepInfraTransportForTests>[0]) {
+  configureCloudflare();
+  process.env.AUDIO_TARGET_TTS_PROVIDER = "deepinfra";
+  process.env.DEEPINFRA_API_KEY = "test-deepinfra-key";
+  setDeepInfraTransportForTests(transport);
+  // Any Cloudflare call would mean the provider switch leaked.
+  globalThis.fetch = async (input) => assert.fail(`unexpected Cloudflare call to ${String(input)}`);
+}
+
+test("target-language speech uses Qwen3-TTS with the Sohee voice on DeepInfra", async () => {
+  let calls = 0;
+  configureDeepInfraSpeech(async (url, init) => {
+    calls++;
+    assert.equal(url, "https://api.deepinfra.com/v1/openai/audio/speech");
+    assert.equal((init.headers as Record<string, string>).Authorization, "Bearer test-deepinfra-key");
+    assert.deepEqual(JSON.parse(String(init.body)), {
+      model: "Qwen/Qwen3-TTS", input: "今天我很开心。", voice: "Sohee", response_format: "mp3",
+    });
+    return new Response(new Uint8Array([7, 8, 9]), { headers: { "Content-Type": "audio/mpeg" } });
+  });
+  assert.deepEqual(getTargetTtsProfile("zh"), {
+    provider: "deepinfra", model: "Qwen/Qwen3-TTS", voice: "Sohee-zh", speed: 1, extension: "mp3",
+  });
+  assert.equal(getTargetTtsProfile("ja").voice, "Sohee-ja");
+  assert.deepEqual(new Uint8Array(await requestTargetSpeech("今天我很开心。", "zh")), new Uint8Array([7, 8, 9]));
+  assert.equal(calls, 1);
+});
+
+test("DeepInfra speech failures become TTS_FAILED without falling back to Cloudflare", async () => {
+  for (const [response, status, reason] of [
+    [new Response("upstream says no", { status: 500 }), 502, "provider_error"],
+    [new Response("slow down", { status: 429 }), 429, "rate_limited"],
+    [Response.json({ error: "not audio" }), 502, "invalid_response"],
+    [new Response(new Uint8Array(), { headers: { "Content-Type": "audio/mpeg" } }), 502, "invalid_response"],
+  ] as const) {
+    configureDeepInfraSpeech(async () => response);
+    await assert.rejects(() => requestTargetSpeech("Bonjour.", "fr"), (error: unknown) =>
+      error instanceof AppError && error.code === "TTS_FAILED" && error.status === status &&
+      error.details?.provider === "deepinfra" && error.details?.reason === reason &&
+      !String(error.message).includes("upstream says no"));
+  }
+});
+
+test("rejects an invalid speech provider or voice setting before calling anyone", async () => {
+  configureDeepInfraSpeech(async () => assert.fail("DeepInfra must not be called"));
+  process.env.DEEPINFRA_TTS_VOICE = "Sohee voice";
+  await assert.rejects(() => requestTargetSpeech("안녕.", "ko"), (error: unknown) =>
+    error instanceof AppError && error.status === 500 && error.details?.reason === "invalid_voice");
+  process.env.AUDIO_TARGET_TTS_PROVIDER = "openai";
+  assert.throws(() => getTargetTtsProfile("ko"), (error: unknown) =>
+    error instanceof AppError && error.status === 500 && error.details?.reason === "invalid_provider");
+});
+
+test("target-language speech stays on Cloudflare when no provider is configured", () => {
+  delete process.env.AUDIO_TARGET_TTS_PROVIDER;
+  assert.deepEqual(getTargetTtsProfile("zh"), {
+    provider: "cloudflare", model: "xai/grok-tts", voice: "ara-zh", speed: 1, extension: "mp3",
+  });
 });

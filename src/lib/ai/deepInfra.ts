@@ -149,17 +149,17 @@ export function setDeepInfraTransportForTests(transport: DeepInfraTransport | un
   transportOverride = transport;
 }
 
-async function postDeepInfra(
+async function sendDeepInfra(
   config: DeepInfraConfig,
   path: string,
   init: { body: BodyInit; headers?: Record<string, string> },
   timeoutMs: number,
   outerSignal?: AbortSignal,
-): Promise<unknown> {
+): Promise<{ response: Response; body: ArrayBuffer }> {
   const attemptSignal = timeoutSignal(timeoutMs, "attempt_timeout");
   const signal = outerSignal ? combineAbortSignals([outerSignal, attemptSignal]) : attemptSignal;
   let response: Response;
-  let raw: string;
+  let body: ArrayBuffer;
   try {
     response = await (transportOverride ?? keepAliveTransport)(`${config.baseUrl}${path}`, {
       method: "POST",
@@ -169,7 +169,7 @@ async function postDeepInfra(
       dispatcher: keepAliveAgent(),
     });
     // Reading the body is covered by the same deadline as the request.
-    raw = await response.text();
+    body = await response.arrayBuffer();
   } catch {
     throw new DeepInfraProviderError(signal.aborted ? "timeout" : "network_error");
   }
@@ -177,8 +177,19 @@ async function postDeepInfra(
   if (!response.ok) {
     throw new DeepInfraProviderError(response.status === 429 ? "rate_limited" : "provider_error", response.status);
   }
+  return { response, body };
+}
+
+async function postDeepInfra(
+  config: DeepInfraConfig,
+  path: string,
+  init: { body: BodyInit; headers?: Record<string, string> },
+  timeoutMs: number,
+  outerSignal?: AbortSignal,
+): Promise<unknown> {
+  const { response, body } = await sendDeepInfra(config, path, init, timeoutMs, outerSignal);
   try {
-    return JSON.parse(raw) as unknown;
+    return JSON.parse(new TextDecoder().decode(body)) as unknown;
   } catch {
     throw new DeepInfraProviderError("invalid_response", response.status);
   }
@@ -248,10 +259,48 @@ export async function translateWithDeepInfra(
   return { englishText, model: config.textModel };
 }
 
+const DEFAULT_TTS_MODEL = "Qwen/Qwen3-TTS";
+// Qwen3-TTS preset voice; it reads all target languages (zh/ja/ko/fr).
+const DEFAULT_TTS_VOICE = "Sohee";
+// Qwen3-TTS took 1.6-3.9 s for one or two short sentences in manual tests.
+const DEFAULT_TTS_TIMEOUT_MS = 10_000;
+const VOICE_PATTERN = /^[A-Za-z0-9_-]{1,64}$/;
+const MAX_SPEECH_BYTES = 10 * 1024 * 1024;
+
+export function deepInfraTtsModel() {
+  return process.env.DEEPINFRA_TTS_MODEL?.trim() || DEFAULT_TTS_MODEL;
+}
+
+export function deepInfraTtsVoice() {
+  return process.env.DEEPINFRA_TTS_VOICE?.trim() || DEFAULT_TTS_VOICE;
+}
+
+/** Text-to-speech through DeepInfra's OpenAI-compatible endpoint; returns MP3 bytes. */
+export async function synthesizeWithDeepInfra(
+  text: string,
+  options: CallOptions = {},
+): Promise<{ audio: ArrayBuffer; model: string; voice: string }> {
+  const config = getDeepInfraConfig();
+  const model = deepInfraTtsModel();
+  const voice = deepInfraTtsVoice();
+  if (!MODEL_PATTERN.test(model)) throw new DeepInfraProviderError("invalid_model");
+  if (!VOICE_PATTERN.test(voice)) throw new DeepInfraProviderError("invalid_voice");
+  const { response, body } = await sendDeepInfra(config, "/audio/speech", {
+    body: JSON.stringify({ model, input: text, voice, response_format: "mp3" }),
+    headers: { "Content-Type": "application/json" },
+  }, positiveInteger("DEEPINFRA_TTS_TIMEOUT_MS", DEFAULT_TTS_TIMEOUT_MS), options.signal);
+  if (!response.headers.get("content-type")?.includes("audio/mpeg") ||
+      body.byteLength === 0 || body.byteLength > MAX_SPEECH_BYTES) {
+    throw new DeepInfraProviderError("invalid_response", response.status);
+  }
+  return { audio: body, model, voice };
+}
+
 function statusFor(error: DeepInfraProviderError) {
   switch (error.reason) {
     case "not_configured": return 503;
     case "invalid_model":
+    case "invalid_voice":
     case "invalid_base_url":
     case "invalid_reasoning_effort": return 500;
     case "timeout": return 504;
@@ -265,6 +314,17 @@ function asrMessage(status: number) {
   if (status === 504) return "Dịch vụ nhận diện giọng nói phản hồi quá thời gian chờ. Vui lòng thử lại.";
   if (status === 503) return "Máy chủ chưa được cấu hình DeepInfra.";
   return "Dịch vụ nhận diện giọng nói tạm thời gặp lỗi. Vui lòng thử lại.";
+}
+
+/** Public error for a failed DeepInfra speech request; other errors pass through unchanged. */
+export function toDeepInfraTtsAppError(error: unknown) {
+  if (!(error instanceof DeepInfraProviderError)) return error;
+  return new AppError("TTS_FAILED", "Chưa tạo được giọng đọc bản dịch.", statusFor(error), {
+    provider: "deepinfra",
+    stage: "tts",
+    reason: error.reason,
+    ...(error.status !== undefined ? { upstreamStatus: error.status } : {}),
+  });
 }
 
 /** Public error for a failed DeepInfra stage; other errors pass through unchanged. */
