@@ -33,7 +33,7 @@
     "test:cloudflare-text": "node --import tsx --test src/lib/ai/cloudflareText.test.ts",
     "test:deepinfra": "node --import tsx --test src/lib/ai/deepInfra.test.ts src/lib/ai/deepInfraSpeechStream.test.ts",
     "test:load-test-persistence": "node --import tsx --test src/lib/ai/loadTestPersistence.test.ts",
-    "test:target-speech": "node --import tsx --test src/lib/ai/targetSpeechDeferred.test.ts src/lib/ai/targetSpeechStreams.test.ts src/lib/ai/speechBroadcast.test.ts src/lib/audio/pcmToMp3.test.ts",
+    "test:target-speech": "node --import tsx --test src/lib/ai/targetSpeechDeferred.test.ts",
     "test:cloudflare-pool": "node --import tsx --test src/lib/ai/cloudflare/accountConfig.test.ts src/lib/ai/cloudflare/quotaPolicy.test.ts src/lib/ai/cloudflare/providerError.test.ts src/lib/ai/cloudflare/deadline.test.ts src/lib/ai/cloudflare/memoryAdmissionStore.test.ts src/lib/ai/cloudflare/redisAdmissionStore.test.ts src/lib/ai/cloudflare/dispatcher.test.ts src/lib/ai/cloudflare/runtime.test.ts src/lib/ai/cloudflare/requestQueue.test.ts src/lib/ai/cloudflare/upload.test.ts src/lib/ai/cloudflareMultiAccountCompatibility.test.ts src/app/api/audio/translate/route.test.ts",
     "test:cloudflare-legacy": "node --import tsx --test src/lib/ai/cloudflare/legacyAdmission.test.ts",
     "test:cloudflare-pool:redis": "node --import tsx --test src/lib/ai/cloudflare/redisAdmissionStore.integration.test.ts",
@@ -65,7 +65,6 @@
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1096.0",
-    "@breezystack/lamejs": "^1.2.7",
     "@neondatabase/serverless": "^1.0.2",
     "@vercel/blob": "^2.6.1",
     "bullmq": "6.5.0",

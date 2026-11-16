@@ -71,18 +71,6 @@ Khi đặt `AUDIO_ASR_HEDGE_MS` hoặc `AUDIO_TEXT_HEDGE_MS` > 0: nếu nhà cun
 - Khi bật pool, session admission vẫn giới hạn số request đồng thời của backend; lượt gọi DeepInfra không dùng permit Cloudflare, lượt dự phòng Cloudflare thì dùng như bình thường. Audio worker vẫn cần `CLOUDFLARE_AUDIO_TRANSLATION_POOL_ENABLED=true`.
 - Không trả nội dung lỗi từ DeepInfra ra ngoài.
 
-## Giọng đọc zh/ja/ko/fr phát dần (stream)
-
-Bật bằng `AUDIO_TARGET_TTS_STREAM=true`. Cần thêm `AUDIO_TARGET_TTS_DEFERRED=true` và `AUDIO_TARGET_TTS_PROVIDER=deepinfra`.
-
-- Khi bản dịch có, pipeline gọi `POST /v1/text-to-speech/{voice}/stream?output_format=pcm`. Với Qwen3-TTS, endpoint này chỉ stream được PCM (24 kHz, s16le, mono); `mp3`/`opus`/`wav` trả body rỗng.
-- Server encode PCM sang MP3 48 kbps ngay khi nhận (`@breezystack/lamejs`, LGPL-3.0), nên app vẫn nhận `audio/mpeg` như cũ.
-- `GET /api/audio/target` trả MP3 phát dần (`X-Audio-Source: stream`, không có `Content-Length`). Request nào vào sau cũng nhận clip từ byte đầu. Clip hoàn chỉnh vẫn được lưu cache như trước.
-- Nếu stream lỗi trước byte đầu, server tự gọi `/audio/speech` (MP3 hoàn chỉnh) và ghi log `target_speech_stream_fallback`. Nếu lỗi sau khi đã gửi audio, request đó lỗi (log `target_speech_stream_failed`); lần sau sẽ tạo lại.
-- Log `target_speech_stream_first_chunk` ghi `latencyMs` tới chunk MP3 đầu tiên, dùng để so với `/audio/speech`.
-- Hạn cho cả luồng: `DEEPINFRA_TTS_STREAM_TIMEOUT_MS` (mặc định 20000).
-- Với câu ngắn, lần đo trước cho thấy chunk PCM đầu tiên không về sớm hơn MP3 hoàn chỉnh. Stream chủ yếu có lợi cho câu dài; đo log trên staging trước khi bật ở production.
-
 ## Cần kiểm tra trước khi dùng thật
 
 1. DeepInfra không có `vad_filter`, `beam_size`, `no_speech_threshold` như Cloudflare. Test riêng audio im lặng/nhiễu để xem Whisper có sinh chữ giả không (kết quả này không kích hoạt fallback).
