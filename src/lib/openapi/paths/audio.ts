@@ -210,6 +210,38 @@ export const audioPaths: OpenApiObject = {
       },
     },
   },
+  "/api/audio/target": {
+    get: {
+      tags: [TTS_TAG],
+      summary: "Audio bản dịch Trung/Nhật/Hàn/Pháp (tạo sau)",
+      description:
+        "Chỉ dùng khi `AUDIO_TARGET_TTS_DEFERRED=true`: bản dịch trả về trước, `audioUrl` trỏ tới route này. " +
+        "Chỉ chấp nhận URL do server ký (HMAC trên ngôn ngữ, hạn dùng và câu; hết hạn sau 15 phút). " +
+        "Nhập vào lần tạo đang chạy trên cùng backend, hoặc 307 tới cache, hoặc tạo mới rồi trả MP3 hoàn chỉnh.",
+      operationId: "getTargetSpeech",
+      parameters: [
+        queryParam("lang", "Ngôn ngữ đích.", { type: "string", enum: ["zh", "ja", "ko", "fr"] }, true),
+        queryParam("text", "Câu đã dịch, 1–300 ký tự.", { type: "string", minLength: 1, maxLength: 300 }, true),
+        queryParam("exp", "Hạn dùng (ms Unix), do server tạo.", { type: "string" }, true),
+        queryParam("sig", "Chữ ký base64url, do server tạo.", { type: "string" }, true),
+        queryParam("node", "Gợi ý định tuyến backend, do server tạo."),
+      ],
+      responses: {
+        "200": binaryResponse("MP3 hoàn chỉnh của câu.", ["audio/mpeg"], {
+          "X-Audio-Source": { schema: { type: "string", enum: ["joined", "synthesized"] } },
+        }),
+        "307": {
+          description: "Đã có cache, chuyển tới file audio.",
+          headers: {
+            Location: { schema: { type: "string" } },
+            "X-Audio-Source": { schema: { type: "string", example: "cache" } },
+          },
+        },
+        "403": errorResponse("URL sai chữ ký, hết hạn hoặc thiếu tham số (`FORBIDDEN`)."),
+        "502": errorResponse("TTS lỗi (`TTS_FAILED`)."),
+      },
+    },
+  },
   "/api/audio/cache/{fileName}": {
     parameters: [pathParam("fileName", "Tên file, ví dụ `<hash>.mp3`. Cũng truy cập được qua `/generated-audio/{fileName}`.")],
     get: {
