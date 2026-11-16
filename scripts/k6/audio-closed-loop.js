@@ -28,6 +28,10 @@
 //   TOKENS            installations registered in setup and shared by the users (default 12;
 //                     registration allows about 12 per minute per IP)
 //   SUMMARY_FILE      also write the full k6 summary as JSON to this path
+//   TARGET_LANGUAGE   en (default) or zh / ja / ko / fr. Other than en, sync mode posts to
+//                     /api/conversation (the app's target-language route); jobs mode is en only.
+//                     That route saves history and uploads the audio unless the backend sets
+//                     LOAD_TEST_SKIP_PERSISTENCE_CLIENT_PREFIX=web_k6_.
 //   ALLOW_PROD=1      required to target the production API
 //
 // Outcome of one loop, as the user sees it:
@@ -52,6 +56,9 @@ const BUSY_RETRIES = Number(__ENV.BUSY_RETRIES || 0);
 const CLIENT_TIMEOUT_S = Number(__ENV.CLIENT_TIMEOUT_S || 40);
 const JOB_TIMEOUT_S = Number(__ENV.JOB_TIMEOUT_S || 120);
 const TOKENS = Number(__ENV.TOKENS || 12);
+const TARGET_LANGUAGE = (__ENV.TARGET_LANGUAGE || "en").toLowerCase();
+if (!["en", "zh", "ja", "ko", "fr"].includes(TARGET_LANGUAGE)) fail(`TARGET_LANGUAGE "${TARGET_LANGUAGE}" is not supported`);
+if (TARGET_LANGUAGE !== "en" && MODE === "jobs") fail("jobs mode only translates to English; use MODE=sync");
 const MAX_RETRY_WAIT_S = 10;
 const POLL_ERROR_RETRIES = 3;
 const MISSING_RESULT_REPOLLS = 3;
@@ -162,7 +169,7 @@ export function setup() {
   const tokens = [];
   for (let i = 0; i < TOKENS; i++) tokens.push(registerInstallation());
   const lengths = mix.map(clip => clip.durationMs / 1000);
-  console.log(`closed loop -> ${BASE_URL} | mode=${MODE} | stages=${STAGES.map(s => `${s.users} users x ${s.holdS}s`).join(", ")} | ` +
+  console.log(`closed loop -> ${BASE_URL} | mode=${MODE} | target=${TARGET_LANGUAGE} | stages=${STAGES.map(s => `${s.users} users x ${s.holdS}s`).join(", ")} | ` +
     `ramp=${RAMP_S}s | think=${THINK_MIN_S}-${THINK_MAX_S}s | clips=${mix.length} (${Math.min(...lengths).toFixed(1)}-${Math.max(...lengths).toFixed(1)}s) | ` +
     `record=${RECORD} | busy retries=${BUSY_RETRIES} | tokens=${tokens.length}`);
   return { tokens, testStartedAt: Date.now() };
@@ -172,11 +179,12 @@ function jsonField(res, path) {
   try { return res.json(path); } catch (_) { return undefined; }
 }
 
-function sendAudio(token, clip, path, extraHeaders) {
+function sendAudio(token, clip, path, extraHeaders, extraFields = {}) {
   const res = http.post(`${BASE_URL}${path}`, {
     audio: http.file(b64decode(clip.audioBase64, "std"), clip.audioName, "audio/wav"),
     sourceLanguage: clip.sourceLanguage || "vi",
     clientId: token.clientId,
+    ...extraFields,
   }, {
     headers: { Authorization: `Bearer ${token.accessToken}`, Accept: "application/json",
       "X-Request-Id": `k6-loop-${randomHex(16)}`, ...extraHeaders },
@@ -192,6 +200,12 @@ function rejection(res) {
 }
 
 function syncAttempt(token, clip) {
+  if (TARGET_LANGUAGE !== "en") {
+    const res = sendAudio(token, clip, "/api/conversation", {},
+      { context: "home", childAge: "6", targetLanguage: TARGET_LANGUAGE });
+    if (res.status === 200) return { kind: jsonField(res, "translatedText") ? "ok" : "error" };
+    return rejection(res);
+  }
   const res = sendAudio(token, clip, "/api/audio/translate", {});
   if (res.status === 200) return { kind: jsonField(res, "englishText") ? "ok" : "error" };
   return rejection(res);
@@ -258,7 +272,7 @@ export function handleSummary(data) {
   const metric = name => (data.metrics[name] || {}).values || {};
   const lines = [
     "",
-    `Closed-loop result (${MODE}, ${BASE_URL})`,
+    `Closed-loop result (${MODE}, target ${TARGET_LANGUAGE}, ${BASE_URL})`,
     "users | loops | req/s |     ok | unclear |   busy |  error | wait avg | wait p95 | wait max",
     "------|-------|-------|--------|---------|--------|--------|----------|----------|---------",
   ];
