@@ -53,14 +53,15 @@ test("production auth fails closed for missing or invalid signing secret", () =>
   `);
 });
 
-test("registered production tokens enforce ownership, refresh rotation and revocation", () => {
+test("storage verification: registered production tokens enforce ownership, refresh rotation and revocation", () => {
   runAuthenticationScenario(String.raw`
+    process.env.INSTALLATION_ACCESS_VERIFICATION = 'storage';
     const clientId = 'web_auth-regression-device';
     const tokens = await auth.registerInstallation({ clientId, platform: 'web', installationSecret: 'a'.repeat(48) });
     const request = token => new Request('https://example.test/api/history', { headers: { authorization: 'Bearer ' + token } });
     const secondTab = await auth.registerInstallation({ clientId, platform: 'web', installationSecret: 'a'.repeat(48), appVersion: '2' });
     assert.equal((await auth.requireInstallationAccess(request(secondTab.accessToken), clientId)).legacy, false);
-    assert.deepEqual(await auth.requireInstallationAccess(request(tokens.accessToken), clientId), { clientId, platform: 'web', legacy: false });
+    assert.deepEqual(await auth.requireInstallationAccess(request(tokens.accessToken), clientId), { clientId, platform: 'web', legacy: false, lookup: 'cache' });
     await assert.rejects(auth.requireInstallationAccess(request(tokens.accessToken), 'web_another-test-device'),
       error => error.code === 'FORBIDDEN' && error.status === 403);
     const refreshed = await auth.refreshInstallation(tokens.refreshToken);
@@ -98,19 +99,27 @@ const countRecordReads = String.raw`
   const readCount = () => reads;
 `;
 
-test("repeated access checks reuse the cached installation record", () => {
+test("storage verification: repeated access checks reuse the cached installation record", () => {
   runAuthenticationScenario(String.raw`
+    process.env.INSTALLATION_ACCESS_VERIFICATION = 'storage';
     const clientId = 'web_cache-hit-device';
     const tokens = await auth.registerInstallation({ clientId, platform: 'web', installationSecret: 'a'.repeat(48) });
     ${countRecordReads}
     const request = new Request('https://example.test/api/history', { headers: { authorization: 'Bearer ' + tokens.accessToken } });
-    for (let i = 0; i < 5; i++) assert.equal((await auth.requireInstallationAccess(request, clientId)).clientId, clientId);
+    const lookups = [];
+    for (let i = 0; i < 5; i++) {
+      const access = await auth.requireInstallationAccess(request, clientId);
+      assert.equal(access.clientId, clientId);
+      lookups.push(access.lookup);
+    }
     assert.equal(readCount(), 1);
+    assert.deepEqual(lookups, ['storage', 'cache', 'cache', 'cache', 'cache']);
   `);
 });
 
-test("a zero cache TTL reads storage on every access check", () => {
+test("storage verification: a zero cache TTL reads storage on every access check", () => {
   runAuthenticationScenario(String.raw`
+    process.env.INSTALLATION_ACCESS_VERIFICATION = 'storage';
     process.env.INSTALLATION_ACCESS_CACHE_TTL_MS = '0';
     const clientId = 'web_cache-off-device';
     const tokens = await auth.registerInstallation({ clientId, platform: 'web', installationSecret: 'a'.repeat(48) });
@@ -121,8 +130,9 @@ test("a zero cache TTL reads storage on every access check", () => {
   `);
 });
 
-test("a session rotated on another instance is accepted at once, not rejected from the cache", () => {
+test("storage verification: a session rotated on another instance is accepted at once, not rejected from the cache", () => {
   runAuthenticationScenario(String.raw`
+    process.env.INSTALLATION_ACCESS_VERIFICATION = 'storage';
     const core = require('./src/lib/installationAuthCore.ts');
     const clientId = 'web_cache-rotated-device';
     const tokens = await auth.registerInstallation({ clientId, platform: 'web', installationSecret: 'a'.repeat(48) });
@@ -139,8 +149,9 @@ test("a session rotated on another instance is accepted at once, not rejected fr
   `);
 });
 
-test("a revocation made on another instance takes effect once the cache entry expires", () => {
+test("storage verification: a revocation made on another instance takes effect once the cache entry expires", () => {
   runAuthenticationScenario(String.raw`
+    process.env.INSTALLATION_ACCESS_VERIFICATION = 'storage';
     process.env.INSTALLATION_ACCESS_CACHE_TTL_MS = '50';
     const clientId = 'web_cache-expiry-device';
     const tokens = await auth.registerInstallation({ clientId, platform: 'web', installationSecret: 'a'.repeat(48) });
@@ -153,8 +164,9 @@ test("a revocation made on another instance takes effect once the cache entry ex
   `);
 });
 
-test("refresh and revoke on this instance drop the cached record immediately", () => {
+test("storage verification: refresh and revoke on this instance drop the cached record immediately", () => {
   runAuthenticationScenario(String.raw`
+    process.env.INSTALLATION_ACCESS_VERIFICATION = 'storage';
     process.env.INSTALLATION_ACCESS_CACHE_TTL_MS = '600000';
     const clientId = 'web_cache-local-write-device';
     const tokens = await auth.registerInstallation({ clientId, platform: 'web', installationSecret: 'a'.repeat(48) });
@@ -163,6 +175,62 @@ test("refresh and revoke on this instance drop the cached record immediately", (
     const refreshed = await auth.refreshInstallation(tokens.refreshToken);
     await assert.rejects(auth.requireInstallationAccess(request(tokens.accessToken), clientId), unauthorized);
     await auth.requireInstallationAccess(request(refreshed.accessToken), clientId);
+    await auth.revokeInstallation(request(refreshed.accessToken));
+    await assert.rejects(auth.requireInstallationAccess(request(refreshed.accessToken), clientId), unauthorized);
+  `);
+});
+
+test("token verification: access checks never read storage", () => {
+  runAuthenticationScenario(String.raw`
+    const clientId = 'web_token-mode-device';
+    const tokens = await auth.registerInstallation({ clientId, platform: 'web', installationSecret: 'a'.repeat(48) });
+    ${countRecordReads}
+    const request = new Request('https://example.test/api/history', { headers: { authorization: 'Bearer ' + tokens.accessToken } });
+    for (let i = 0; i < 3; i++) {
+      const access = await auth.requireInstallationAccess(request, clientId);
+      assert.equal(access.lookup, 'token');
+    }
+    assert.equal(readCount(), 0);
+    await assert.rejects(auth.requireInstallationAccess(request, 'web_another-test-device'),
+      error => error.code === 'FORBIDDEN' && error.status === 403);
+  `);
+});
+
+test("token verification: a forged or expired token is still rejected", () => {
+  runAuthenticationScenario(String.raw`
+    const core = require('./src/lib/installationAuthCore.ts');
+    const claims = { kind: 'access', clientId: 'web_forged-device', platform: 'web', tokenVersion: 1, sessionId: 'session' };
+    const forged = core.issueInstallationToken(claims, 'another-secret-with-at-least-32-characters!', 900);
+    const expired = core.issueInstallationToken(claims, process.env.INSTALLATION_AUTH_SECRET, -1);
+    for (const token of [forged.token, expired.token, 'not-a-token']) {
+      const request = new Request('https://example.test/api/history', { headers: { authorization: 'Bearer ' + token } });
+      await assert.rejects(auth.requireInstallationAccess(request), unauthorized);
+    }
+  `);
+});
+
+test("token verification: a revocation on another instance blocks refresh but not the live access token", () => {
+  runAuthenticationScenario(String.raw`
+    const clientId = 'web_token-mode-remote-revoke';
+    const tokens = await auth.registerInstallation({ clientId, platform: 'web', installationSecret: 'a'.repeat(48) });
+    // Another backend instance deletes the installation directly in shared storage.
+    globalThis.__homiInstallationRecords.delete(clientId);
+    const request = new Request('https://example.test/api/history', { headers: { authorization: 'Bearer ' + tokens.accessToken } });
+    assert.equal((await auth.requireInstallationAccess(request, clientId)).clientId, clientId);
+    await assert.rejects(auth.refreshInstallation(tokens.refreshToken), unauthorized);
+  `);
+});
+
+test("token verification: refresh keeps the previous access token until expiry, revoke refuses it at once", () => {
+  runAuthenticationScenario(String.raw`
+    const clientId = 'web_token-mode-local-write';
+    const tokens = await auth.registerInstallation({ clientId, platform: 'web', installationSecret: 'a'.repeat(48) });
+    const request = token => new Request('https://example.test/api/history', { headers: { authorization: 'Bearer ' + token } });
+    const refreshed = await auth.refreshInstallation(tokens.refreshToken);
+    // Requests sent just before a proactive refresh must not fail.
+    assert.equal((await auth.requireInstallationAccess(request(tokens.accessToken), clientId)).lookup, 'token');
+    await assert.rejects(auth.refreshInstallation(tokens.refreshToken), unauthorized);
+    assert.equal((await auth.requireInstallationAccess(request(refreshed.accessToken), clientId)).lookup, 'token');
     await auth.revokeInstallation(request(refreshed.accessToken));
     await assert.rejects(auth.requireInstallationAccess(request(refreshed.accessToken), clientId), unauthorized);
   `);

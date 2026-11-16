@@ -117,7 +117,7 @@ export function getInstallationAuthConfig() {
     invalidSecret: Boolean(configuredSecret && !secret),
     // A legacy clientId is a development convenience, never a production credential.
     required: process.env.NODE_ENV === "production" || enabled("INSTALLATION_AUTH_REQUIRED"),
-    accessTtlSeconds: positiveInteger("INSTALLATION_ACCESS_TTL_SECONDS", 3600),
+    accessTtlSeconds: positiveInteger("INSTALLATION_ACCESS_TTL_SECONDS", 900),
     refreshTtlSeconds: positiveInteger(
       "INSTALLATION_REFRESH_TTL_SECONDS",
       90 * 24 * 60 * 60,
@@ -391,6 +391,9 @@ export async function refreshInstallation(refreshToken: string) {
   });
   // A concurrent access check may have cached the pre-rotation record meanwhile.
   forgetInstallation(record.clientId);
+  // With "token" verification the previous access token stays valid until it expires:
+  // clients refresh ahead of expiry while requests carrying it are still in flight.
+  // Only the refresh token is single-use; revoke refuses the session's access tokens.
   if (!rotated) {
     throw new AppError(
       "DEVICE_NOT_REGISTERED",
@@ -405,7 +408,74 @@ export type InstallationAccess = {
   clientId: string;
   platform?: InstallationPlatform;
   legacy: boolean;
+  /**
+   * How the access token was accepted: "token" = signature and expiry only (no storage
+   * read), "cache"/"storage" = installation record confirmed in that place. Absent for legacy access.
+   */
+  lookup?: "token" | "cache" | "storage";
 };
+
+export type InstallationAccessVerification = "token" | "storage";
+
+/**
+ * "token" (default) accepts a validly signed, unexpired access token without reading
+ * storage, so authentication adds no database round-trip to API calls. The cost: a
+ * session refreshed or revoked through another backend instance keeps working there
+ * until its access token expires (INSTALLATION_ACCESS_TTL_SECONDS). Refresh always
+ * reads storage, so a revoked installation cannot obtain a new access token.
+ * "storage" confirms every token against the installation record (cached briefly).
+ */
+export function getInstallationAccessVerification(): InstallationAccessVerification {
+  return process.env.INSTALLATION_ACCESS_VERIFICATION?.trim().toLowerCase() === "storage"
+    ? "storage"
+    : "token";
+}
+
+type SessionClaims = { clientId: string; tokenVersion: number; sessionId: string };
+type RevocationGlobal = typeof globalThis & { __homiRevokedInstallationSessions?: Map<string, number> };
+const MAX_REVOKED_SESSIONS = 50_000;
+
+function revokedSessions() {
+  return ((globalThis as RevocationGlobal).__homiRevokedInstallationSessions ??= new Map());
+}
+
+function sessionKey(claims: SessionClaims) {
+  return `${claims.clientId}\n${claims.tokenVersion}\n${claims.sessionId}`;
+}
+
+/**
+ * Remembers, in this process, a session that was rotated or revoked here, so its
+ * outstanding access tokens are refused at once instead of when they expire. An
+ * entry is needed only until the last token of that session could expire.
+ */
+function rememberRevokedSession(claims: SessionClaims) {
+  const now = Date.now();
+  const sessions = revokedSessions();
+  for (const [key, expiresAt] of sessions) {
+    if (expiresAt > now && sessions.size < MAX_REVOKED_SESSIONS) break;
+    sessions.delete(key);
+  }
+  sessions.set(sessionKey(claims), now + getInstallationAuthConfig().accessTtlSeconds * 1000);
+}
+
+function isRevokedSession(claims: SessionClaims) {
+  const expiresAt = revokedSessions().get(sessionKey(claims));
+  return expiresAt !== undefined && expiresAt > Date.now();
+}
+
+async function confirmInstallationRecord(claims: SessionClaims) {
+  // A cached record that does not match (e.g. the session was refreshed through the
+  // other backend) is re-read before rejecting, so valid tokens are never refused.
+  let record = cachedInstallation(claims.clientId);
+  const lookup: "cache" | "storage" = recordMatchesToken(record, claims) ? "cache" : "storage";
+  if (lookup === "storage") {
+    const generationBeforeRead = installationWriteGeneration;
+    record = await readRecord(claims.clientId);
+    if (!recordMatchesToken(record, claims)) accessCache().delete(claims.clientId);
+    else if (generationBeforeRead === installationWriteGeneration) rememberInstallation(record);
+  }
+  return recordMatchesToken(record, claims) ? lookup : null;
+}
 
 export async function requireInstallationAccess(
   request: Request,
@@ -427,16 +497,12 @@ export async function requireInstallationAccess(
     throw new AppError("UNAUTHORIZED", "Thiếu installation access token.", 401);
   }
   const claims = verifyInstallationToken(token, secureConfig.secret, "access");
-  // A cached record that does not match (e.g. the session was refreshed through the
-  // other backend) is re-read before rejecting, so valid tokens are never refused.
-  let record = cachedInstallation(claims.clientId);
-  if (!recordMatchesToken(record, claims)) {
-    const generationBeforeRead = installationWriteGeneration;
-    record = await readRecord(claims.clientId);
-    if (!recordMatchesToken(record, claims)) accessCache().delete(claims.clientId);
-    else if (generationBeforeRead === installationWriteGeneration) rememberInstallation(record);
-  }
-  if (!recordMatchesToken(record, claims)) {
+  const lookup = isRevokedSession(claims)
+    ? null
+    : getInstallationAccessVerification() === "token"
+      ? "token"
+      : await confirmInstallationRecord(claims);
+  if (!lookup) {
     throw new AppError(
       "UNAUTHORIZED",
       "Installation access token đã bị thu hồi.",
@@ -455,12 +521,15 @@ export async function requireInstallationAccess(
     clientId: claims.clientId,
     platform: claims.platform,
     legacy: false,
+    lookup,
   };
 }
 
 export async function revokeInstallation(request: Request) {
   const access = await requireInstallationAccess(request);
+  const claims = verifyInstallationToken(bearerToken(request), requireSecret().secret, "access");
   await removeRecord(access.clientId);
+  rememberRevokedSession(claims);
   forgetInstallation(access.clientId);
   return access;
 }
