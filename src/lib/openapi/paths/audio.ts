@@ -217,9 +217,7 @@ export const audioPaths: OpenApiObject = {
       description:
         "Chỉ dùng khi `AUDIO_TARGET_TTS_DEFERRED=true`: bản dịch trả về trước, `audioUrl` trỏ tới route này. " +
         "Chỉ chấp nhận URL do server ký (HMAC trên ngôn ngữ, hạn dùng và câu; hết hạn sau 15 phút). " +
-        "Nhập vào lần tạo đang chạy trên cùng backend, hoặc 307 tới cache, hoặc tạo mới rồi trả MP3 hoàn chỉnh. " +
-        "Khi `AUDIO_TARGET_TTS_STREAM=true`, lúc giọng đọc còn đang tạo thì body là MP3 phát dần " +
-        "(chunked, không có `Content-Length`, `X-Audio-Source: stream`); mọi request vào sau đều nhận clip từ byte đầu.",
+        "Nhập vào lần tạo đang chạy trên cùng backend, hoặc 307 tới cache, hoặc tạo mới rồi trả MP3 hoàn chỉnh.",
       operationId: "getTargetSpeech",
       parameters: [
         queryParam("lang", "Ngôn ngữ đích.", { type: "string", enum: ["zh", "ja", "ko", "fr"] }, true),
@@ -229,8 +227,8 @@ export const audioPaths: OpenApiObject = {
         queryParam("node", "Gợi ý định tuyến backend, do server tạo."),
       ],
       responses: {
-        "200": binaryResponse("MP3 của câu: hoàn chỉnh, hoặc phát dần khi `X-Audio-Source: stream`.", ["audio/mpeg"], {
-          "X-Audio-Source": { schema: { type: "string", enum: ["joined", "synthesized", "stream"] } },
+        "200": binaryResponse("MP3 hoàn chỉnh của câu.", ["audio/mpeg"], {
+          "X-Audio-Source": { schema: { type: "string", enum: ["joined", "synthesized"] } },
         }),
         "307": {
           description: "Đã có cache, chuyển tới file audio.",

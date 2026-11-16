@@ -2,7 +2,7 @@ import { AppError, toErrorResponse } from "@/lib/errors";
 import { getRequestId, logEvent, withRequestId } from "@/lib/observability";
 import { getReusableAudioUrl } from "@/lib/storage/audio";
 import { verifyTargetAudioUrl } from "@/lib/ai/targetAudioUrl";
-import { subscribeTargetSpeech, targetSpeech, targetSpeechDescriptor } from "@/lib/ai/targetSpeech";
+import { targetSpeech, targetSpeechDescriptor } from "@/lib/ai/targetSpeech";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -11,8 +11,7 @@ export const maxDuration = 60;
  * Speech for a zh/ja/ko/fr translation that was returned before its audio existed.
  * Only signed URLs issued by the conversation pipeline are served (see targetAudioUrl.ts).
  * Order: join the synthesis this backend already started, else the durable cache,
- * else synthesize now. With AUDIO_TARGET_TTS_STREAM the body is MP3 encoded from
- * DeepInfra's PCM stream as it arrives (no Content-Length); otherwise the finished clip.
+ * else synthesize now. Qwen3-TTS cannot stream MP3, so the body is the finished clip.
  */
 export async function GET(request: Request) {
   const requestId = getRequestId(request);
@@ -35,28 +34,6 @@ export async function GET(request: Request) {
       }), requestId);
     }
     job = targetSpeech.start(text, language);
-  }
-
-  // AUDIO_TARGET_TTS_STREAM: play the MP3 while it is still being generated.
-  const live = subscribeTargetSpeech(text, language);
-  if (live) {
-    const latencyMs = Math.round(performance.now() - startedAt);
-    job.then(
-      audio => logEvent("info", "target_speech_served", {
-        requestId, language, joined, streamed: true, byteLength: audio.byteLength, latencyMs,
-        totalMs: Math.round(performance.now() - startedAt),
-      }),
-      error => logEvent("warn", "target_speech_failed", { requestId, language, joined, streamed: true, latencyMs, error }),
-    );
-    return withRequestId(new Response(live, {
-      status: 200,
-      headers: {
-        "Content-Type": "audio/mpeg",
-        "Cache-Control": "private, max-age=900",
-        "X-Accel-Buffering": "no",
-        "X-Audio-Source": "stream",
-      },
-    }), requestId);
   }
 
   try {
