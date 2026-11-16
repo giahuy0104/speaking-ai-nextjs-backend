@@ -11,6 +11,7 @@ import {
   uploadConversationUserAudio,
 } from "@/lib/storage/cloudinaryUserAudio";
 import { maybeLearnFromRepeatedUse } from "./adaptiveLearning";
+import { skipsPostResponsePersistence } from "./loadTestPersistence";
 
 type PostResponseOptions = {
   userAudio?: Blob;
@@ -56,6 +57,7 @@ export function scheduleConversationPostResponseTasks(
   inputMode: "audio" | "text",
   options: PostResponseOptions = {},
 ) {
+  if (skipsPostResponsePersistence(result.clientId)) return;
   after(async () => {
     const startedAt = Date.now();
     try {
