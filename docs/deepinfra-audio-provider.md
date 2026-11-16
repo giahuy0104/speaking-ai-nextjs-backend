@@ -1,6 +1,6 @@
 # DeepInfra cho ASR và dịch của `/api/audio/translate`
 
-Áp dụng cho `POST /api/audio/translate` và audio worker (BullMQ). Không đổi pipeline Flutter chính, dịch text V1 hay TTS: các luồng đó vẫn dùng Cloudflare.
+Áp dụng cho `POST /api/audio/translate`, audio worker (BullMQ), và bước nhận dạng + dịch của luồng hội thoại tiếng Trung/Nhật/Hàn/Pháp (`/api/conversation`, `targetLanguage` = zh/ja/ko/fr). Hai luồng dùng chung `AUDIO_ASR_PROVIDER` / `AUDIO_TEXT_PROVIDER`. Luồng hội thoại tiếng Anh, dịch text V1 và TTS (kể cả TTS zh/ja/ko/fr) vẫn dùng Cloudflare.
 
 ## Cấu hình khuyến nghị: DeepInfra trước, Cloudflare dự phòng
 

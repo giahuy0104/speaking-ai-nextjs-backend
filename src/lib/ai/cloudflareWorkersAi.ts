@@ -389,7 +389,7 @@ function failureFields(error: unknown) {
  * other call still running is cancelled. If all fail, a non-fallback error (such as
  * a 4xx) is reported first, otherwise the error of the last provider.
  */
-function runProviders<T>(
+export function runProviders<T>(
   stage: "asr" | "text",
   providers: readonly AudioProvider[],
   signal: AbortSignal,
@@ -653,6 +653,37 @@ export async function transcribeAudioToVietnamese(
   const result = await transcribeAudio(audio, "vi", options);
   const { text, ...metadata } = result;
   return { ...metadata, vietnameseText: text };
+}
+
+export type ProviderAudioTranscriptionResult = AudioTranscriptionResult & { provider: AudioProvider };
+
+/**
+ * Vietnamese ASR on the providers of AUDIO_ASR_PROVIDER (e.g. "deepinfra,cloudflare"),
+ * with the same fallback rules as /api/audio/translate. Used by the zh/ja/ko/fr pipeline.
+ */
+export async function transcribeAudioToVietnameseWithProviders(
+  audio: File,
+  options: { vadFilter?: boolean } = {},
+): Promise<ProviderAudioTranscriptionResult> {
+  const providers = resolveAudioProviders("asr");
+  const neverAborts = new AbortController().signal;
+  return runProviders("asr", providers, neverAborts, {}, async (provider, cancel) => {
+    if (provider === "cloudflare") {
+      return { ...(await transcribeAudioToVietnamese(audio, options)), provider };
+    }
+    const startedAt = performance.now();
+    let transcription;
+    try {
+      transcription = await transcribeWithDeepInfra(audio, audio.name, "vi", { signal: cancel });
+    } catch (error) {
+      throw toDeepInfraAppError(error, "asr", performance.now() - startedAt);
+    }
+    if (!transcription.text) {
+      throw new AppError("ASR_LOW_CONFIDENCE", "Mình chưa nghe rõ. Con đưa micro lại gần và nói rõ hơn nhé.", 422,
+        { provider: "deepinfra", reason: "empty_transcript" });
+    }
+    return { vietnameseText: transcription.text, segments: transcription.segments, model: transcription.model, provider };
+  });
 }
 
 export async function transcribeAudioToEnglish(
