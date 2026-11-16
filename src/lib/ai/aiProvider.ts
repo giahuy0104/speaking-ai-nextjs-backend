@@ -4,6 +4,7 @@ import { fetchLegacyCloudflare } from "./cloudflare/legacyAdmission";
 import { clientAbortSignal, combineAbortSignals, timeoutSignal } from "./cloudflare/abortDiagnostics";
 import type { CloudflareTask } from "./cloudflare/types";
 import { attachFailureDiagnostics } from "./cloudflare/providerError";
+import { deepInfraTtsModel, deepInfraTtsVoice, synthesizeWithDeepInfra, toDeepInfraTtsAppError } from "./deepInfra";
 
 // `@cf/openai/...` is a model namespace in Cloudflare's catalog. Requests are
 // still sent only to api.cloudflare.com; this does not use an OpenAI account.
@@ -32,7 +33,7 @@ export type TextGenerationResult = {
 };
 
 export type TtsProfile = {
-  provider: AiProvider;
+  provider: AiProvider | "deepinfra";
   model: string;
   voice: string;
   speed: number;
@@ -320,14 +321,30 @@ export function getConfiguredTtsProfile(): TtsProfile {
   };
 }
 
+/** zh/ja/ko/fr speech: AUDIO_TARGET_TTS_PROVIDER=deepinfra (Qwen3-TTS) or cloudflare (default, xai/grok-tts). */
+export function targetTtsProvider(): "cloudflare" | "deepinfra" {
+  const configured = process.env.AUDIO_TARGET_TTS_PROVIDER?.trim().toLowerCase() || "cloudflare";
+  if (configured !== "cloudflare" && configured !== "deepinfra") {
+    throw new AppError("TTS_FAILED", "Cấu hình nhà cung cấp AI không hợp lệ.", 500,
+      { reason: "invalid_provider", setting: "AUDIO_TARGET_TTS_PROVIDER" });
+  }
+  return configured;
+}
+
 export function getTargetTtsProfile(language: TargetSpeechLanguage): TtsProfile {
-  return {
-    provider: "cloudflare",
-    model: multilingualCloudflareTtsModel,
-    voice: `${targetSpeechVoice}-${language}`,
-    speed: 1,
-    extension: "mp3",
-  };
+  // The language stays in the voice so the reusable-audio cache never shares a clip
+  // between languages that write a sentence the same way (zh/ja kanji).
+  return targetTtsProvider() === "deepinfra"
+    ? { provider: "deepinfra", model: deepInfraTtsModel(), voice: `${deepInfraTtsVoice()}-${language}`, speed: 1, extension: "mp3" }
+    : { provider: "cloudflare", model: multilingualCloudflareTtsModel, voice: `${targetSpeechVoice}-${language}`, speed: 1, extension: "mp3" };
+}
+
+async function requestTargetSpeechFromDeepInfra(text: string) {
+  try {
+    return (await synthesizeWithDeepInfra(text)).audio;
+  } catch (error) {
+    throw toDeepInfraTtsAppError(error);
+  }
 }
 
 export async function requestTargetSpeech(
@@ -335,6 +352,7 @@ export async function requestTargetSpeech(
   language: TargetSpeechLanguage,
   options: { parentRequestId?: string } = {},
 ): Promise<ArrayBuffer> {
+  if (targetTtsProvider() === "deepinfra") return requestTargetSpeechFromDeepInfra(text);
   const config = requireCloudflareConfig("TTS_FAILED");
   const response = await fetchProvider(
     `https://api.cloudflare.com/client/v4/accounts/${encodeURIComponent(config.accountId)}/ai/run`,

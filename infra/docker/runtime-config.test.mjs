@@ -112,3 +112,14 @@ test("DeepInfra audio providers require their API key and reject unknown provide
   configureDeployment(ordered);
   assert.equal(ordered.AUDIO_ASR_PROVIDER, "deepinfra,cloudflare");
 });
+test("target-language speech provider defaults to Cloudflare and DeepInfra needs its key", () => {
+  const defaults = fixture();
+  configureDeployment(defaults);
+  assert.equal(defaults.AUDIO_TARGET_TTS_PROVIDER, "cloudflare");
+  assert.throws(() => configureDeployment(fixture({ AUDIO_TARGET_TTS_PROVIDER: "deepinfra" })), /DEEPINFRA_API_KEY \(required\)/);
+  assert.throws(() => configureDeployment(fixture({ AUDIO_TARGET_TTS_PROVIDER: "deepinfra,cloudflare", DEEPINFRA_API_KEY: "k" })),
+    /AUDIO_TARGET_TTS_PROVIDER \(cloudflare_or_deepinfra\)/);
+  const env = fixture({ AUDIO_TARGET_TTS_PROVIDER: " DeepInfra ", DEEPINFRA_API_KEY: "audit-deepinfra-key" });
+  configureDeployment(env);
+  assert.equal(env.AUDIO_TARGET_TTS_PROVIDER, "deepinfra");
+});

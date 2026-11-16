@@ -84,7 +84,11 @@ export function configureDeployment(env, role = "web") {
     env[key] = providers.join(",");
     return providers;
   });
-  if (audioProviders.includes("deepinfra")) required(env, "DEEPINFRA_API_KEY");
+  // zh/ja/ko/fr speech has a single provider (no fallback list).
+  const targetTts = value(env, "AUDIO_TARGET_TTS_PROVIDER").toLowerCase() || "cloudflare";
+  if (targetTts !== "cloudflare" && targetTts !== "deepinfra") fail("AUDIO_TARGET_TTS_PROVIDER", "cloudflare_or_deepinfra");
+  env.AUDIO_TARGET_TTS_PROVIDER = targetTts;
+  if (audioProviders.includes("deepinfra") || targetTts === "deepinfra") required(env, "DEEPINFRA_API_KEY");
   if (role === "web") {
     if (!/^[a-f0-9]{32}$/i.test(required(env, "CLOUDFLARE_ACCOUNT_ID"))) fail("CLOUDFLARE_ACCOUNT_ID", "invalid_account_id");
     required(env, "CLOUDFLARE_WORKERS_AI_API_TOKEN");
