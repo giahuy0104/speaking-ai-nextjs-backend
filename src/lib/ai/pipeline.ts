@@ -16,7 +16,9 @@ import {
 import { PROMPT_VERSION } from "./prompts";
 import { translateTargetLanguage } from "./targetTranslation";
 import { getFailureDiagnostics } from "./cloudflare/providerError";
-import { getTargetTtsProfile, requestTargetSpeech } from "./aiProvider";
+import { requestTargetSpeech } from "./aiProvider";
+import { createTargetAudioUrl } from "./targetAudioUrl";
+import { isTargetSpeechDeferred, targetSpeech, targetSpeechDescriptor } from "./targetSpeech";
 import {
   prepareEnglishAudio,
   synthesizeEnglishAudio,
@@ -76,32 +78,37 @@ export async function runTargetLanguageConversationPipeline(
   }));
   const translatedText = translation.value.translatedText;
 
-  const profile = getTargetTtsProfile(language);
-  const descriptor = {
-    text: translatedText.normalize("NFKC").replace(/\s+/g, " ").trim(),
-    model: profile.model,
-    voice: profile.voice,
-    speed: profile.speed,
-    extension: profile.extension,
-  };
+  const descriptor = targetSpeechDescriptor(language, translatedText);
+  const reportAudioUnavailable = (error: unknown, deferred: boolean) =>
+    logEvent("warn", "target_translation_audio_unavailable", {
+      requestId: input.requestId,
+      language,
+      stage: "tts",
+      model: descriptor.model,
+      deferred,
+      reason: error instanceof AppError ? error.details?.reason ?? "audio_unavailable" : "audio_unavailable",
+      status: error instanceof AppError ? error.status : 500,
+      ...getFailureDiagnostics(error),
+      error,
+    });
+  let deferred = false;
   const tts = await measureStep(async () => {
     try {
       const cachedUrl = await getReusableAudioUrl(descriptor);
       if (cachedUrl) return { audioUrl: cachedUrl, source: "cache" as const };
+      const deferredUrl = isTargetSpeechDeferred() ? createTargetAudioUrl(language, translatedText) : undefined;
+      if (deferredUrl) {
+        // The app fetches this URL after showing the translation; synthesis is
+        // already running, so the audio request only waits for what is left.
+        deferred = true;
+        targetSpeech.start(translatedText, language).catch(error => reportAudioUnavailable(error, true));
+        return { audioUrl: deferredUrl, source: "cloudflare_tts" as const };
+      }
       const audio = await requestTargetSpeech(translatedText, language, { parentRequestId: input.requestId });
       const audioUrl = await saveReusableAudio(descriptor, audio);
       return { audioUrl, source: "cloudflare_tts" as const };
     } catch (error) {
-      logEvent("warn", "target_translation_audio_unavailable", {
-        requestId: input.requestId,
-        language,
-        stage: "tts",
-        model: profile.model,
-        reason: error instanceof AppError ? error.details?.reason ?? "audio_unavailable" : "audio_unavailable",
-        status: error instanceof AppError ? error.status : 500,
-        ...getFailureDiagnostics(error),
-        error,
-      });
+      reportAudioUnavailable(error, false);
       return { audioUrl: null, source: "device_tts" as const };
     }
   });
@@ -134,7 +141,7 @@ export async function runTargetLanguageConversationPipeline(
   };
   logEvent("info", "target_translation_pipeline_completed", {
     requestId: input.requestId, language, model: result.textModel,
-    audioSource: result.audioSource, audioReady: result.audioUrl !== null,
+    audioSource: result.audioSource, audioReady: result.audioUrl !== null, audioDeferred: deferred,
     latency: result.latency,
   });
   return result;

@@ -296,6 +296,118 @@ export async function synthesizeWithDeepInfra(
   return { audio: body, model, voice };
 }
 
+/** Raw PCM from the streaming endpoint: signed 16-bit little-endian, mono. */
+export const DEEPINFRA_PCM_SAMPLE_RATE = 24_000;
+const PCM_BYTES_PER_SAMPLE = 2;
+// Two minutes of speech; a translated sentence is a few seconds.
+const MAX_PCM_BYTES = DEEPINFRA_PCM_SAMPLE_RATE * PCM_BYTES_PER_SAMPLE * 120;
+// The whole stream (headers + body) must finish within this. Separate from the
+// MP3 timeout because a slow listener's backpressure also counts against it.
+const DEFAULT_TTS_STREAM_TIMEOUT_MS = 20_000;
+const STREAM_LANGUAGES = new Set(["zh", "ja", "ko", "fr", "en"]);
+
+export type DeepInfraSpeechStream = Readonly<{
+  /** Chunks always hold whole 16-bit samples (even byte lengths). */
+  pcm: ReadableStream<Uint8Array>;
+  sampleRate: number;
+  model: string;
+  voice: string;
+}>;
+
+/**
+ * Speech as it is generated, via the ElevenLabs-style endpoint
+ * POST /v1/text-to-speech/{voice}/stream. For Qwen3-TTS only `pcm` streams:
+ * mp3, opus and wav answer 200 with an empty body (checked 2026-11-16), so the
+ * caller encodes. One deadline covers the whole stream, not just the headers.
+ */
+export async function streamSpeechWithDeepInfra(
+  text: string,
+  language: string,
+  options: CallOptions = {},
+): Promise<DeepInfraSpeechStream> {
+  const config = getDeepInfraConfig();
+  const model = deepInfraTtsModel();
+  const voice = deepInfraTtsVoice();
+  if (!MODEL_PATTERN.test(model)) throw new DeepInfraProviderError("invalid_model");
+  if (!VOICE_PATTERN.test(voice)) throw new DeepInfraProviderError("invalid_voice");
+  // The OpenAI-compatible routes live under /v1/openai; this one sits beside them.
+  const root = config.baseUrl.replace(/\/openai$/, "");
+  const deadline = timeoutSignal(
+    positiveInteger("DEEPINFRA_TTS_STREAM_TIMEOUT_MS", DEFAULT_TTS_STREAM_TIMEOUT_MS), "attempt_timeout");
+  const signal = options.signal ? combineAbortSignals([options.signal, deadline]) : deadline;
+  // A caller abort (client gone) is a network-level stop, not our deadline.
+  const failure = () => new DeepInfraProviderError(deadline.aborted ? "timeout" : "network_error");
+  let response: Response;
+  try {
+    response = await (transportOverride ?? keepAliveTransport)(
+      `${root}/text-to-speech/${encodeURIComponent(voice)}/stream?output_format=pcm`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${config.apiKey}`, "Content-Type": "application/json" },
+        body: JSON.stringify({
+          text, model_id: model, output_format: "pcm",
+          ...(STREAM_LANGUAGES.has(language) ? { language_code: language } : {}),
+        }),
+        signal,
+        dispatcher: keepAliveAgent(),
+      });
+  } catch {
+    throw failure();
+  }
+  if (!response.ok || !response.body) {
+    // Upstream error bodies are never surfaced: they may echo the text.
+    await response.body?.cancel().catch(() => undefined);
+    throw new DeepInfraProviderError(response.status === 429 ? "rate_limited" : "provider_error", response.status);
+  }
+  if (!response.headers.get("content-type")?.includes("audio/pcm")) {
+    await response.body.cancel().catch(() => undefined);
+    throw new DeepInfraProviderError("invalid_response", response.status);
+  }
+  const reader = response.body.getReader();
+  let received = 0;
+  // Upstream chunks may split a sample; carry the odd byte into the next chunk.
+  let carry: Uint8Array | undefined;
+  const pcm = new ReadableStream<Uint8Array>({
+    async pull(controller) {
+      try {
+        for (;;) {
+          const { done, value } = await reader.read();
+          if (done) {
+            if (received < PCM_BYTES_PER_SAMPLE) controller.error(new DeepInfraProviderError("empty_response", response.status));
+            else controller.close();
+            return;
+          }
+          received += value.byteLength;
+          if (received > MAX_PCM_BYTES) {
+            controller.error(new DeepInfraProviderError("invalid_response", response.status));
+            await reader.cancel().catch(() => undefined);
+            return;
+          }
+          const bytes = carry ? concatBytes(carry, value) : value;
+          const whole = bytes.byteLength - (bytes.byteLength % PCM_BYTES_PER_SAMPLE);
+          carry = whole < bytes.byteLength ? bytes.slice(whole) : undefined;
+          if (whole > 0) {
+            controller.enqueue(whole === bytes.byteLength ? bytes : bytes.subarray(0, whole));
+            return;
+          }
+        }
+      } catch {
+        controller.error(failure());
+      }
+    },
+    cancel(reason) {
+      return reader.cancel(reason).catch(() => undefined);
+    },
+  });
+  return { pcm, sampleRate: DEEPINFRA_PCM_SAMPLE_RATE, model, voice };
+}
+
+function concatBytes(head: Uint8Array, tail: Uint8Array) {
+  const joined = new Uint8Array(head.byteLength + tail.byteLength);
+  joined.set(head, 0);
+  joined.set(tail, head.byteLength);
+  return joined;
+}
+
 function statusFor(error: DeepInfraProviderError) {
   switch (error.reason) {
     case "not_configured": return 503;
