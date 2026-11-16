@@ -76,8 +76,16 @@ test("a stream that stalls past the deadline fails with a timeout", async () => 
       init.signal?.addEventListener("abort", () => controller.error(init.signal?.reason));
     },
   }), { headers: { "Content-Type": "audio/pcm" } }));
-  const speech = await streamSpeechWithDeepInfra("안녕.", "ko");
-  await assert.rejects(readAll(speech.pcm), isReason("timeout"));
+  // AbortSignal.timeout does not keep the process alive. With nothing else pending,
+  // Node 22 ends the event loop before the deadline fires and cancels the test;
+  // a server always has open sockets, so only the test needs this.
+  const keepAlive = setInterval(() => undefined, 1_000);
+  try {
+    const speech = await streamSpeechWithDeepInfra("안녕.", "ko");
+    await assert.rejects(readAll(speech.pcm), isReason("timeout"));
+  } finally {
+    clearInterval(keepAlive);
+  }
 });
 
 test("an invalid voice setting is rejected before any request", async () => {
