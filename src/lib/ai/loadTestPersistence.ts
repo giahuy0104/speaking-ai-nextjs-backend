@@ -15,3 +15,13 @@ export function skipsPostResponsePersistence(clientId: string | undefined): bool
   const prefix = loadTestPersistencePrefix();
   return Boolean(prefix && clientId?.startsWith(prefix));
 }
+
+/**
+ * LOAD_TEST_BYPASS_AUDIO_CACHE=true (dev only): load-test installations (same prefix
+ * as above) never reuse cached zh/ja/ko/fr speech, so every request pays for a real
+ * synthesis, and the clip is not written back (the database is shared with production).
+ */
+export function bypassesAudioCache(clientId: string | undefined): boolean {
+  return process.env.LOAD_TEST_BYPASS_AUDIO_CACHE?.trim().toLowerCase() === "true" &&
+    skipsPostResponsePersistence(clientId);
+}

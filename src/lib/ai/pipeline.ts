@@ -18,6 +18,7 @@ import { translateTargetLanguage } from "./targetTranslation";
 import { getFailureDiagnostics } from "./cloudflare/providerError";
 import { requestTargetSpeech } from "./aiProvider";
 import { createTargetAudioUrl } from "./targetAudioUrl";
+import { bypassesAudioCache } from "./loadTestPersistence";
 import { isTargetSpeechDeferred, targetSpeech, targetSpeechDescriptor } from "./targetSpeech";
 import {
   prepareEnglishAudio,
@@ -92,8 +93,14 @@ export async function runTargetLanguageConversationPipeline(
       error,
     });
   let deferred = false;
+  // Load tests only: always synthesize, never read or write the shared audio cache.
+  const audioCacheBypassed = bypassesAudioCache(input.clientId);
   const tts = await measureStep(async () => {
     try {
+      if (audioCacheBypassed) {
+        await requestTargetSpeech(translatedText, language, { parentRequestId: input.requestId });
+        return { audioUrl: null, source: "cloudflare_tts" as const };
+      }
       const cachedUrl = await getReusableAudioUrl(descriptor);
       if (cachedUrl) return { audioUrl: cachedUrl, source: "cache" as const };
       const deferredUrl = isTargetSpeechDeferred() ? createTargetAudioUrl(language, translatedText) : undefined;
@@ -141,7 +148,7 @@ export async function runTargetLanguageConversationPipeline(
   };
   logEvent("info", "target_translation_pipeline_completed", {
     requestId: input.requestId, language, model: result.textModel,
-    audioSource: result.audioSource, audioReady: result.audioUrl !== null, audioDeferred: deferred,
+    audioSource: result.audioSource, audioReady: result.audioUrl !== null, audioDeferred: deferred, audioCacheBypassed,
     latency: result.latency,
   });
   return result;
