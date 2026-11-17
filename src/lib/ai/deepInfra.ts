@@ -275,21 +275,28 @@ export function deepInfraTtsVoice() {
   return process.env.DEEPINFRA_TTS_VOICE?.trim() || DEFAULT_TTS_VOICE;
 }
 
-/** Text-to-speech through DeepInfra's OpenAI-compatible endpoint; returns MP3 bytes. */
+export type DeepInfraSpeechFormat = "mp3" | "wav";
+const SPEECH_CONTENT_TYPES: Record<DeepInfraSpeechFormat, string> = { mp3: "audio/mpeg", wav: "audio/wav" };
+
+/**
+ * Text-to-speech through DeepInfra's OpenAI-compatible endpoint; returns the
+ * finished clip. MP3 by default; WAV (24 kHz, 16-bit, mono) matches streamed speech.
+ */
 export async function synthesizeWithDeepInfra(
   text: string,
-  options: CallOptions = {},
+  options: CallOptions & { format?: DeepInfraSpeechFormat } = {},
 ): Promise<{ audio: ArrayBuffer; model: string; voice: string }> {
   const config = getDeepInfraConfig();
   const model = deepInfraTtsModel();
   const voice = deepInfraTtsVoice();
+  const format = options.format ?? "mp3";
   if (!MODEL_PATTERN.test(model)) throw new DeepInfraProviderError("invalid_model");
   if (!VOICE_PATTERN.test(voice)) throw new DeepInfraProviderError("invalid_voice");
   const { response, body } = await sendDeepInfra(config, "/audio/speech", {
-    body: JSON.stringify({ model, input: text, voice, response_format: "mp3" }),
+    body: JSON.stringify({ model, input: text, voice, response_format: format }),
     headers: { "Content-Type": "application/json" },
   }, positiveInteger("DEEPINFRA_TTS_TIMEOUT_MS", DEFAULT_TTS_TIMEOUT_MS), options.signal);
-  if (!response.headers.get("content-type")?.includes("audio/mpeg") ||
+  if (!response.headers.get("content-type")?.includes(SPEECH_CONTENT_TYPES[format]) ||
       body.byteLength === 0 || body.byteLength > MAX_SPEECH_BYTES) {
     throw new DeepInfraProviderError("invalid_response", response.status);
   }

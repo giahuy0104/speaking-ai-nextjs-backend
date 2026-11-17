@@ -71,6 +71,20 @@ Khi đặt `AUDIO_ASR_HEDGE_MS` hoặc `AUDIO_TEXT_HEDGE_MS` > 0: nếu nhà cun
 - Khi bật pool, session admission vẫn giới hạn số request đồng thời của backend; lượt gọi DeepInfra không dùng permit Cloudflare, lượt dự phòng Cloudflare thì dùng như bình thường. Audio worker vẫn cần `CLOUDFLARE_AUDIO_TRANSLATION_POOL_ENABLED=true`.
 - Không trả nội dung lỗi từ DeepInfra ra ngoài.
 
+## Giọng đọc zh/ja/ko/fr phát dần (stream)
+
+Bật bằng `AUDIO_TARGET_TTS_STREAM=true`. Cần thêm `AUDIO_TARGET_TTS_DEFERRED=true` và `AUDIO_TARGET_TTS_PROVIDER=deepinfra`.
+
+- Khi bản dịch có, pipeline gọi `POST /v1/text-to-speech/{voice}/stream?output_format=pcm`. Với Qwen3-TTS, endpoint này chỉ stream được PCM (24 kHz, s16le, mono); `mp3`/`opus`/`wav` trả body rỗng.
+- Server **không nén**: PCM được gửi thẳng cho app dưới dạng WAV (`audio/wav`, header 44 byte ghi độ dài `0xFFFFFFFF` vì chưa biết trước). Không tốn CPU encode, nhưng nặng khoảng 48 KB cho mỗi giây audio, gấp khoảng 8 lần MP3 48 kbps.
+- `GET /api/audio/target` trả WAV phát dần (`X-Audio-Source: stream`, không có `Content-Length`). Request nào vào sau cũng nhận clip từ byte đầu.
+- Clip hoàn chỉnh được lưu cache dưới dạng `.wav` (đã điền độ dài thật), tách riêng khỏi cache MP3 khi tắt stream. Trong DB/storage cũng nặng gấp khoảng 8 lần. Storage `cloudinary` chỉ nhận MP3, nên khi bật stream thì việc lưu cache sẽ lỗi (log `target_speech_cache_save_failed`); `postgres`, `r2`, `vercel-blob` và `local` vẫn dùng được.
+- Nếu stream lỗi trước byte đầu, server gọi `/audio/speech` với `response_format: "wav"` (WAV hoàn chỉnh, cùng 24 kHz mono 16-bit) và ghi log `target_speech_stream_fallback`. Nếu lỗi sau khi đã gửi audio, request đó lỗi (log `target_speech_stream_failed`); lần sau sẽ tạo lại.
+- Log `target_speech_stream_first_chunk` ghi `latencyMs` tới chunk audio đầu tiên, dùng để so với `/audio/speech`.
+- Hạn cho cả luồng: `DEEPINFRA_TTS_STREAM_TIMEOUT_MS` (mặc định 20000).
+- Đo ngày 2026-11-17 từ VPS dev (Qwen3-TTS, giọng Sohee): byte audio đầu tiên của stream về sau khoảng 1,6–1,7 s với câu ngắn (`/audio/speech` MP3: 1,4–1,5 s) và khoảng 2,1 s với câu dài khoảng 19 s audio (`/audio/speech` MP3: 11–12 s). Stream chủ yếu có lợi cho câu dài.
+- App phải phát được WAV không có độ dài qua HTTP. Cần thử trên máy thật, nhất là iOS (AVPlayer), trước khi bật ở production.
+
 ## Cần kiểm tra trước khi dùng thật
 
 1. DeepInfra không có `vad_filter`, `beam_size`, `no_speech_threshold` như Cloudflare. Test riêng audio im lặng/nhiễu để xem Whisper có sinh chữ giả không (kết quả này không kích hoạt fallback).
