@@ -4,6 +4,7 @@ import {
   saveReusableAudio,
 } from "@/lib/storage/audio";
 import type { AudioSource } from "@/types/conversation";
+import { signUncachedEnglishAudio } from "./loadTestPersistence";
 import {
   getConfiguredTtsProfile,
   requestEnglishSpeech,
@@ -31,7 +32,7 @@ const ttsGlobal = globalThis as typeof globalThis & {
   >;
   __aiSpeakingAudioMissTokens?: Map<
     string,
-    { normalizedText: string; expiresAt: number }
+    { normalizedText: string; expiresAt: number; bypassCache?: boolean }
   >;
   __aiSpeakingActiveAudioStreams?: Map<string, ActiveEnglishAudioStream>;
   __aiSpeakingAudioStreamBootstraps?: Map<string, Promise<void>>;
@@ -41,7 +42,7 @@ const inFlightSynthesis =
     new Map<string, Promise<AudioSynthesisResult>>();
 const audioMissTokens =
   ttsGlobal.__aiSpeakingAudioMissTokens ??=
-    new Map<string, { normalizedText: string; expiresAt: number }>();
+    new Map<string, AudioMissTokenEntry>();
 const activeAudioStreams =
   ttsGlobal.__aiSpeakingActiveAudioStreams ??=
     new Map<string, ActiveEnglishAudioStream>();
@@ -284,7 +285,14 @@ function getInstanceAudioStreamUrl(englishText: string) {
     : base;
 }
 
-function getKnownMissAudioStreamUrl(englishText: string) {
+type AudioMissTokenEntry = {
+  normalizedText: string;
+  expiresAt: number;
+  /** Load tests: synthesize without reading, joining or writing any cache. */
+  bypassCache?: boolean;
+};
+
+function getKnownMissAudioStreamUrl(englishText: string, options: { bypassCache?: boolean } = {}) {
   const now = Date.now();
   for (const [token, entry] of audioMissTokens) {
     if (entry.expiresAt <= now) {
@@ -295,6 +303,7 @@ function getKnownMissAudioStreamUrl(englishText: string) {
   audioMissTokens.set(token, {
     normalizedText: normalizeEnglishAudioText(englishText),
     expiresAt: now + 30_000,
+    ...(options.bypassCache ? { bypassCache: true } : {}),
   });
   return `${getInstanceAudioStreamUrl(englishText)}&missToken=${token}`;
 }
@@ -340,16 +349,36 @@ export function consumeKnownAudioCacheMiss(
   token: string | null,
   englishText: string,
 ) {
-  if (!token) {
-    return false;
-  }
+  return consumeAudioStreamToken(token, englishText).knownCacheMiss;
+}
+
+/**
+ * Single-use token issued with a stream URL on this instance. `knownCacheMiss`
+ * skips the cache lookup; `bypassCache` (load tests) also skips joining other
+ * listeners and writing the cache.
+ */
+export function consumeAudioStreamToken(token: string | null, englishText: string) {
+  if (!token) return { knownCacheMiss: false, bypassCache: false };
   const entry = audioMissTokens.get(token);
   audioMissTokens.delete(token);
-  return Boolean(
+  const valid = Boolean(
     entry &&
       entry.expiresAt > Date.now() &&
       entry.normalizedText === normalizeEnglishAudioText(englishText),
   );
+  return { knownCacheMiss: valid, bypassCache: valid && entry?.bypassCache === true };
+}
+
+/** Load tests: a stream URL whose audio is synthesized fresh and never cached. */
+export function getUncachedEnglishAudioStreamUrl(englishText: string): AudioSynthesisResult {
+  const signed = signUncachedEnglishAudio(englishText);
+  const url = getKnownMissAudioStreamUrl(englishText, { bypassCache: true });
+  return {
+    audioUrl: signed ? `${url}&nocache=${encodeURIComponent(signed)}` : url,
+    source: "cloudflare_tts",
+    cacheReady: false,
+    cacheLookupSkipped: true,
+  };
 }
 
 async function getCachedProfileAudioUrl(

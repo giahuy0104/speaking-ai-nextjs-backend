@@ -168,8 +168,9 @@ function registerInstallation() {
     const res = http.post(`${BASE_URL}/api/installations/register`, payload, {
       headers: { "Content-Type": "application/json" }, timeout: "20s" });
     if (res.status === 201) return { clientId: res.json("clientId"), accessToken: res.json("accessToken") };
-    if (res.status !== 429) fail(`register failed: HTTP ${res.status}`);
-    sleep((Number(res.headers["Retry-After"]) || 10) + 1);
+    // 429: registration rate limit. 5xx: a brief database hiccup (seen with Neon).
+    if (res.status !== 429 && res.status < 500) fail(`register failed: HTTP ${res.status}`);
+    sleep(res.status === 429 ? (Number(res.headers["Retry-After"]) || 10) + 1 : 3);
   }
   fail("register failed after retries");
 }

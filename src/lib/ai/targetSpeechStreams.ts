@@ -72,10 +72,17 @@ export function createTargetSpeechStreams(options: TargetSpeechStreamsOptions) {
     }
   }
 
+  function subscribeKey(key: string): ReadableStream<Uint8Array> | null {
+    const broadcast = live.get(key);
+    return broadcast?.live() ? broadcast.subscribe() : null;
+  }
+
   return {
-    /** Starts one streamed synthesis; the coordinator ensures one per sentence. */
-    start(text: string, language: string): Promise<ArrayBuffer> {
-      const key = keyFor(text, language);
+    /**
+     * Starts one streamed synthesis; the coordinator ensures one per sentence.
+     * `key` overrides the sentence key (load tests keep each turn's stream apart).
+     */
+    start(text: string, language: string, key = keyFor(text, language)): Promise<ArrayBuffer> {
       const broadcast = createSpeechBroadcast(options.maxBytes ?? DEFAULT_MAX_WAV_BYTES);
       live.set(key, broadcast);
       const forget = () => {
@@ -88,8 +95,10 @@ export function createTargetSpeechStreams(options: TargetSpeechStreamsOptions) {
 
     /** WAV from its first byte while synthesis is still running; null once it has settled. */
     subscribe(text: string, language: string): ReadableStream<Uint8Array> | null {
-      const broadcast = live.get(keyFor(text, language));
-      return broadcast?.live() ? broadcast.subscribe() : null;
+      return subscribeKey(keyFor(text, language));
     },
+
+    /** Same as subscribe, for a stream started with its own key. */
+    subscribeKey,
   };
 }

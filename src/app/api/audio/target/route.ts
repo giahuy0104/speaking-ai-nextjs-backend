@@ -2,8 +2,17 @@ import { AppError, toErrorResponse } from "@/lib/errors";
 import { getRequestId, logEvent, withRequestId } from "@/lib/observability";
 import { getReusableAudioUrl } from "@/lib/storage/audio";
 import { verifyTargetAudioUrl } from "@/lib/ai/targetAudioUrl";
-import { subscribeTargetSpeech, targetSpeech, targetSpeechDescriptor, targetSpeechMode } from "@/lib/ai/targetSpeech";
+import {
+  startUncachedTargetSpeech,
+  subscribeTargetSpeech,
+  subscribeUncachedTargetSpeech,
+  targetSpeech,
+  targetSpeechDescriptor,
+  targetSpeechMode,
+} from "@/lib/ai/targetSpeech";
+import type { TargetAudioLanguage } from "@/lib/ai/targetAudioUrl";
 import { isWav } from "@/lib/audio/wav";
+import { loadTestCacheBypassEnabled } from "@/lib/ai/loadTestPersistence";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -25,6 +34,14 @@ export async function GET(request: Request) {
       new AppError("FORBIDDEN", "Đường dẫn âm thanh không hợp lệ hoặc đã hết hạn.", 403), requestId), requestId);
   }
   const { language, text } = verified;
+  if (verified.jobId) {
+    // Load-test URLs only work while the dev bypass is on: no uncached paid TTS elsewhere.
+    if (!loadTestCacheBypassEnabled()) {
+      return withRequestId(toErrorResponse(
+        new AppError("FORBIDDEN", "Đường dẫn âm thanh không hợp lệ hoặc đã hết hạn.", 403), requestId), requestId);
+    }
+    return withRequestId(await uncachedSpeech(verified.jobId, language, text, requestId, startedAt), requestId);
+  }
 
   let job = targetSpeech.peek(text, language);
   const joined = Boolean(job);
@@ -86,5 +103,30 @@ export async function GET(request: Request) {
       ? error
       : new AppError("TTS_FAILED", "Chưa tạo được giọng đọc bản dịch.", 502);
     return withRequestId(toErrorResponse(responseError, requestId), requestId);
+  }
+}
+
+/**
+ * Load tests (a signed `job` id): this turn's own synthesis, started by the
+ * conversation pipeline. Never served from or written to the cache, never shared.
+ */
+async function uncachedSpeech(jobId: string, language: TargetAudioLanguage, text: string, requestId: string, startedAt: number) {
+  const job = startUncachedTargetSpeech(jobId, text, language);
+  const live = subscribeUncachedTargetSpeech(jobId);
+  const headers = { "Cache-Control": "no-store", "X-Audio-Cache": "bypass" };
+  if (live) {
+    logEvent("info", "target_speech_served", { requestId, language, uncached: true, streamed: true, latencyMs: Math.round(performance.now() - startedAt) });
+    return new Response(live, { status: 200, headers: { ...headers, "Content-Type": "audio/wav", "X-Accel-Buffering": "no", "X-Audio-Source": "stream" } });
+  }
+  try {
+    const audio = await job;
+    logEvent("info", "target_speech_served", { requestId, language, uncached: true, streamed: false, byteLength: audio.byteLength, latencyMs: Math.round(performance.now() - startedAt) });
+    return new Response(audio, {
+      status: 200,
+      headers: { ...headers, "Content-Type": isWav(audio) ? "audio/wav" : "audio/mpeg", "Content-Length": String(audio.byteLength), "X-Audio-Source": "synthesized" },
+    });
+  } catch (error) {
+    logEvent("warn", "target_speech_failed", { requestId, language, uncached: true, error });
+    return toErrorResponse(error instanceof AppError ? error : new AppError("TTS_FAILED", "Chưa tạo được giọng đọc bản dịch.", 502), requestId);
   }
 }

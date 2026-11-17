@@ -201,8 +201,10 @@ export async function generateEnglishSentence(
   requestId?: string,
   deferCacheWrite = false,
   skipFastLookup = false,
+  /** Load tests: no rule or cache lookup, no joining a twin request, no cache write. */
+  bypassCache = false,
 ): Promise<EnglishGenerationResult> {
-  const fastSentence = skipFastLookup
+  const fastSentence = skipFastLookup || bypassCache
     ? null
     : await resolveFastEnglishSentence(
         vietnameseText,
@@ -234,11 +236,7 @@ export async function generateEnglishSentence(
     context,
     childAge,
   );
-  const claimedFlight = claimSingleFlight({
-    flights: textGenerationFlights,
-    key: flightKey,
-    retainForMs: textGenerationFlightRetentionMs,
-    operation: async (): Promise<EnglishGenerationResult> => {
+  const generate = async (): Promise<EnglishGenerationResult> => {
       try {
         const result = await generateWithProviders(
           vietnameseText,
@@ -268,7 +266,9 @@ export async function generateEnglishSentence(
           }
         };
         try {
-          if (deferCacheWrite) {
+          if (bypassCache) {
+            // Load tests never write the shared (production) text cache.
+          } else if (deferCacheWrite) {
             after(saveTextCacheSafely);
           } else {
             await saveTextCacheSafely();
@@ -304,7 +304,13 @@ export async function generateEnglishSentence(
           { provider: "cloudflare", reason: failureReason },
         );
       }
-    },
+  };
+  if (bypassCache) return generate();
+  const claimedFlight = claimSingleFlight({
+    flights: textGenerationFlights,
+    key: flightKey,
+    retainForMs: textGenerationFlightRetentionMs,
+    operation: generate,
   });
   if (claimedFlight.joined) {
     logEvent("info", "text_generation_flight_joined", {

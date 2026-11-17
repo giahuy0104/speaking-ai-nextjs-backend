@@ -1,9 +1,10 @@
 import { after } from "next/server";
+import { verifyUncachedEnglishAudio } from "@/lib/ai/loadTestPersistence";
 import { AppError, toErrorResponse } from "@/lib/errors";
 import { requestEnglishSpeech } from "@/lib/ai/aiProvider";
 import {
   claimEnglishAudioCacheFill,
-  consumeKnownAudioCacheMiss,
+  consumeAudioStreamToken,
   getEnglishAudioCacheUrl,
   getTtsProfile,
   startEnglishAudioStream,
@@ -24,10 +25,10 @@ export async function GET(request: Request) {
   const startedAt = performance.now();
   const url = new URL(request.url);
   const text = url.searchParams.get("text")?.trim() ?? "";
-  const knownCacheMiss = consumeKnownAudioCacheMiss(
-    url.searchParams.get("missToken"),
-    text,
-  );
+  const { knownCacheMiss } = consumeAudioStreamToken(url.searchParams.get("missToken"), text);
+  // The signature, not the single-use token, decides: a retry, probe or another
+  // backend must not fall back to the shared cache for a load-test turn.
+  const bypassCache = verifyUncachedEnglishAudio(url.searchParams.get("nocache"), text);
 
   if (!text || text.length > 500) {
     return Response.json(
@@ -41,6 +42,8 @@ export async function GET(request: Request) {
       { status: 400 },
     );
   }
+
+  if (bypassCache) return withRequestId(await uncachedSpeech(text, requestId, startedAt), requestId);
 
   const cacheStartedAt = performance.now();
   const cachedUrl = knownCacheMiss
@@ -192,6 +195,38 @@ export async function GET(request: Request) {
     `cache;dur=${cacheLookupMs}, tts-headers;dur=${upstreamHeadersMs}`,
   );
   return withRequestId(unbuffered(streamResponse), requestId);
+}
+
+/**
+ * Load tests (k6 installations with LOAD_TEST_BYPASS_AUDIO_CACHE): fresh speech
+ * streamed straight from the provider. No cache read or write, and no joining or
+ * sharing a stream with any other listener, so every turn pays a real synthesis.
+ */
+async function uncachedSpeech(text: string, requestId: string, startedAt: number) {
+  try {
+    const speech = await requestEnglishSpeech(text, getTtsProfile());
+    logEvent("info", "tts_uncached_stream_started", {
+      requestId,
+      provider: speech.profile.provider,
+      model: speech.profile.model,
+      headersMs: Math.round(performance.now() - startedAt),
+    });
+    return unbuffered(new Response(speech.response.body, {
+      status: 200,
+      headers: {
+        "Content-Type": speech.response.headers.get("content-type") ?? "audio/mpeg",
+        "Cache-Control": "no-store",
+        "X-Audio-Source": speech.source,
+        "X-Audio-Cache": "bypass",
+      },
+    }));
+  } catch (error) {
+    logEvent("error", "tts_stream_request_failed", { requestId, uncached: true, error });
+    const responseError = error instanceof AppError
+      ? error
+      : new AppError("TTS_FAILED", "Không thể truyền luồng âm thanh.", 502);
+    return toErrorResponse(responseError, requestId);
+  }
 }
 
 /**
