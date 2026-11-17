@@ -220,10 +220,12 @@ function localAudioUrl(fileName: string) {
   return `/api/audio/cache/${encodeURIComponent(fileName)}`;
 }
 
-function audioContentType(fileName: string) {
-  return fileName.toLowerCase().endsWith(".mp3")
-    ? "audio/mpeg"
-    : "application/octet-stream";
+/** MP3 clips, and the uncompressed WAV of streamed target-language speech. */
+export function audioContentType(fileName: string) {
+  const lower = fileName.toLowerCase();
+  if (lower.endsWith(".mp3")) return "audio/mpeg";
+  if (lower.endsWith(".wav")) return "audio/wav";
+  return "application/octet-stream";
 }
 
 async function readPostgresAudio(fileName: string) {
@@ -306,7 +308,7 @@ async function saveBlobAudio(fileName: string, audio: ArrayBuffer) {
       addRandomSuffix: false,
       allowOverwrite: false,
       cacheControlMaxAge: immutableCacheSeconds,
-      contentType: fileName.endsWith(".mp3") ? "audio/mpeg" : undefined,
+      contentType: audioContentType(fileName),
       token: getGeneratedAudioBlobToken(),
     });
     return result.url;
