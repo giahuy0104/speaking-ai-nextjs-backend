@@ -29,11 +29,15 @@ function signingKey(secret: string) {
   return createHmac("sha256", secret).update("homi-target-audio-url:v1").digest();
 }
 
-function signature(secret: string, language: string, expiresAt: number, text: string) {
-  return createHmac("sha256", signingKey(secret))
-    .update(`${language}\n${expiresAt}\n${text}`)
-    .digest("base64url");
+function signature(secret: string, language: string, expiresAt: number, text: string, jobId?: string) {
+  // A load-test job id is signed too; URLs without one keep the original payload.
+  const payload = jobId
+    ? JSON.stringify(["job:v1", language, expiresAt, text, jobId])
+    : `${language}\n${expiresAt}\n${text}`;
+  return createHmac("sha256", signingKey(secret)).update(payload).digest("base64url");
 }
+
+const JOB_ID_PATTERN = /^[A-Za-z0-9_-]{1,64}$/;
 
 function configuredSecret(env: EnvSource) {
   const secret = env.INSTALLATION_AUTH_SECRET?.trim() ?? "";
@@ -48,17 +52,20 @@ export function isTargetAudioLanguage(value: unknown): value is TargetAudioLangu
 export function createTargetAudioUrl(
   language: TargetAudioLanguage,
   text: string,
-  options: { env?: EnvSource; now?: number } = {},
+  options: { env?: EnvSource; now?: number; jobId?: string } = {},
 ): string | undefined {
   const env = options.env ?? process.env;
   const secret = configuredSecret(env);
   if (!secret || !text || text.length > MAX_DEFERRED_TEXT_LENGTH) return undefined;
+  if (options.jobId !== undefined && !JOB_ID_PATTERN.test(options.jobId)) return undefined;
   const expiresAt = (options.now ?? Date.now()) + URL_TTL_MS;
   const params = new URLSearchParams({
     lang: language,
     exp: String(expiresAt),
-    sig: signature(secret, language, expiresAt, text),
+    sig: signature(secret, language, expiresAt, text, options.jobId),
   });
+  // Load tests: this turn's own uncached synthesis (see startUncachedTargetSpeech).
+  if (options.jobId) params.set("job", options.jobId);
   // Same pinning as /api/audio/stream: Nginx routes ?node= back to the backend
   // that already started synthesis, so the request joins it instead of paying twice.
   const node = env.AUDIO_STREAM_NODE?.trim();
@@ -96,7 +103,7 @@ export function issueTargetAudioUrl(
   return { audioUrl, expiresAt };
 }
 
-export type TargetAudioRequest = { language: TargetAudioLanguage; text: string };
+export type TargetAudioRequest = { language: TargetAudioLanguage; text: string; jobId?: string };
 
 /** The verified language and text, or undefined for a missing, expired or forged URL. */
 export function verifyTargetAudioUrl(
@@ -108,12 +115,14 @@ export function verifyTargetAudioUrl(
   const text = params.get("text") ?? "";
   const expiresAt = Number(params.get("exp"));
   const given = params.get("sig") ?? "";
+  const jobId = params.get("job") ?? undefined;
   if (!secret || !isTargetAudioLanguage(language)) return undefined;
+  if (jobId !== undefined && !JOB_ID_PATTERN.test(jobId)) return undefined;
   if (!text || text.length > MAX_DEFERRED_TEXT_LENGTH || !Number.isSafeInteger(expiresAt)) return undefined;
   const now = options.now ?? Date.now();
   if (expiresAt <= now || expiresAt > now + URL_TTL_MS + MAX_FUTURE_SKEW_MS) return undefined;
-  const expected = Buffer.from(signature(secret, language, expiresAt, text));
+  const expected = Buffer.from(signature(secret, language, expiresAt, text, jobId));
   const received = Buffer.from(given);
   if (received.length !== expected.length || !timingSafeEqual(received, expected)) return undefined;
-  return { language, text };
+  return jobId ? { language, text, jobId } : { language, text };
 }

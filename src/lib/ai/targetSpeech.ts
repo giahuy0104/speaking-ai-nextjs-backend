@@ -71,6 +71,44 @@ export function subscribeTargetSpeech(text: string, language: TargetSpeechLangua
   return targetSpeechStreams.subscribe(text, language);
 }
 
+// Load tests (k6 installations with LOAD_TEST_BYPASS_AUDIO_CACHE): each turn gets its
+// own synthesis, keyed by a job id in its signed URL. It never reads or writes the
+// cache and never joins or shares another turn's synthesis. Kept briefly so the
+// app's second download of the same URL gets the same clip.
+// The app's second download follows the first within seconds of playback.
+const UNCACHED_JOB_RETAIN_MS = 20_000;
+const MAX_UNCACHED_JOBS = 1_000;
+const uncachedJobs = new Map<string, Promise<ArrayBuffer>>();
+
+const uncachedKey = (jobId: string) => `uncached\n${jobId}`;
+
+/** Starts (or joins) the uncached synthesis of one load-test turn. */
+export function startUncachedTargetSpeech(jobId: string, text: string, language: TargetSpeechLanguage): Promise<ArrayBuffer> {
+  const existing = uncachedJobs.get(jobId);
+  if (existing) return existing;
+  if (uncachedJobs.size >= MAX_UNCACHED_JOBS) {
+    const oldest = uncachedJobs.keys().next().value;
+    if (oldest !== undefined) uncachedJobs.delete(oldest);
+  }
+  const job = targetSpeechMode(language, text) === "stream"
+    ? targetSpeechStreams.start(text, language, uncachedKey(jobId))
+    : requestTargetSpeech(text, language);
+  uncachedJobs.set(jobId, job);
+  const forget = () => {
+    const timer = setTimeout(() => {
+      if (uncachedJobs.get(jobId) === job) uncachedJobs.delete(jobId);
+    }, UNCACHED_JOB_RETAIN_MS);
+    (timer as { unref?: () => void }).unref?.();
+  };
+  job.then(forget, () => uncachedJobs.delete(jobId));
+  return job;
+}
+
+/** The live WAV of a load-test turn, from its first byte; null once it has settled. */
+export function subscribeUncachedTargetSpeech(jobId: string) {
+  return targetSpeechStreams.subscribeKey(uncachedKey(jobId));
+}
+
 export const targetSpeech = createTargetSpeechCoordinator({
   synthesize: (text, language) => targetSpeechMode(language, text) === "stream"
     ? targetSpeechStreams.start(text, language)

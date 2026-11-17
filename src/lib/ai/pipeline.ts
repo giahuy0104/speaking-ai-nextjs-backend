@@ -19,8 +19,15 @@ import { getFailureDiagnostics } from "./cloudflare/providerError";
 import { requestTargetSpeech } from "./aiProvider";
 import { createTargetAudioUrl } from "./targetAudioUrl";
 import { bypassesAudioCache } from "./loadTestPersistence";
-import { isTargetSpeechDeferred, targetSpeech, targetSpeechDescriptor, targetSpeechMode } from "./targetSpeech";
 import {
+  isTargetSpeechDeferred,
+  startUncachedTargetSpeech,
+  targetSpeech,
+  targetSpeechDescriptor,
+  targetSpeechMode,
+} from "./targetSpeech";
+import {
+  getUncachedEnglishAudioStreamUrl,
   prepareEnglishAudio,
   synthesizeEnglishAudio,
   type AudioSynthesisResult,
@@ -98,6 +105,17 @@ export async function runTargetLanguageConversationPipeline(
   const tts = await measureStep(async () => {
     try {
       if (audioCacheBypassed) {
+        // Like a real turn (translation first, then the signed URL), but this turn's
+        // own synthesis: no cache read or write, no sharing with other turns.
+        const jobId = `job_${crypto.randomUUID().replace(/-/g, "")}`;
+        const uncachedUrl = isTargetSpeechDeferred()
+          ? createTargetAudioUrl(language, translatedText, { jobId })
+          : undefined;
+        if (uncachedUrl) {
+          deferred = true;
+          startUncachedTargetSpeech(jobId, translatedText, language).catch(error => reportAudioUnavailable(error, true));
+          return { audioUrl: uncachedUrl, source: "cloudflare_tts" as const };
+        }
         await requestTargetSpeech(translatedText, language, { parentRequestId: input.requestId });
         return { audioUrl: null, source: "cloudflare_tts" as const };
       }
@@ -228,7 +246,9 @@ export async function prepareConversationPipeline(
         latencyMs: resolvedPrefetchedTranscript.latencyMs,
       }
     : await measureStep(() => transcribeVietnamese(input));
-  const llm = prefetchedTranslation
+  // Load tests only: every turn pays a real translation and a real synthesis.
+  const cacheBypassed = bypassesAudioCache(input.clientId);
+  const llm = prefetchedTranslation && !cacheBypassed
     ? { value: prefetchedTranslation, latencyMs: 0 }
     : await measureStep(() =>
         generateEnglishSentence(
@@ -238,6 +258,8 @@ export async function prepareConversationPipeline(
           input.clientId,
           input.requestId,
           options.deferTextCacheWrite,
+          false,
+          cacheBypassed,
         ),
       );
   // A brand-new AI sentence cannot be a cache hit. Return its streaming URL
@@ -248,7 +270,9 @@ export async function prepareConversationPipeline(
     !prefetchedAudio &&
     (options.streamAudioOnCacheMiss || llm.value.source === "cloudflare" ||
       getAudioStorageBackend() === "cloudinary");
-  const tts = prefetchedAudio
+  const tts = cacheBypassed
+    ? { value: getUncachedEnglishAudioStreamUrl(llm.value.englishText), latencyMs: 0 }
+    : prefetchedAudio
     ? { value: prefetchedAudio, latencyMs: 0 }
     : await measureStep<AudioSynthesisResult>(() =>
         usesFastStreamingTts
