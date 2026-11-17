@@ -75,7 +75,6 @@ export function createConcurrencyLimiter(options: { maxConcurrent: number; maxWa
           },
         };
         const timer = setTimeout(() => waiter.fail(new ConcurrencyLimitTimeoutError(Date.now() - startedAt)), maxWaitMs);
-        (timer as { unref?: () => void }).unref?.();
         signal?.addEventListener("abort", onAbort, { once: true });
         queue.push(waiter);
       });
