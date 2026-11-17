@@ -8,6 +8,7 @@ import {
   errorResponse,
   headerParam,
   int,
+  jsonBody,
   jsonResponse,
   num,
   object,
@@ -218,9 +219,10 @@ export const audioPaths: OpenApiObject = {
         "Chỉ dùng khi `AUDIO_TARGET_TTS_DEFERRED=true`: bản dịch trả về trước, `audioUrl` trỏ tới route này. " +
         "Chỉ chấp nhận URL do server ký (HMAC trên ngôn ngữ, hạn dùng và câu; hết hạn sau 15 phút). " +
         "Nhập vào lần tạo đang chạy trên cùng backend, hoặc 307 tới cache, hoặc tạo mới rồi trả MP3 hoàn chỉnh. " +
-        "Khi `AUDIO_TARGET_TTS_STREAM=true`, giọng đọc là WAV không nén (`audio/wav`, 24 kHz mono 16-bit): " +
+        "Khi `AUDIO_TARGET_TTS_STREAM=true`, chỉ câu dài (≥ `AUDIO_TARGET_STREAM_MIN_CHARS` ký tự, mặc định 20; " +
+        "tiếng Pháp `AUDIO_TARGET_STREAM_MIN_CHARS_FR`, mặc định 50) là WAV không nén (`audio/wav`, 24 kHz mono 16-bit): " +
         "lúc còn đang tạo thì body phát dần (chunked, không có `Content-Length`, `X-Audio-Source: stream`); " +
-        "mọi request vào sau đều nhận clip từ byte đầu.",
+        "mọi request vào sau đều nhận clip từ byte đầu. Câu ngắn hơn trả MP3 hoàn chỉnh như khi tắt stream.",
       operationId: "getTargetSpeech",
       parameters: [
         queryParam("lang", "Ngôn ngữ đích.", { type: "string", enum: ["zh", "ja", "ko", "fr"] }, true),
@@ -244,6 +246,33 @@ export const audioPaths: OpenApiObject = {
         },
         "403": errorResponse("URL sai chữ ký, hết hạn hoặc thiếu tham số (`FORBIDDEN`)."),
         "502": errorResponse("TTS lỗi (`TTS_FAILED`)."),
+      },
+    },
+  },
+  "/api/audio/target/url": {
+    post: {
+      tags: [TTS_TAG],
+      summary: "Ký URL audio Trung/Nhật/Hàn/Pháp cho một câu (chỉ để test)",
+      description:
+        "Chỉ bật khi `AUDIO_TARGET_URL_ENDPOINT=true` (dev); tắt thì trả 404. " +
+        "Trả `audioUrl` giống URL mà `POST /api/conversation` trả về, để gọi thẳng `GET /api/audio/target` " +
+        "và đo stream mà không cần một lượt hội thoại. Ký URL không tạo giọng; giọng chỉ được tạo khi GET URL. " +
+        "Câu đã có trong cache thì GET trả 307 thay vì stream.",
+      operationId: "issueTargetSpeechUrl",
+      security: INSTALLATION_SECURITY,
+      requestBody: jsonBody(object({
+        lang: { type: "string", enum: ["zh", "ja", "ko", "fr"], description: "Ngôn ngữ đích." },
+        text: str("Câu cần đọc.", { minLength: 1, maxLength: 300 }),
+      }, ["lang", "text"]), true, { lang: "ja", text: "今日は公園で友達と遊びました。" }),
+      responses: {
+        "200": jsonResponse("URL đã ký, hết hạn sau 15 phút.", object({
+          requestId: str(),
+          audioUrl: str("Đường dẫn tương đối `/api/audio/target?lang=…&exp=…&sig=…&node=…&text=…`."),
+          expiresAt: int("Hạn dùng (ms Unix)."),
+        }, ["audioUrl", "expiresAt"])),
+        "400": errorResponse("Thiếu hoặc sai `lang`/`text` (`BAD_REQUEST`)."),
+        ...INSTALL_AUTH_ERRORS,
+        "404": errorResponse("Endpoint đang tắt."),
       },
     },
   },

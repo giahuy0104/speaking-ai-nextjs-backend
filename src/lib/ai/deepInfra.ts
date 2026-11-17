@@ -3,6 +3,7 @@
 import { Agent, FormData as UndiciFormData, fetch as undiciFetch } from "undici";
 import { AppError } from "../appError";
 import { combineAbortSignals, timeoutSignal } from "./cloudflare/abortDiagnostics";
+import { ConcurrencyLimitTimeoutError, createConcurrencyLimiter, type ConcurrencyLimiter, type ReleaseSlot } from "./concurrencyLimiter";
 
 /**
  * DeepInfra adapter for the audio translation pipeline: Whisper for ASR and an
@@ -266,6 +267,44 @@ const DEFAULT_TTS_VOICE = "Sohee";
 const DEFAULT_TTS_TIMEOUT_MS = 10_000;
 const VOICE_PATTERN = /^[A-Za-z0-9_-]{1,64}$/;
 const MAX_SPEECH_BYTES = 10 * 1024 * 1024;
+// DeepInfra refuses (HTTP 429) calls beyond the account's concurrency limit for a
+// model, and the voice is then lost. Each backend process keeps its own Qwen3-TTS
+// calls under this cap and lets the rest wait briefly for a free slot. The account
+// limit is shared by every backend (dev and production): N backends x this cap.
+const DEFAULT_TTS_MAX_CONCURRENCY = 40;
+// Short: the app waits 20 s for the whole turn, and a busy account rarely frees
+// many slots within a few seconds.
+const DEFAULT_TTS_QUEUE_WAIT_MS = 3_000;
+// One limiter per process even if Next loads this module in several bundles.
+const TTS_LIMITER_KEY = Symbol.for("homi.deepinfra.ttsLimiter");
+const limiterHolder = globalThis as typeof globalThis & { [TTS_LIMITER_KEY]?: ConcurrencyLimiter };
+
+function deepInfraTtsLimiter() {
+  limiterHolder[TTS_LIMITER_KEY] ??= createConcurrencyLimiter({
+    maxConcurrent: positiveInteger("DEEPINFRA_TTS_MAX_CONCURRENCY", DEFAULT_TTS_MAX_CONCURRENCY),
+    maxWaitMs: positiveInteger("DEEPINFRA_TTS_QUEUE_WAIT_MS", DEFAULT_TTS_QUEUE_WAIT_MS),
+  });
+  return limiterHolder[TTS_LIMITER_KEY];
+}
+
+/** Tests change the limits through the environment; this rebuilds the limiter. */
+export function resetDeepInfraTtsLimiterForTests() {
+  delete limiterHolder[TTS_LIMITER_KEY];
+}
+
+/** DeepInfra is refusing work (account limit or full local queue): trying again now hits the same wall. */
+export function isDeepInfraBusy(error: unknown) {
+  return error instanceof DeepInfraProviderError && (error.reason === "rate_limited" || error.reason === "queue_timeout");
+}
+
+/** Waits for a Qwen3-TTS slot; `queue_timeout` (HTTP 429) when none frees in time. */
+async function acquireTtsSlot(signal?: AbortSignal): Promise<ReleaseSlot> {
+  try {
+    return await deepInfraTtsLimiter().acquire(signal);
+  } catch (error) {
+    throw new DeepInfraProviderError(error instanceof ConcurrencyLimitTimeoutError ? "queue_timeout" : "network_error");
+  }
+}
 
 export function deepInfraTtsModel() {
   return process.env.DEEPINFRA_TTS_MODEL?.trim() || DEFAULT_TTS_MODEL;
@@ -292,15 +331,21 @@ export async function synthesizeWithDeepInfra(
   const format = options.format ?? "mp3";
   if (!MODEL_PATTERN.test(model)) throw new DeepInfraProviderError("invalid_model");
   if (!VOICE_PATTERN.test(voice)) throw new DeepInfraProviderError("invalid_voice");
-  const { response, body } = await sendDeepInfra(config, "/audio/speech", {
-    body: JSON.stringify({ model, input: text, voice, response_format: format }),
-    headers: { "Content-Type": "application/json" },
-  }, positiveInteger("DEEPINFRA_TTS_TIMEOUT_MS", DEFAULT_TTS_TIMEOUT_MS), options.signal);
-  if (!response.headers.get("content-type")?.includes(SPEECH_CONTENT_TYPES[format]) ||
-      body.byteLength === 0 || body.byteLength > MAX_SPEECH_BYTES) {
-    throw new DeepInfraProviderError("invalid_response", response.status);
+  // The provider timeout starts once a slot is held, so waiting never eats into it.
+  const release = await acquireTtsSlot(options.signal);
+  try {
+    const { response, body } = await sendDeepInfra(config, "/audio/speech", {
+      body: JSON.stringify({ model, input: text, voice, response_format: format }),
+      headers: { "Content-Type": "application/json" },
+    }, positiveInteger("DEEPINFRA_TTS_TIMEOUT_MS", DEFAULT_TTS_TIMEOUT_MS), options.signal);
+    if (!response.headers.get("content-type")?.includes(SPEECH_CONTENT_TYPES[format]) ||
+        body.byteLength === 0 || body.byteLength > MAX_SPEECH_BYTES) {
+      throw new DeepInfraProviderError("invalid_response", response.status);
+    }
+    return { audio: body, model, voice };
+  } finally {
+    release();
   }
-  return { audio: body, model, voice };
 }
 
 /** Raw PCM from the streaming endpoint: signed 16-bit little-endian, mono. */
@@ -339,9 +384,14 @@ export async function streamSpeechWithDeepInfra(
   if (!VOICE_PATTERN.test(voice)) throw new DeepInfraProviderError("invalid_voice");
   // The OpenAI-compatible routes live under /v1/openai; this one sits beside them.
   const root = config.baseUrl.replace(/\/openai$/, "");
+  // Held until the stream ends, fails or is cancelled: the call is open until then.
+  const release = await acquireTtsSlot(options.signal);
   const deadline = timeoutSignal(
     positiveInteger("DEEPINFRA_TTS_STREAM_TIMEOUT_MS", DEFAULT_TTS_STREAM_TIMEOUT_MS), "attempt_timeout");
   const signal = options.signal ? combineAbortSignals([options.signal, deadline]) : deadline;
+  // The deadline or a caller abort ends the call even when nobody is reading the
+  // stream (no pull pending), so the slot cannot stay held by a stalled listener.
+  signal.addEventListener("abort", release, { once: true });
   // A caller abort (client gone) is a network-level stop, not our deadline.
   const failure = () => new DeepInfraProviderError(deadline.aborted ? "timeout" : "network_error");
   let response: Response;
@@ -358,14 +408,17 @@ export async function streamSpeechWithDeepInfra(
         dispatcher: keepAliveAgent(),
       });
   } catch {
+    release();
     throw failure();
   }
   if (!response.ok || !response.body) {
+    release();
     // Upstream error bodies are never surfaced: they may echo the text.
     await response.body?.cancel().catch(() => undefined);
     throw new DeepInfraProviderError(response.status === 429 ? "rate_limited" : "provider_error", response.status);
   }
   if (!response.headers.get("content-type")?.includes("audio/pcm")) {
+    release();
     await response.body.cancel().catch(() => undefined);
     throw new DeepInfraProviderError("invalid_response", response.status);
   }
@@ -379,12 +432,14 @@ export async function streamSpeechWithDeepInfra(
         for (;;) {
           const { done, value } = await reader.read();
           if (done) {
+            release();
             if (received < PCM_BYTES_PER_SAMPLE) controller.error(new DeepInfraProviderError("empty_response", response.status));
             else controller.close();
             return;
           }
           received += value.byteLength;
           if (received > MAX_PCM_BYTES) {
+            release();
             controller.error(new DeepInfraProviderError("invalid_response", response.status));
             await reader.cancel().catch(() => undefined);
             return;
@@ -398,10 +453,12 @@ export async function streamSpeechWithDeepInfra(
           }
         }
       } catch {
+        release();
         controller.error(failure());
       }
     },
     cancel(reason) {
+      release();
       return reader.cancel(reason).catch(() => undefined);
     },
   });
@@ -423,7 +480,8 @@ function statusFor(error: DeepInfraProviderError) {
     case "invalid_base_url":
     case "invalid_reasoning_effort": return 500;
     case "timeout": return 504;
-    case "rate_limited": return 429;
+    case "rate_limited":
+    case "queue_timeout": return 429;
     default: return 502;
   }
 }

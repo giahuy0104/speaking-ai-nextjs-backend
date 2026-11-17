@@ -14,6 +14,8 @@ export type TargetSpeechStreamsOptions = {
   openPcm: (text: string, language: string) => Promise<PcmSpeech>;
   /** The finished-clip path, used only when the stream fails before its first byte. */
   fallback: (text: string, language: string) => Promise<ArrayBuffer>;
+  /** False when the finished-clip path would fail the same way (provider busy); default true. */
+  shouldFallback?: (error: unknown) => boolean;
   /** Maps a provider error to the one listeners and logs see. */
   toPublicError?: (error: unknown) => unknown;
   log?: (level: "info" | "warn", event: string, fields: Record<string, unknown>) => void;
@@ -51,6 +53,11 @@ export function createTargetSpeechStreams(options: TargetSpeechStreamsOptions) {
       const reported = toPublicError(error);
       // Listeners already hold part of this clip; another voice take cannot continue it.
       if (broadcast.started()) {
+        log("warn", "target_speech_stream_failed", { language, error: reported });
+        broadcast.fail(reported);
+        return;
+      }
+      if (options.shouldFallback && !options.shouldFallback(error)) {
         log("warn", "target_speech_stream_failed", { language, error: reported });
         broadcast.fail(reported);
         return;

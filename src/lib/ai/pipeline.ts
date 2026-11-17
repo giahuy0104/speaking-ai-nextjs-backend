@@ -19,7 +19,7 @@ import { getFailureDiagnostics } from "./cloudflare/providerError";
 import { requestTargetSpeech } from "./aiProvider";
 import { createTargetAudioUrl } from "./targetAudioUrl";
 import { bypassesAudioCache } from "./loadTestPersistence";
-import { isTargetSpeechDeferred, targetSpeech, targetSpeechDescriptor } from "./targetSpeech";
+import { isTargetSpeechDeferred, targetSpeech, targetSpeechDescriptor, targetSpeechMode } from "./targetSpeech";
 import {
   prepareEnglishAudio,
   synthesizeEnglishAudio,
@@ -148,7 +148,8 @@ export async function runTargetLanguageConversationPipeline(
   };
   logEvent("info", "target_translation_pipeline_completed", {
     requestId: input.requestId, language, model: result.textModel,
-    audioSource: result.audioSource, audioReady: result.audioUrl !== null, audioDeferred: deferred, audioCacheBypassed,
+    audioSource: result.audioSource, audioReady: result.audioUrl !== null, audioDeferred: deferred,
+    audioMode: deferred ? targetSpeechMode(language, translatedText) : undefined, audioCacheBypassed,
     latency: result.latency,
   });
   return result;
