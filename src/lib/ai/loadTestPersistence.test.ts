@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { afterEach, test } from "node:test";
-import { loadTestPersistencePrefix, skipsPostResponsePersistence } from "./loadTestPersistence";
+import { bypassesAudioCache, loadTestPersistencePrefix, skipsPostResponsePersistence } from "./loadTestPersistence";
 
 const ENV = "LOAD_TEST_SKIP_PERSISTENCE_CLIENT_PREFIX";
 
@@ -27,4 +27,21 @@ test("ignores a prefix too short to single out test installations", () => {
     assert.equal(loadTestPersistencePrefix(), undefined);
     assert.equal(skipsPostResponsePersistence("web_real-device"), false);
   }
+});
+
+test("the audio cache is bypassed only for load-test installations with the flag on", () => {
+  process.env[ENV] = "web_k6_";
+  for (const value of [undefined, "", "false", "1"]) {
+    if (value === undefined) delete process.env.LOAD_TEST_BYPASS_AUDIO_CACHE;
+    else process.env.LOAD_TEST_BYPASS_AUDIO_CACHE = value;
+    assert.equal(bypassesAudioCache("web_k6_abc123"), false);
+  }
+  process.env.LOAD_TEST_BYPASS_AUDIO_CACHE = " TRUE ";
+  assert.equal(bypassesAudioCache("web_k6_abc123"), true);
+  assert.equal(bypassesAudioCache("web_real-device"), false);
+  assert.equal(bypassesAudioCache(undefined), false);
+  // Without a valid prefix nobody bypasses, even with the flag on.
+  process.env[ENV] = "web_";
+  assert.equal(bypassesAudioCache("web_k6_abc123"), false);
+  delete process.env.LOAD_TEST_BYPASS_AUDIO_CACHE;
 });
