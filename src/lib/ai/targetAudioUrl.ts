@@ -67,6 +67,35 @@ export function createTargetAudioUrl(
   return `${TARGET_AUDIO_PATH}?${params.toString()}`;
 }
 
+/**
+ * AUDIO_TARGET_URL_ENDPOINT=true enables POST /api/audio/target/url, a test hook
+ * that signs a URL for any sentence (dev only: every URL it issues is paid TTS).
+ */
+export function isTargetAudioUrlEndpointEnabled(env: EnvSource = process.env) {
+  return env.AUDIO_TARGET_URL_ENDPOINT?.trim().toLowerCase() === "true";
+}
+
+export type IssuedTargetAudioUrl =
+  | { audioUrl: string; expiresAt: number }
+  | { error: "invalid_input" | "signing_unavailable" };
+
+/** Validates `{ lang, text }` and signs the same URL the conversation pipeline would return. */
+export function issueTargetAudioUrl(
+  body: unknown,
+  options: { env?: EnvSource; now?: number } = {},
+): IssuedTargetAudioUrl {
+  if (!body || typeof body !== "object") return { error: "invalid_input" };
+  const { lang, text } = body as { lang?: unknown; text?: unknown };
+  const trimmed = typeof text === "string" ? text.trim() : "";
+  if (!isTargetAudioLanguage(lang) || !trimmed || trimmed.length > MAX_DEFERRED_TEXT_LENGTH) {
+    return { error: "invalid_input" };
+  }
+  const audioUrl = createTargetAudioUrl(lang, trimmed, options);
+  if (!audioUrl) return { error: "signing_unavailable" };
+  const expiresAt = Number(new URL(audioUrl, "http://local").searchParams.get("exp"));
+  return { audioUrl, expiresAt };
+}
+
 export type TargetAudioRequest = { language: TargetAudioLanguage; text: string };
 
 /** The verified language and text, or undefined for a missing, expired or forged URL. */

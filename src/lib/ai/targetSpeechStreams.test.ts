@@ -82,3 +82,16 @@ test("a stream cut after audio was sent fails instead of splicing in another tak
   await assert.rejects(completed, /TTS_FAILED/);
   assert.equal(fallbacks, 0);
 });
+
+test("a stream refused because the provider is busy does not try the fallback, which would hit the same limit", async () => {
+  let fallbacks = 0;
+  const busy = Object.assign(new Error("busy"), { reason: "queue_timeout" });
+  const streams = createTargetSpeechStreams({
+    openPcm: async () => { throw busy; },
+    fallback: async () => { fallbacks++; return new ArrayBuffer(1); },
+    shouldFallback: error => (error as { reason?: string }).reason !== "queue_timeout",
+    log: quiet,
+  });
+  await assert.rejects(streams.start("今天我很开心。", "zh"), /busy/);
+  assert.equal(fallbacks, 0);
+});

@@ -2,8 +2,9 @@ import { logEvent } from "@/lib/observability";
 import { saveReusableAudio, type ReusableAudioDescriptor } from "@/lib/storage/audio";
 import { getTargetTtsProfile, requestTargetSpeech, targetTtsProvider, type TargetSpeechLanguage } from "./aiProvider";
 import { createTargetSpeechCoordinator } from "./targetSpeechCoordinator";
-import { streamSpeechWithDeepInfra, synthesizeWithDeepInfra, toDeepInfraTtsAppError } from "./deepInfra";
+import { isDeepInfraBusy, streamSpeechWithDeepInfra, synthesizeWithDeepInfra, toDeepInfraTtsAppError } from "./deepInfra";
 import { createTargetSpeechStreams } from "./targetSpeechStreams";
+import { targetSpeechModeFor, type TargetSpeechMode } from "./targetSpeechMode";
 
 /**
  * Cache identity of a translated sentence's speech (provider model + voice per language).
@@ -16,7 +17,7 @@ export function targetSpeechDescriptor(language: TargetSpeechLanguage, text: str
     model: profile.model,
     voice: profile.voice,
     speed: profile.speed,
-    extension: isTargetSpeechStreaming() ? "wav" : profile.extension,
+    extension: targetSpeechMode(language, text) === "stream" ? "wav" : profile.extension,
   };
 }
 
@@ -39,6 +40,14 @@ export function isTargetSpeechStreaming() {
   return isTargetSpeechDeferred() && process.env.AUDIO_TARGET_TTS_STREAM?.trim().toLowerCase() === "true";
 }
 
+/**
+ * With streaming on, only long sentences stream (WAV); short ones are a finished
+ * MP3 clip (see targetSpeechMode.ts). Without streaming every sentence is a clip.
+ */
+export function targetSpeechMode(language: string, text: string): TargetSpeechMode {
+  return targetSpeechModeFor(language, text, { streaming: isTargetSpeechStreaming() });
+}
+
 async function finishedWavSpeech(text: string) {
   try {
     return (await synthesizeWithDeepInfra(text, { format: "wav" })).audio;
@@ -51,6 +60,8 @@ const targetSpeechStreams = createTargetSpeechStreams({
   openPcm: streamSpeechWithDeepInfra,
   // Same format as the stream, so listeners and the cache never mix WAV and MP3.
   fallback: text => finishedWavSpeech(text),
+  // A busy account would refuse the finished clip too, after another wait in the queue.
+  shouldFallback: error => !isDeepInfraBusy(error),
   toPublicError: toDeepInfraTtsAppError,
   log: (level, event, fields) => logEvent(level, event, fields),
 });
@@ -61,7 +72,7 @@ export function subscribeTargetSpeech(text: string, language: TargetSpeechLangua
 }
 
 export const targetSpeech = createTargetSpeechCoordinator({
-  synthesize: (text, language) => isTargetSpeechStreaming()
+  synthesize: (text, language) => targetSpeechMode(language, text) === "stream"
     ? targetSpeechStreams.start(text, language)
     : requestTargetSpeech(text, language as TargetSpeechLanguage),
   save: (text, language, audio) => saveReusableAudio(targetSpeechDescriptor(language as TargetSpeechLanguage, text), audio),

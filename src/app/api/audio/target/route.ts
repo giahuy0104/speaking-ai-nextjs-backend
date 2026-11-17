@@ -2,7 +2,7 @@ import { AppError, toErrorResponse } from "@/lib/errors";
 import { getRequestId, logEvent, withRequestId } from "@/lib/observability";
 import { getReusableAudioUrl } from "@/lib/storage/audio";
 import { verifyTargetAudioUrl } from "@/lib/ai/targetAudioUrl";
-import { subscribeTargetSpeech, targetSpeech, targetSpeechDescriptor } from "@/lib/ai/targetSpeech";
+import { subscribeTargetSpeech, targetSpeech, targetSpeechDescriptor, targetSpeechMode } from "@/lib/ai/targetSpeech";
 import { isWav } from "@/lib/audio/wav";
 
 export const runtime = "nodejs";
@@ -12,8 +12,9 @@ export const maxDuration = 60;
  * Speech for a zh/ja/ko/fr translation that was returned before its audio existed.
  * Only signed URLs issued by the conversation pipeline are served (see targetAudioUrl.ts).
  * Order: join the synthesis this backend already started, else the durable cache,
- * else synthesize now. With AUDIO_TARGET_TTS_STREAM the body is uncompressed WAV
- * carrying DeepInfra's PCM as it arrives (no Content-Length); otherwise the finished MP3.
+ * else synthesize now. With AUDIO_TARGET_TTS_STREAM a long sentence is uncompressed WAV
+ * carrying DeepInfra's PCM as it arrives (no Content-Length); a short sentence, or any
+ * sentence without streaming, is the finished MP3 (see targetSpeechMode.ts).
  */
 export async function GET(request: Request) {
   const requestId = getRequestId(request);
@@ -63,7 +64,7 @@ export async function GET(request: Request) {
   try {
     const audio = await job;
     logEvent("info", "target_speech_served", {
-      requestId, language, joined, byteLength: audio.byteLength,
+      requestId, language, joined, streamed: false, mode: targetSpeechMode(language, text), byteLength: audio.byteLength,
       latencyMs: Math.round(performance.now() - startedAt),
     });
     return withRequestId(new Response(audio, {
