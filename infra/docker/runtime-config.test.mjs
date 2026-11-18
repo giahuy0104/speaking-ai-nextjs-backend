@@ -133,6 +133,18 @@ test("Google speech needs a service-account key or Application Default Credentia
   configureDeployment(withAdc);
   assert.equal(withAdc.AUDIO_TARGET_TTS_PROVIDER, "google");
 });
+test("English speech defaults to Cloudflare; Google English needs Google credentials", () => {
+  const defaults = fixture();
+  configureDeployment(defaults);
+  assert.equal(defaults.AUDIO_ENGLISH_TTS_PROVIDER, "cloudflare");
+  assert.throws(() => configureDeployment(fixture({ AUDIO_ENGLISH_TTS_PROVIDER: "deepinfra" })),
+    /AUDIO_ENGLISH_TTS_PROVIDER \(cloudflare_or_google\)/);
+  assert.throws(() => configureDeployment(fixture({ AUDIO_ENGLISH_TTS_PROVIDER: "google" })),
+    /GOOGLE_TTS_CREDENTIALS_JSON \(required\)/);
+  const env = fixture({ AUDIO_ENGLISH_TTS_PROVIDER: " Google ", GOOGLE_TTS_CREDENTIALS_JSON: "e30=" });
+  configureDeployment(env);
+  assert.equal(env.AUDIO_ENGLISH_TTS_PROVIDER, "google");
+});
 test("sending a share of Google clips to DeepInfra needs the DeepInfra key", () => {
   const google = { AUDIO_TARGET_TTS_PROVIDER: "google", GOOGLE_TTS_CREDENTIALS_JSON: "e30=" };
   assert.throws(() => configureDeployment(fixture({ ...google, AUDIO_TARGET_CLIP_DEEPINFRA_SHARE: "0.33" })),

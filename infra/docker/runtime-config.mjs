@@ -89,8 +89,14 @@ export function configureDeployment(env, role = "web") {
   if (!["cloudflare", "deepinfra", "google"].includes(targetTts)) fail("AUDIO_TARGET_TTS_PROVIDER", "cloudflare_deepinfra_or_google");
   env.AUDIO_TARGET_TTS_PROVIDER = targetTts;
   if (audioProviders.includes("deepinfra") || targetTts === "deepinfra") required(env, "DEEPINFRA_API_KEY");
+  // English speech: Cloudflare aura-1 (default) or Google (Neural2 clips, Chirp 3 HD streams).
+  const englishTts = value(env, "AUDIO_ENGLISH_TTS_PROVIDER").toLowerCase() || "cloudflare";
+  if (!["cloudflare", "google"].includes(englishTts)) fail("AUDIO_ENGLISH_TTS_PROVIDER", "cloudflare_or_google");
+  env.AUDIO_ENGLISH_TTS_PROVIDER = englishTts;
   // Google: a service-account key, or Application Default Credentials from a mounted file.
-  if (targetTts === "google" && !value(env, "GOOGLE_APPLICATION_CREDENTIALS")) required(env, "GOOGLE_TTS_CREDENTIALS_JSON");
+  if ((targetTts === "google" || englishTts === "google") && !value(env, "GOOGLE_APPLICATION_CREDENTIALS")) {
+    required(env, "GOOGLE_TTS_CREDENTIALS_JSON");
+  }
   // A share of Google's short clips may be spoken by DeepInfra (AUDIO_TARGET_CLIP_DEEPINFRA_SHARE).
   if (targetTts === "google" && Number(value(env, "AUDIO_TARGET_CLIP_DEEPINFRA_SHARE")) > 0) required(env, "DEEPINFRA_API_KEY");
   if (role === "web") {

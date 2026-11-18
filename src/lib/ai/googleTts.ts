@@ -41,7 +41,8 @@ export const GOOGLE_TTS_SAMPLE_RATE = 24_000;
 export const GOOGLE_TTS_MODEL = "google-cloud-tts";
 const DEFAULT_VOICE = "Chirp3-HD-Aoede";
 const VOICE_PATTERN = /^[A-Za-z0-9-]{1,64}$/;
-const LOCALES: Readonly<Record<string, string>> = { zh: "cmn-CN", ja: "ja-JP", ko: "ko-KR", fr: "fr-FR" };
+// en: English speech with AUDIO_ENGLISH_TTS_PROVIDER=google (see englishSpeech.ts).
+const LOCALES: Readonly<Record<string, string>> = { en: "en-US", zh: "cmn-CN", ja: "ja-JP", ko: "ko-KR", fr: "fr-FR" };
 const PCM_BYTES_PER_SAMPLE = 2;
 // Two minutes of speech; a translated sentence is a few seconds.
 const MAX_PCM_BYTES = GOOGLE_TTS_SAMPLE_RATE * PCM_BYTES_PER_SAMPLE * 120;
