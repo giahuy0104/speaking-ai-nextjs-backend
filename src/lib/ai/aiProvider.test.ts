@@ -29,6 +29,7 @@ const environmentKeys = [
   "DEEPINFRA_TTS_VOICE",
   "GOOGLE_TTS_VOICE",
   "GOOGLE_TTS_CLIP_VOICE_JA",
+  "AUDIO_TARGET_CLIP_DEEPINFRA_SHARE",
 ] as const;
 const originalEnvironment = Object.fromEntries(
   environmentKeys.map((key) => [key, process.env[key]]),
@@ -368,6 +369,52 @@ test("a Google clip voice is used for that language's MP3 clips and their cache 
   assert.equal(getTargetTtsProfile("zh").voice, "Chirp3-HD-Aoede-zh");
   await requestTargetSpeech("こんにちは。", "ja");
   assert.deepEqual((requests[0] as { voice: unknown }).voice, { languageCode: "ja-JP", name: "ja-JP-Neural2-B" });
+});
+
+function configureGoogleWithDeepInfraShare(
+  deepInfra: Parameters<typeof setDeepInfraTransportForTests>[0],
+  googleVoices: unknown[],
+) {
+  configureCloudflare();
+  globalThis.fetch = async (input) => assert.fail(`unexpected Cloudflare call to ${String(input)}`);
+  process.env.AUDIO_TARGET_TTS_PROVIDER = "google";
+  process.env.AUDIO_TARGET_CLIP_DEEPINFRA_SHARE = "1";
+  process.env.GOOGLE_TTS_CLIP_VOICE_JA = "Neural2-B";
+  process.env.DEEPINFRA_API_KEY = "test-deepinfra-key";
+  setDeepInfraTransportForTests(deepInfra);
+  setGoogleTtsClientForTests({
+    streamingSynthesize: () => assert.fail("stream not expected"),
+    async synthesizeSpeech(request) { googleVoices.push(request.voice.name); return [{ audioContent: new Uint8Array([4]) }]; },
+  });
+}
+
+test("a share of Google clips goes to DeepInfra (Qwen3-TTS), and the cache records that voice", async () => {
+  const googleVoices: unknown[] = [];
+  configureGoogleWithDeepInfraShare(async () =>
+    new Response(new Uint8Array([7, 7]), { headers: { "Content-Type": "audio/mpeg" } }), googleVoices);
+  assert.deepEqual(new Uint8Array(await requestTargetSpeech("こんにちは。", "ja")), new Uint8Array([7, 7]));
+  assert.deepEqual(googleVoices, []);
+  assert.deepEqual(getTargetTtsProfile("ja", "clip", "こんにちは。"), {
+    provider: "deepinfra", model: "Qwen/Qwen3-TTS", voice: "Sohee-ja", speed: 1, extension: "mp3",
+  });
+  // Streams and profiles asked without a sentence stay on Google.
+  assert.equal(getTargetTtsProfile("ja", "stream", "こんにちは。").provider, "google");
+  assert.equal(getTargetTtsProfile("ja").voice, "Neural2-B-ja");
+});
+
+test("a busy or failing DeepInfra clip falls back to the Google clip voice and is reported", async () => {
+  const googleVoices: unknown[] = [];
+  configureGoogleWithDeepInfraShare(async () => new Response("slow down", { status: 429 }), googleVoices);
+  const fallbacks: unknown[] = [];
+  const audio = await requestTargetSpeech("こんにちは。", "ja", { onClipFallback: error => fallbacks.push(error) });
+  assert.deepEqual(new Uint8Array(audio), new Uint8Array([4]));
+  assert.deepEqual(googleVoices, ["ja-JP-Neural2-B"]);
+  assert.equal(fallbacks.length, 1);
+  assert.ok(fallbacks[0] instanceof AppError && fallbacks[0].details?.provider === "deepinfra" && fallbacks[0].details?.reason === "rate_limited");
+
+  // Chinese falls back to Chirp 3 HD (no clip voice set).
+  await requestTargetSpeech("你好。", "zh");
+  assert.deepEqual(googleVoices, ["ja-JP-Neural2-B", "cmn-CN-Chirp3-HD-Aoede"]);
 });
 
 test("Google speech failures become TTS_FAILED with the google provider", async () => {

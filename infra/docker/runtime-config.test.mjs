@@ -133,3 +133,10 @@ test("Google speech needs a service-account key or Application Default Credentia
   configureDeployment(withAdc);
   assert.equal(withAdc.AUDIO_TARGET_TTS_PROVIDER, "google");
 });
+test("sending a share of Google clips to DeepInfra needs the DeepInfra key", () => {
+  const google = { AUDIO_TARGET_TTS_PROVIDER: "google", GOOGLE_TTS_CREDENTIALS_JSON: "e30=" };
+  assert.throws(() => configureDeployment(fixture({ ...google, AUDIO_TARGET_CLIP_DEEPINFRA_SHARE: "0.33" })),
+    /DEEPINFRA_API_KEY \(required\)/);
+  configureDeployment(fixture({ ...google, AUDIO_TARGET_CLIP_DEEPINFRA_SHARE: "0.33", DEEPINFRA_API_KEY: "k" }));
+  configureDeployment(fixture({ ...google, AUDIO_TARGET_CLIP_DEEPINFRA_SHARE: "0" }));
+});
