@@ -32,6 +32,7 @@ import {
   synthesizeEnglishAudio,
   type AudioSynthesisResult,
 } from "./tts";
+import { turnContent } from "@/lib/turnContentLog";
 
 export type ConversationPipelineOptions = {
   deferTextCacheWrite?: boolean;
@@ -93,6 +94,7 @@ export async function runTargetLanguageConversationPipeline(
       language,
       stage: "tts",
       model: descriptor.model,
+      ...turnContent({ translatedText }),
       deferred,
       reason: error instanceof AppError ? error.details?.reason ?? "audio_unavailable" : "audio_unavailable",
       status: error instanceof AppError ? error.status : 500,
@@ -166,6 +168,10 @@ export async function runTargetLanguageConversationPipeline(
   };
   logEvent("info", "target_translation_pipeline_completed", {
     requestId: input.requestId, language, model: result.textModel,
+    ...turnContent({
+      clientId: input.clientId, sourceText: result.vietnameseText,
+      translatedText: result.translatedText, audioUrl: result.audioUrl,
+    }),
     audioSource: result.audioSource, audioReady: result.audioUrl !== null, audioDeferred: deferred,
     audioMode: deferred ? targetSpeechMode(language, translatedText) : undefined, audioCacheBypassed,
     latency: result.latency,
@@ -193,6 +199,7 @@ export async function prepareConversationPipeline(
             transcriptLength:
               options.prefetchedTranscript?.sourceText.trim().length ?? 0,
             prefetchedTranscript: true,
+            ...turnContent({ sourceText: options.prefetchedTranscript?.sourceText }),
           });
         },
       })
@@ -338,6 +345,10 @@ export function completePreparedConversationPipeline(
   logEvent("info", "conversation_pipeline_completed", {
     requestId: input.requestId,
     conversationId,
+    ...turnContent({
+      clientId: input.clientId, sourceText: result.vietnameseText,
+      englishText: result.englishText, audioUrl: result.audioUrl,
+    }),
     context: input.context,
     asrMode: result.asrMode,
     processingMode: result.processingMode,

@@ -10,6 +10,7 @@ import { getCloudflareAudioMaxBytes } from "@/lib/ai/cloudflareWorkersAi";
 import { scheduleConversationPostResponseTasks } from "@/lib/ai/postResponseTasks";
 import { requireInstallationAccess } from "@/lib/installationAuth";
 import { getRequestId, logEvent, withRequestId } from "@/lib/observability";
+import { turnContent } from "@/lib/turnContentLog";
 
 export const runtime = "nodejs";
 
@@ -138,6 +139,8 @@ async function parseJson(request: Request) {
 export async function POST(request: Request) {
   const requestId = getRequestId(request);
 
+  // Logged with a failure when LOG_TURN_CONTENT=true (see turnContentLog.ts).
+  let receivedSourceText: string | undefined;
   try {
     const contentType = request.headers.get("content-type") ?? "";
     const isMultipart = contentType.includes("multipart/form-data");
@@ -149,6 +152,7 @@ export async function POST(request: Request) {
       parsedInput.clientId,
     );
     const input = { ...parsedInput, clientId: access.clientId };
+    receivedSourceText = input.sourceText;
     const result = input.targetLanguage === "en"
       ? await runConversationPipeline({ ...input, requestId }, {
         deferTextCacheWrite: true,
@@ -177,7 +181,9 @@ export async function POST(request: Request) {
       requestId,
     );
   } catch (error) {
-    logEvent("warn", "conversation_request_failed", { requestId, error });
+    logEvent("warn", "conversation_request_failed", {
+      requestId, ...turnContent({ sourceText: receivedSourceText }), error,
+    });
     return withRequestId(toErrorResponse(error, requestId), requestId);
   }
 }

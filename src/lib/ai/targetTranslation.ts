@@ -13,6 +13,7 @@ import {
   deepInfraTextModel, resolveAudioProviders, toDeepInfraAppError, translateWithDeepInfra, type AudioProvider,
 } from "./deepInfra";
 import { buildTargetLanguageInstruction } from "./prompts";
+import { turnContent } from "@/lib/turnContentLog";
 
 type TranslationLanguage = Exclude<TargetLanguage, "en">;
 const maxOutputCharacters = 2_000;
@@ -131,6 +132,7 @@ export async function translateTargetLanguage(input: TargetTranslationInput) {
     sourceLength: input.sourceText.length,
     maxCompletionTokens,
     maxOutputCharacters,
+    ...turnContent({ sourceText: input.sourceText }),
   };
   try {
     const result = await runProviders("text", resolveAudioProviders("text"), new AbortController().signal, {
@@ -147,6 +149,7 @@ export async function translateTargetLanguage(input: TargetTranslationInput) {
       ...fields, provider: winner?.provider, ...winner?.completion, ...winner?.output, model: result.model,
       providerAttempts: attempts.length,
       latencyMs: Math.round(performance.now() - startedAt),
+      ...turnContent({ translatedText: result.translatedText }),
     });
     return result;
   } catch (projected) {
