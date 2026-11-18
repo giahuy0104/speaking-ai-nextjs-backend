@@ -9,6 +9,14 @@ import { speechStreamProvider } from "./targetSpeechProviders";
 afterEach(() => {
   setGoogleTtsClientForTests(undefined);
   resetGoogleTtsForTests();
+  delete process.env.GOOGLE_TTS_VOICE;
+});
+
+test("google streams only while its stream voice is Chirp 3 HD; DeepInfra always can", () => {
+  assert.equal(speechStreamProvider("google").canStream("ko"), true);
+  process.env.GOOGLE_TTS_VOICE = "Neural2-A";
+  assert.equal(speechStreamProvider("google").canStream("ko"), false);
+  assert.equal(speechStreamProvider("deepinfra").canStream("ko"), true);
 });
 
 test("google streams PCM through StreamingSynthesize and falls back to a LINEAR16 WAV clip", async () => {

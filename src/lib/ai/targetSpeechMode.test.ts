@@ -23,6 +23,14 @@ test("the thresholds come from the environment", () => {
   assert.equal(targetSpeechModeFor("fr", "Ce matin je me suis levé tôt et j'ai ouvert la fenêtre.", { streaming: true, env }), "clip");
 });
 
+test("a language can have its own threshold, which wins over the shared one", () => {
+  const env = { AUDIO_TARGET_STREAM_MIN_CHARS: "5", AUDIO_TARGET_STREAM_MIN_CHARS_JA: "30", AUDIO_TARGET_STREAM_MIN_CHARS_KO: "x" };
+  assert.equal(targetSpeechModeFor("ja", "こんにちは、元気ですか？", { streaming: true, env }), "clip");
+  assert.equal(targetSpeechModeFor("zh", "今天天气晴朗好看", { streaming: true, env }), "stream", "zh keeps the shared threshold");
+  // An invalid language threshold falls back to the shared one.
+  assert.equal(targetSpeechModeFor("ko", "오늘은 날씨가 좋아요", { streaming: true, env }), "stream");
+});
+
 test("length counts characters of the normalized text, so the pipeline and the audio route agree", () => {
   const options = { streaming: true, env: { AUDIO_TARGET_STREAM_MIN_CHARS: "8" } };
   // Surrounding and repeated whitespace does not count.

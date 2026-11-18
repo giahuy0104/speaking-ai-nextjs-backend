@@ -36,8 +36,10 @@ export function targetSpeechModeFor(
 ): TargetSpeechMode {
   if (!options.streaming) return "clip";
   const env = options.env ?? process.env;
-  const minChars = language === "fr"
-    ? threshold(env, "AUDIO_TARGET_STREAM_MIN_CHARS_FR", DEFAULT_MIN_CHARS_FR)
+  // AUDIO_TARGET_STREAM_MIN_CHARS_<LANG> wins; French otherwise has its own default.
+  const shared = language === "fr"
+    ? DEFAULT_MIN_CHARS_FR
     : threshold(env, "AUDIO_TARGET_STREAM_MIN_CHARS", DEFAULT_MIN_CHARS_CJK);
+  const minChars = threshold(env, `AUDIO_TARGET_STREAM_MIN_CHARS_${language.toUpperCase()}`, shared);
   return spokenLength(text) >= minChars ? "stream" : "clip";
 }

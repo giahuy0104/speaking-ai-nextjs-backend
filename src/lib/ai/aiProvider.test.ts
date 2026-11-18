@@ -28,6 +28,7 @@ const environmentKeys = [
   "DEEPINFRA_TTS_MODEL",
   "DEEPINFRA_TTS_VOICE",
   "GOOGLE_TTS_VOICE",
+  "GOOGLE_TTS_CLIP_VOICE_JA",
 ] as const;
 const originalEnvironment = Object.fromEntries(
   environmentKeys.map((key) => [key, process.env[key]]),
@@ -351,6 +352,22 @@ test("target-language speech uses Google Cloud TTS (Chirp 3 HD MP3) when the pro
     voice: { languageCode: "ko-KR", name: "ko-KR-Chirp3-HD-Aoede" },
     audioConfig: { audioEncoding: "MP3" },
   }]);
+});
+
+test("a Google clip voice is used for that language's MP3 clips and their cache identity", async () => {
+  configureCloudflare();
+  process.env.AUDIO_TARGET_TTS_PROVIDER = "google";
+  process.env.GOOGLE_TTS_CLIP_VOICE_JA = "Neural2-B";
+  const requests: unknown[] = [];
+  setGoogleTtsClientForTests({
+    streamingSynthesize: () => assert.fail("stream not expected"),
+    async synthesizeSpeech(request) { requests.push(request); return [{ audioContent: new Uint8Array([1]) }]; },
+  });
+  assert.equal(getTargetTtsProfile("ja").voice, "Neural2-B-ja");
+  assert.equal(getTargetTtsProfile("ja", "stream").voice, "Chirp3-HD-Aoede-ja", "streams keep the stream voice");
+  assert.equal(getTargetTtsProfile("zh").voice, "Chirp3-HD-Aoede-zh");
+  await requestTargetSpeech("こんにちは。", "ja");
+  assert.deepEqual((requests[0] as { voice: unknown }).voice, { languageCode: "ja-JP", name: "ja-JP-Neural2-B" });
 });
 
 test("Google speech failures become TTS_FAILED with the google provider", async () => {

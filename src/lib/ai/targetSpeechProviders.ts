@@ -1,5 +1,5 @@
 import { isDeepInfraBusy, streamSpeechWithDeepInfra, synthesizeWithDeepInfra, toDeepInfraTtsAppError } from "./deepInfra";
-import { isGoogleTtsBusy, streamSpeechWithGoogle, synthesizeWithGoogle, toGoogleTtsAppError } from "./googleTts";
+import { googleTtsCanStream, isGoogleTtsBusy, streamSpeechWithGoogle, synthesizeWithGoogle, toGoogleTtsAppError } from "./googleTts";
 import type { PcmSpeech } from "./targetSpeechStreams";
 
 /** The providers whose speech can stream (AUDIO_TARGET_TTS_STREAM=true). */
@@ -12,6 +12,8 @@ export type SpeechStreamProvider = Readonly<{
   /** The provider refuses work: the finished-clip path would fail the same way. */
   isBusy: (error: unknown) => boolean;
   toPublicError: (error: unknown) => unknown;
+  /** Whether this language's voice can stream; otherwise its speech is a finished clip. */
+  canStream: (language: string) => boolean;
 }>;
 
 const PROVIDERS: Readonly<Record<StreamingSpeechProvider, SpeechStreamProvider>> = {
@@ -26,6 +28,7 @@ const PROVIDERS: Readonly<Record<StreamingSpeechProvider, SpeechStreamProvider>>
     },
     isBusy: isDeepInfraBusy,
     toPublicError: toDeepInfraTtsAppError,
+    canStream: () => true,
   },
   google: {
     openPcm: (text, language) => streamSpeechWithGoogle(text, language),
@@ -38,6 +41,7 @@ const PROVIDERS: Readonly<Record<StreamingSpeechProvider, SpeechStreamProvider>>
     },
     isBusy: isGoogleTtsBusy,
     toPublicError: toGoogleTtsAppError,
+    canStream: () => googleTtsCanStream(),
   },
 };
 
