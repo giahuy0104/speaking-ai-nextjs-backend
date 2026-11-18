@@ -118,8 +118,18 @@ test("target-language speech provider defaults to Cloudflare and DeepInfra needs
   assert.equal(defaults.AUDIO_TARGET_TTS_PROVIDER, "cloudflare");
   assert.throws(() => configureDeployment(fixture({ AUDIO_TARGET_TTS_PROVIDER: "deepinfra" })), /DEEPINFRA_API_KEY \(required\)/);
   assert.throws(() => configureDeployment(fixture({ AUDIO_TARGET_TTS_PROVIDER: "deepinfra,cloudflare", DEEPINFRA_API_KEY: "k" })),
-    /AUDIO_TARGET_TTS_PROVIDER \(cloudflare_or_deepinfra\)/);
+    /AUDIO_TARGET_TTS_PROVIDER \(cloudflare_deepinfra_or_google\)/);
   const env = fixture({ AUDIO_TARGET_TTS_PROVIDER: " DeepInfra ", DEEPINFRA_API_KEY: "audit-deepinfra-key" });
   configureDeployment(env);
   assert.equal(env.AUDIO_TARGET_TTS_PROVIDER, "deepinfra");
+});
+test("Google speech needs a service-account key or Application Default Credentials", () => {
+  assert.throws(() => configureDeployment(fixture({ AUDIO_TARGET_TTS_PROVIDER: "google" })),
+    /GOOGLE_TTS_CREDENTIALS_JSON \(required\)/);
+  const withKey = fixture({ AUDIO_TARGET_TTS_PROVIDER: " Google ", GOOGLE_TTS_CREDENTIALS_JSON: "e30=" });
+  configureDeployment(withKey);
+  assert.equal(withKey.AUDIO_TARGET_TTS_PROVIDER, "google");
+  const withAdc = fixture({ AUDIO_TARGET_TTS_PROVIDER: "google", GOOGLE_APPLICATION_CREDENTIALS: "/run/secrets/google.json" });
+  configureDeployment(withAdc);
+  assert.equal(withAdc.AUDIO_TARGET_TTS_PROVIDER, "google");
 });
