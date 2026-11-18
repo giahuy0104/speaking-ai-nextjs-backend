@@ -17,7 +17,7 @@ import { synthesizeEnglishAudio } from "./tts";
 import { normalizeVietnameseForExactMatch } from "./exactRules";
 
 const repeatPromotionThreshold = 3;
-const promotableTextSources = new Set(["cloudflare", "openai", "text_cache"]);
+const promotableTextSources = new Set(["cloudflare", "openai", "deepinfra", "text_cache"]);
 const ruleTextSources = new Set([
   "phrase_rule",
   "corpus_rule",
@@ -237,7 +237,7 @@ export async function maybeLearnFromRepeatedUse(
     await updateConversationHistory({
       conversationId: conversation.conversationId,
       learningStatus:
-        ["cloudflare", "openai"].includes(conversation.textSource)
+        ["cloudflare", "openai", "deepinfra"].includes(conversation.textSource)
           ? "cached"
           : "observing",
       learningUseCount: useCount,

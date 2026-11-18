@@ -2,7 +2,7 @@ import type { ConversationRequest } from "@/types/conversation";
 import { AppError } from "@/lib/errors";
 import { delay } from "@/lib/latency";
 import { logEvent } from "@/lib/observability";
-import { transcribeAudioToVietnamese, transcribeAudioToVietnameseWithProviders } from "./cloudflareWorkersAi";
+import { transcribeAudioToVietnameseWithProviders } from "./cloudflareWorkersAi";
 import { resolveCloudflareAsrVadPolicy } from "./cloudflareWorkersAiRequest";
 import { sampleVietnameseByContext } from "./prompts";
 import { repairVietnameseChildSpeechLayers } from "./childSpeechTranscriptRepair";
@@ -89,11 +89,10 @@ async function transcribeAudio(input: ConversationRequest) {
     bluetoothAudioInput: input.benchmark.bluetoothAudioInput,
   });
 
-  // zh/ja/ko/fr follow AUDIO_ASR_PROVIDER (DeepInfra first when configured); English stays on Cloudflare.
+  // Every target language follows AUDIO_ASR_PROVIDER (DeepInfra first when configured,
+  // Cloudflare when unset), English included.
   const asrOptions = { vadFilter: vadPolicy.vadFilter };
-  const result = input.targetLanguage !== "en"
-    ? await transcribeAudioToVietnameseWithProviders(audioFile, asrOptions)
-    : { ...(await transcribeAudioToVietnamese(audioFile, asrOptions)), provider: "cloudflare" as const };
+  const result = await transcribeAudioToVietnameseWithProviders(audioFile, asrOptions);
   assertVietnameseTranscript(result.vietnameseText, result.segments, {
     requestId: input.requestId,
     provider: result.provider,

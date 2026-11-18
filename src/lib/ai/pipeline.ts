@@ -275,7 +275,7 @@ export async function prepareConversationPipeline(
   // known text-cache entries still resolve to durable audio before returning.
   const usesFastStreamingTts =
     !prefetchedAudio &&
-    (options.streamAudioOnCacheMiss || llm.value.source === "cloudflare" ||
+    (options.streamAudioOnCacheMiss || llm.value.source === "cloudflare" || llm.value.source === "deepinfra" ||
       getAudioStorageBackend() === "cloudinary");
   const tts = cacheBypassed
     ? { value: getUncachedEnglishAudioStreamUrl(llm.value.englishText), latencyMs: 0 }
@@ -287,7 +287,7 @@ export async function prepareConversationPipeline(
               eagerStream: options.eagerAudioOnCacheMiss === true,
               knownCacheMiss:
                 options.eagerAudioOnCacheMiss === true &&
-                llm.value.source === "cloudflare",
+                (llm.value.source === "cloudflare" || llm.value.source === "deepinfra"),
             })
           : synthesizeEnglishAudio(llm.value.englishText),
       );

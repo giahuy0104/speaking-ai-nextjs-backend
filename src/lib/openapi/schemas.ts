@@ -24,6 +24,7 @@ export const TEXT_SOURCES = [
   "text_cache",
   "cloudflare",
   "openai",
+  "deepinfra",
   "fallback",
 ];
 export const AUDIO_SOURCES = ["cache", "openai_tts", "cloudflare_tts", "device_tts"];
@@ -114,7 +115,7 @@ const conversationProperties: OpenApiObject = {
   processingMode: enumOf(["rule", "ai", "fallback"]),
   matchedRule: str(),
   textSource: enumOf(TEXT_SOURCES),
-  textProvider: enumOf(["cloudflare", "openai"]),
+  textProvider: enumOf(["cloudflare", "openai", "deepinfra"]),
   textModel: str(),
   textFallbackUsed: bool(),
   textFallbackReason: str(),

@@ -11,6 +11,7 @@ const { transcribeAudioToVietnameseWithProviders } = await import("./cloudflareW
 const { setDeepInfraTransportForTests } = await import("./deepInfra.ts");
 const { translateTargetLanguage } = await import("./targetTranslation.ts");
 const { transcribeVietnamese } = await import("./asr.ts");
+const { generateEnglishSentence } = await import("./llm.ts");
 
 const DEEPINFRA_ASR_URL = "https://api.deepinfra.com/v1/openai/audio/transcriptions";
 const DEEPINFRA_CHAT_URL = "https://api.deepinfra.com/v1/openai/chat/completions";
@@ -140,7 +141,18 @@ test("zh/ja/ko/fr pipeline uses DeepInfra when configured", async (t) => {
     assert.equal(calls.length, 2);
   });
 
-  await t.test("the English conversation flow keeps Cloudflare ASR even when DeepInfra is configured", async () => {
+  await t.test("the English conversation flow also transcribes on DeepInfra when configured", async () => {
+    globalThis.fetch = async (url) => {
+      calls.push(String(url));
+      return Response.json({ text: "Con khát nước rồi mẹ ơi.", segments: [] });
+    };
+    const text = await transcribeVietnamese({ context: "home", targetLanguage: "en", audioFile: audio });
+    assert.equal(text, "Con khát nước rồi mẹ ơi.");
+    assert.deepEqual(calls, [DEEPINFRA_ASR_URL]);
+  });
+
+  await t.test("the English conversation flow keeps Cloudflare ASR when AUDIO_ASR_PROVIDER is unset", async () => {
+    delete process.env.AUDIO_ASR_PROVIDER;
     globalThis.fetch = async (url) => {
       calls.push(String(url));
       return cloudflareAsr("Con khát nước rồi mẹ ơi.");
@@ -148,5 +160,77 @@ test("zh/ja/ko/fr pipeline uses DeepInfra when configured", async (t) => {
     await transcribeVietnamese({ context: "home", targetLanguage: "en", audioFile: audio });
     assert.ok(calls.length > 0);
     assert.ok(calls.every((url) => url.startsWith("https://api.cloudflare.com/")));
+  });
+
+  // generateEnglishSentence(text, context, age, clientId, requestId, deferCacheWrite, skipFastLookup, bypassCache):
+  // no rule, cache lookup or cache write, so only the providers answer.
+  const translateEnglish = () => generateEnglishSentence(SOURCE_TEXT, "home", 6, undefined, undefined, false, true, true);
+
+  await t.test("translates English with DeepInfra and never calls Cloudflare", async () => {
+    globalThis.fetch = async (url) => {
+      calls.push(String(url));
+      return chat("I am thirsty. Mom, please give me water.");
+    };
+    const result = await translateEnglish();
+    assert.equal(result.englishText, "I am thirsty. Mom, please give me water.");
+    assert.equal(result.source, "deepinfra");
+    assert.equal(result.textProvider, "deepinfra");
+    assert.equal(result.textModel, "deepseek-ai/DeepSeek-V4-Flash-0731");
+    assert.equal(result.textFallbackUsed, false);
+    assert.deepEqual(calls, [DEEPINFRA_CHAT_URL]);
+  });
+
+  await t.test("English falls back to Cloudflare when DeepInfra is overloaded", async () => {
+    globalThis.fetch = async (url) => {
+      calls.push(String(url));
+      return String(url) === DEEPINFRA_CHAT_URL
+        ? new Response("busy", { status: 503 })
+        : cloudflareChat("I am thirsty. Mom, please give me water.");
+    };
+    const result = await translateEnglish();
+    assert.equal(result.textProvider, "cloudflare");
+    assert.equal(result.textModel, "@cf/meta/llama-4-scout-17b-16e-instruct");
+    assert.equal(result.textFallbackUsed, true);
+    assert.equal(calls[0], DEEPINFRA_CHAT_URL);
+    assert.equal(calls.length, 2);
+  });
+
+  await t.test("English with Cloudflare first falls back to DeepInfra when Cloudflare is overloaded", async () => {
+    process.env.AUDIO_TEXT_PROVIDER = "cloudflare,deepinfra";
+    globalThis.fetch = async (url) => {
+      calls.push(String(url));
+      return String(url) === DEEPINFRA_CHAT_URL
+        ? chat("I am thirsty. Mom, please give me water.")
+        : new Response("busy", { status: 503 });
+    };
+    const result = await translateEnglish();
+    assert.equal(result.textProvider, "deepinfra");
+    assert.equal(result.textFallbackUsed, true);
+    assert.equal(calls.at(-1), DEEPINFRA_CHAT_URL);
+  });
+
+  await t.test("an English failure on DeepInfra alone names DeepInfra, not Cloudflare", async () => {
+    process.env.AUDIO_TEXT_PROVIDER = "deepinfra";
+    globalThis.fetch = async (url) => {
+      calls.push(String(url));
+      return new Response("busy", { status: 503 });
+    };
+    await assert.rejects(translateEnglish(), (error) => {
+      assert.equal(error.code, "LLM_FAILED");
+      assert.equal(error.status, 503);
+      assert.equal(error.details.provider, "deepinfra");
+      return true;
+    });
+  });
+
+  await t.test("English stays on Cloudflare when AUDIO_TEXT_PROVIDER is unset", async () => {
+    delete process.env.AUDIO_TEXT_PROVIDER;
+    globalThis.fetch = async (url) => {
+      calls.push(String(url));
+      return cloudflareChat("I am thirsty. Mom, please give me water.");
+    };
+    const result = await translateEnglish();
+    assert.equal(result.textProvider, "cloudflare");
+    assert.ok(!calls.includes(DEEPINFRA_CHAT_URL));
   });
 });
