@@ -67,22 +67,40 @@ function positiveInteger(name: string, fallback: number) {
   return Number.isInteger(value) && value > 0 ? value : fallback;
 }
 
-/** The configured voice without its locale (GOOGLE_TTS_VOICE). */
-export function googleTtsVoice(): string {
-  return process.env.GOOGLE_TTS_VOICE?.trim() || DEFAULT_VOICE;
+/**
+ * "stream": streamed speech and its WAV stand-in. "clip": a finished MP3 clip (a short
+ * sentence, or every sentence while streaming is off).
+ */
+export type GoogleVoiceKind = "stream" | "clip";
+
+/**
+ * A voice without its locale. Streams use GOOGLE_TTS_VOICE (default Chirp3-HD-Aoede);
+ * clips may use GOOGLE_TTS_CLIP_VOICE_<LANG> (e.g. GOOGLE_TTS_CLIP_VOICE_JA=Neural2-B),
+ * otherwise the stream voice.
+ */
+export function googleTtsVoice(language: string, kind: GoogleVoiceKind = "stream"): string {
+  const streamVoice = process.env.GOOGLE_TTS_VOICE?.trim() || DEFAULT_VOICE;
+  if (kind === "stream") return streamVoice;
+  return process.env[`GOOGLE_TTS_CLIP_VOICE_${language.toUpperCase()}`]?.trim() || streamVoice;
 }
 
-/** Full Google voice name for a language, e.g. zh -> cmn-CN-Chirp3-HD-Aoede. */
-export function googleTtsVoiceName(language: string): string {
+/** Full Google voice name, e.g. zh -> cmn-CN-Chirp3-HD-Aoede. */
+export function googleTtsVoiceName(language: string, kind: GoogleVoiceKind = "stream"): string {
   const locale = LOCALES[language];
   if (!locale) throw new GoogleTtsProviderError("unsupported_language");
-  const voice = googleTtsVoice();
+  const voice = googleTtsVoice(language, kind);
   if (!VOICE_PATTERN.test(voice)) throw new GoogleTtsProviderError("invalid_voice");
   return `${locale}-${voice}`;
 }
 
-function voiceFor(language: string) {
-  const name = googleTtsVoiceName(language);
+/** Google streams only Chirp 3 HD voices ("only Chirp 3: HD voices are supported for streaming synthesis"). */
+export function googleTtsCanStream(): boolean {
+  const voice = googleTtsVoice("", "stream");
+  return VOICE_PATTERN.test(voice) && voice.startsWith("Chirp3-HD-");
+}
+
+function voiceFor(language: string, kind: GoogleVoiceKind) {
+  const name = googleTtsVoiceName(language, kind);
   return { languageCode: LOCALES[language], name };
 }
 
@@ -202,7 +220,9 @@ export async function streamSpeechWithGoogle(
   language: string,
   options: { signal?: AbortSignal } = {},
 ): Promise<GoogleSpeechStream> {
-  const voice = voiceFor(language);
+  const voice = voiceFor(language, "stream");
+  // Google would refuse the call; the clip path serves these voices.
+  if (!googleTtsCanStream()) throw new GoogleTtsProviderError("invalid_voice");
   const release = await acquireSlot(options.signal);
   let call: Duplex;
   try {
@@ -291,7 +311,8 @@ export async function synthesizeWithGoogle(
   language: string,
   options: { format?: GoogleSpeechFormat; signal?: AbortSignal } = {},
 ): Promise<ArrayBuffer> {
-  const voice = voiceFor(language);
+  // A WAV clip stands in for a stream, so it keeps the stream's voice.
+  const voice = voiceFor(language, options.format === "wav" ? "stream" : "clip");
   const release = await acquireSlot(options.signal);
   try {
     const client = await googleClient();

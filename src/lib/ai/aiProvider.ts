@@ -5,7 +5,7 @@ import { clientAbortSignal, combineAbortSignals, timeoutSignal } from "./cloudfl
 import type { CloudflareTask } from "./cloudflare/types";
 import { attachFailureDiagnostics } from "./cloudflare/providerError";
 import { deepInfraTtsModel, deepInfraTtsVoice, synthesizeWithDeepInfra, toDeepInfraTtsAppError } from "./deepInfra";
-import { GOOGLE_TTS_MODEL, googleTtsVoice, synthesizeWithGoogle, toGoogleTtsAppError } from "./googleTts";
+import { GOOGLE_TTS_MODEL, googleTtsVoice, synthesizeWithGoogle, toGoogleTtsAppError, type GoogleVoiceKind } from "./googleTts";
 
 // `@cf/openai/...` is a model namespace in Cloudflare's catalog. Requests are
 // still sent only to api.cloudflare.com; this does not use an OpenAI account.
@@ -338,14 +338,18 @@ export function targetTtsProvider(): TargetTtsProvider {
   return configured as TargetTtsProvider;
 }
 
-export function getTargetTtsProfile(language: TargetSpeechLanguage): TtsProfile {
+/**
+ * `kind` matters only for Google, where a finished MP3 clip may use another voice
+ * (GOOGLE_TTS_CLIP_VOICE_<LANG>) than a stream.
+ */
+export function getTargetTtsProfile(language: TargetSpeechLanguage, kind: GoogleVoiceKind = "clip"): TtsProfile {
   // The language stays in the voice so the reusable-audio cache never shares a clip
   // between languages that write a sentence the same way (zh/ja kanji).
   switch (targetTtsProvider()) {
     case "deepinfra":
       return { provider: "deepinfra", model: deepInfraTtsModel(), voice: `${deepInfraTtsVoice()}-${language}`, speed: 1, extension: "mp3" };
     case "google":
-      return { provider: "google", model: GOOGLE_TTS_MODEL, voice: `${googleTtsVoice()}-${language}`, speed: 1, extension: "mp3" };
+      return { provider: "google", model: GOOGLE_TTS_MODEL, voice: `${googleTtsVoice(language, kind)}-${language}`, speed: 1, extension: "mp3" };
     default:
       return { provider: "cloudflare", model: multilingualCloudflareTtsModel, voice: `${targetSpeechVoice}-${language}`, speed: 1, extension: "mp3" };
   }

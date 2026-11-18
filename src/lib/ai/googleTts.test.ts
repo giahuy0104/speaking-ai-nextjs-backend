@@ -4,6 +4,8 @@ import { afterEach, beforeEach, test } from "node:test";
 import { AppError } from "../appError";
 import {
   GoogleTtsProviderError,
+  googleTtsCanStream,
+  googleTtsVoice,
   googleTtsVoiceName,
   isGoogleTtsBusy,
   resetGoogleTtsForTests,
@@ -14,7 +16,7 @@ import {
   type GoogleTtsClient,
 } from "./googleTts";
 
-const KEYS = ["GOOGLE_TTS_VOICE", "GOOGLE_TTS_TIMEOUT_MS", "GOOGLE_TTS_STREAM_TIMEOUT_MS", "GOOGLE_TTS_MAX_CONCURRENCY", "GOOGLE_TTS_QUEUE_WAIT_MS"] as const;
+const KEYS = ["GOOGLE_TTS_VOICE", "GOOGLE_TTS_CLIP_VOICE_ZH", "GOOGLE_TTS_CLIP_VOICE_JA", "GOOGLE_TTS_CLIP_VOICE_KO", "GOOGLE_TTS_CLIP_VOICE_FR", "GOOGLE_TTS_TIMEOUT_MS", "GOOGLE_TTS_STREAM_TIMEOUT_MS", "GOOGLE_TTS_MAX_CONCURRENCY", "GOOGLE_TTS_QUEUE_WAIT_MS"] as const;
 const saved = Object.fromEntries(KEYS.map(key => [key, process.env[key]]));
 
 beforeEach(() => {
@@ -73,6 +75,43 @@ test("voice names join the Google locale of the language and the configured voic
   assert.equal(googleTtsVoiceName("fr"), "fr-FR-Chirp3-HD-Aoede");
   process.env.GOOGLE_TTS_VOICE = "Chirp3-HD-Kore";
   assert.equal(googleTtsVoiceName("ko"), "ko-KR-Chirp3-HD-Kore");
+});
+
+test("finished clips may use a per-language voice; streams always use GOOGLE_TTS_VOICE", () => {
+  process.env.GOOGLE_TTS_CLIP_VOICE_JA = "Neural2-B";
+  process.env.GOOGLE_TTS_CLIP_VOICE_FR = " Neural2-F ";
+  assert.equal(googleTtsVoiceName("ja", "clip"), "ja-JP-Neural2-B");
+  assert.equal(googleTtsVoiceName("fr", "clip"), "fr-FR-Neural2-F");
+  assert.equal(googleTtsVoiceName("zh", "clip"), "cmn-CN-Chirp3-HD-Aoede", "no clip voice: the stream voice");
+  assert.equal(googleTtsVoiceName("ja", "stream"), "ja-JP-Chirp3-HD-Aoede");
+  assert.equal(googleTtsVoice("ja", "clip"), "Neural2-B");
+  assert.equal(googleTtsVoice("ja", "stream"), "Chirp3-HD-Aoede");
+  process.env.GOOGLE_TTS_CLIP_VOICE_KO = "bad voice!";
+  assert.throws(() => googleTtsVoiceName("ko", "clip"), isReason("invalid_voice"));
+});
+
+test("only a Chirp 3 HD stream voice can stream; anything else is refused before calling Google", async () => {
+  assert.equal(googleTtsCanStream(), true);
+  process.env.GOOGLE_TTS_CLIP_VOICE_JA = "Neural2-B";
+  assert.equal(googleTtsCanStream(), true, "a clip voice does not affect streaming");
+  process.env.GOOGLE_TTS_VOICE = "Neural2-B";
+  assert.equal(googleTtsCanStream(), false);
+  const { client, calls } = fakeStreamingClient(() => undefined);
+  setGoogleTtsClientForTests(client);
+  await assert.rejects(streamSpeechWithGoogle("こんにちは。", "ja"), isReason("invalid_voice"));
+  assert.equal(calls.length, 0);
+});
+
+test("MP3 clips use the clip voice; the WAV stand-in for a stream keeps the stream voice", async () => {
+  process.env.GOOGLE_TTS_CLIP_VOICE_KO = "Neural2-A";
+  const voices: unknown[] = [];
+  setGoogleTtsClientForTests({
+    streamingSynthesize: () => assert.fail("stream not expected"),
+    async synthesizeSpeech(request) { voices.push(request.voice.name); return [{ audioContent: new Uint8Array([1]) }]; },
+  });
+  await synthesizeWithGoogle("안녕.", "ko");
+  await synthesizeWithGoogle("안녕.", "ko", { format: "wav" });
+  assert.deepEqual(voices, ["ko-KR-Neural2-A", "ko-KR-Chirp3-HD-Aoede"]);
 });
 
 test("streams PCM: config first, then the text, then half-close; odd bytes carry over", async () => {

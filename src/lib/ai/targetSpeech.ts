@@ -11,13 +11,15 @@ import { targetSpeechModeFor, type TargetSpeechMode } from "./targetSpeechMode";
  * Streamed speech is uncompressed WAV, so it is cached apart from the MP3 clips.
  */
 export function targetSpeechDescriptor(language: TargetSpeechLanguage, text: string): ReusableAudioDescriptor {
-  const profile = getTargetTtsProfile(language);
+  const mode = targetSpeechMode(language, text);
+  // Google: a clip may use another voice than a stream, and the cache must say which.
+  const profile = getTargetTtsProfile(language, mode === "stream" ? "stream" : "clip");
   return {
     text: text.normalize("NFKC").replace(/\s+/g, " ").trim(),
     model: profile.model,
     voice: profile.voice,
     speed: profile.speed,
-    extension: targetSpeechMode(language, text) === "stream" ? "wav" : profile.extension,
+    extension: mode === "stream" ? "wav" : profile.extension,
   };
 }
 
@@ -52,7 +54,9 @@ export function isTargetSpeechStreaming() {
  * MP3 clip (see targetSpeechMode.ts). Without streaming every sentence is a clip.
  */
 export function targetSpeechMode(language: string, text: string): TargetSpeechMode {
-  return targetSpeechModeFor(language, text, { streaming: isTargetSpeechStreaming() });
+  // A voice that cannot stream (Google Neural2...) always serves a finished clip.
+  const streaming = isTargetSpeechStreaming() && activeStreamProvider().canStream(language);
+  return targetSpeechModeFor(language, text, { streaming });
 }
 
 /** Streams only run while a streaming provider is configured (see isTargetSpeechDeferred). */
