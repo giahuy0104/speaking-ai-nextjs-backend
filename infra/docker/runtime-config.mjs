@@ -86,9 +86,11 @@ export function configureDeployment(env, role = "web") {
   });
   // zh/ja/ko/fr speech has a single provider (no fallback list).
   const targetTts = value(env, "AUDIO_TARGET_TTS_PROVIDER").toLowerCase() || "cloudflare";
-  if (targetTts !== "cloudflare" && targetTts !== "deepinfra") fail("AUDIO_TARGET_TTS_PROVIDER", "cloudflare_or_deepinfra");
+  if (!["cloudflare", "deepinfra", "google"].includes(targetTts)) fail("AUDIO_TARGET_TTS_PROVIDER", "cloudflare_deepinfra_or_google");
   env.AUDIO_TARGET_TTS_PROVIDER = targetTts;
   if (audioProviders.includes("deepinfra") || targetTts === "deepinfra") required(env, "DEEPINFRA_API_KEY");
+  // Google: a service-account key, or Application Default Credentials from a mounted file.
+  if (targetTts === "google" && !value(env, "GOOGLE_APPLICATION_CREDENTIALS")) required(env, "GOOGLE_TTS_CREDENTIALS_JSON");
   if (role === "web") {
     if (!/^[a-f0-9]{32}$/i.test(required(env, "CLOUDFLARE_ACCOUNT_ID"))) fail("CLOUDFLARE_ACCOUNT_ID", "invalid_account_id");
     required(env, "CLOUDFLARE_WORKERS_AI_API_TOKEN");
