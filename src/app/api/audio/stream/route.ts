@@ -1,7 +1,7 @@
 import { after } from "next/server";
 import { verifyUncachedEnglishAudio } from "@/lib/ai/loadTestPersistence";
 import { AppError, toErrorResponse } from "@/lib/errors";
-import { requestEnglishSpeech } from "@/lib/ai/aiProvider";
+import { requestEnglishSpeechAudio } from "@/lib/ai/englishSpeech";
 import {
   claimEnglishAudioCacheFill,
   consumeAudioStreamToken,
@@ -62,7 +62,7 @@ export async function GET(request: Request) {
     }), requestId);
   }
 
-  const profile = getTtsProfile();
+  const profile = getTtsProfile(text);
   const cacheFillClaim = claimEnglishAudioCacheFill(text);
 
   if (!cacheFillClaim.owner) {
@@ -118,7 +118,7 @@ export async function GET(request: Request) {
   const upstreamStartedAt = performance.now();
 
   try {
-    const speech = await requestEnglishSpeech(text, profile);
+    const speech = await requestEnglishSpeechAudio(text);
     upstream = speech.response;
     audioSource = speech.source;
     speechProfile = speech.profile;
@@ -148,6 +148,7 @@ export async function GET(request: Request) {
     requestId,
     provider: speechProfile.provider,
     model: speechProfile.model,
+    voice: speechProfile.voice,
     independentFromClient: true,
   });
   after(async () => {
@@ -157,6 +158,7 @@ export async function GET(request: Request) {
         requestId,
         provider: speechProfile.provider,
         model: speechProfile.model,
+        voice: speechProfile.voice,
         audioUrl: result.audioUrl,
         byteLength: result.byteLength,
         independentFromClient: true,
@@ -167,6 +169,7 @@ export async function GET(request: Request) {
         requestId,
         provider: speechProfile.provider,
         model: speechProfile.model,
+        voice: speechProfile.voice,
         independentFromClient: true,
         error,
       });
@@ -184,6 +187,7 @@ export async function GET(request: Request) {
         requestId,
         provider: speechProfile.provider,
         model: speechProfile.model,
+        voice: speechProfile.voice,
         cacheLookupMs,
         upstreamHeadersMs,
         firstChunkMs: Math.round(performance.now() - startedAt),
@@ -204,11 +208,12 @@ export async function GET(request: Request) {
  */
 async function uncachedSpeech(text: string, requestId: string, startedAt: number) {
   try {
-    const speech = await requestEnglishSpeech(text, getTtsProfile());
+    const speech = await requestEnglishSpeechAudio(text);
     logEvent("info", "tts_uncached_stream_started", {
       requestId,
       provider: speech.profile.provider,
       model: speech.profile.model,
+      voice: speech.profile.voice,
       headersMs: Math.round(performance.now() - startedAt),
     });
     return unbuffered(new Response(speech.response.body, {

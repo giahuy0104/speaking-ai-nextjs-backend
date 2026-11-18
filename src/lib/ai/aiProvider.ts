@@ -39,7 +39,8 @@ export type TtsProfile = {
   model: string;
   voice: string;
   speed: number;
-  extension: "mp3";
+  /** "wav": streamed speech (uncompressed while it is generated); "mp3": a finished clip. */
+  extension: "mp3" | "wav";
 };
 
 export type EnglishSpeechResult = {

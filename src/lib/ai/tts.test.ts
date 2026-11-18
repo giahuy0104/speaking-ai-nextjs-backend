@@ -81,6 +81,49 @@ test("cache fill survives cancellation of the client response branch", async () 
   );
 });
 
+test("a streamed WAV is cached with its real sizes, not the unknown-length header", async () => {
+  const { wavHeader } = await import("../audio/wav");
+  const text = "A long English sentence that streamed as Chirp 3 HD speech.";
+  const owner = claimEnglishAudioCacheFill(text);
+  assert.ok(owner.owner);
+  const streamed = Buffer.concat([Buffer.from(wavHeader(24_000)), Buffer.from([1, 2, 3, 4])]);
+  const result = await owner.cacheResponse({
+    response: new Response(streamed, { headers: { "content-type": "audio/wav" } }),
+    source: "cloudflare_tts",
+    profile: { provider: "google", model: "google-cloud-tts", voice: "Chirp3-HD-Aoede-en", speed: 1, extension: "wav" },
+  }, false);
+
+  assert.match(result.audioUrl, /\.wav$/);
+  const saved = await readGeneratedAudioFile(decodeURIComponent(result.audioUrl.split("/").at(-1)!));
+  assert.ok(saved);
+  assert.equal(saved.readUInt32LE(4), saved.byteLength - 8, "RIFF size");
+  assert.equal(saved.readUInt32LE(40), 4, "data size");
+});
+
+test("a long sentence cached as its Neural2 fallback is found again instead of re-synthesized", async () => {
+  const { getEnglishAudioCacheUrl } = await import("./tts");
+  const { getEnglishTtsProfile } = await import("./englishSpeech");
+  process.env.AUDIO_ENGLISH_TTS_PROVIDER = "google";
+  process.env.GOOGLE_TTS_CLIP_VOICE_EN = "Neural2-F";
+  try {
+    const text = "This weekend my family plans to go to the beach to relax and watch the sunset.";
+    assert.equal(getEnglishTtsProfile(text).extension, "wav", "first choice: a Chirp 3 HD stream");
+    assert.equal(await getEnglishAudioCacheUrl(text), null);
+    const owner = claimEnglishAudioCacheFill(text);
+    assert.ok(owner.owner);
+    // Google refused the stream, so the sentence was spoken and saved as a Neural2 clip.
+    const saved = await owner.cacheResponse({
+      response: new Response(Buffer.from("neural2 mp3"), { headers: { "content-type": "audio/mpeg" } }),
+      source: "cloudflare_tts",
+      profile: getEnglishTtsProfile("short"),
+    }, false);
+    assert.equal(await getEnglishAudioCacheUrl(text), saved.audioUrl);
+  } finally {
+    delete process.env.AUDIO_ENGLISH_TTS_PROVIDER;
+    delete process.env.GOOGLE_TTS_CLIP_VOICE_EN;
+  }
+});
+
 test("equivalent whitespace joins one TTS cache fill", async () => {
   const owner = claimEnglishAudioCacheFill("  Welcome   home.  ");
   const joined = claimEnglishAudioCacheFill("Welcome home.");

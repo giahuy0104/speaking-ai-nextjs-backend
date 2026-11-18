@@ -23,6 +23,10 @@
 //   PREVIEW=0           skip the en preview call
 //   SECOND_AUDIO_GET=0  skip the app's second download of the clip
 //   SUMMARY_FILE        write the full summary JSON here
+//   TURNS_PER_MIN       pace each user to this many turns a minute, e.g. "8-12" (a fresh
+//                       random rate each turn) or "10"; a turn that runs longer than its
+//                       slot starts the next one at once. Unset: the next turn starts
+//                       as soon as the clip has finished playing.
 //
 // k6 does not stream response bodies: the first audio byte is the response's
 // time to first byte, and "playable" (first 100 ms of sound) is interpolated
@@ -47,6 +51,13 @@ const WAV_BYTES_PER_S = 48000; // 24 kHz mono 16-bit
 const MP3_BYTES_PER_S = 6000; // ~48 kbps
 const PLAYABLE_S = 0.1;
 const LONG_CLIP_MS = 4000;
+
+const TURNS_PER_MIN = (() => {
+  if (!__ENV.TURNS_PER_MIN) return null;
+  const [low, high = low] = String(__ENV.TURNS_PER_MIN).split("-").map(Number);
+  if (!(low > 0) || !(high >= low)) fail(`TURNS_PER_MIN "${__ENV.TURNS_PER_MIN}" must look like 10 or 8-12`);
+  return { low, high };
+})();
 
 function seconds(text) {
   let total = 0;
@@ -207,6 +218,15 @@ function clipSeconds(contentType, bytes) {
 }
 
 export function userLoop(data) {
+  if (!TURNS_PER_MIN) return runTurn(data);
+  const rate = TURNS_PER_MIN.low + Math.random() * (TURNS_PER_MIN.high - TURNS_PER_MIN.low);
+  const slotEndsAt = Date.now() + 60000 / rate;
+  runTurn(data);
+  const leftS = (slotEndsAt - Date.now()) / 1000;
+  if (leftS > 0) sleep(leftS);
+}
+
+function runTurn(data) {
   const token = data.tokens[(__VU - 1) % data.tokens.length];
   const clip = mix[Math.floor(Math.random() * mix.length)];
   const lang = pickLang();
