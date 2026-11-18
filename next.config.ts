@@ -4,6 +4,9 @@ const nextConfig: NextConfig = {
   output: process.env.NEXT_OUTPUT_STANDALONE === "true" ? "standalone" : undefined,
   // Verify production builds without touching a running local dev checkout.
   distDir: process.env.AUDIO_TRANSLATION_ISOLATED_BUILD === "true" ? ".next-audio-check" : ".next",
+  // gRPC client: loads its .proto/JSON descriptors from disk at runtime, so it is
+  // required from node_modules instead of bundled.
+  serverExternalPackages: ["@google-cloud/text-to-speech"],
   async rewrites() {
     return {
       beforeFiles: [],

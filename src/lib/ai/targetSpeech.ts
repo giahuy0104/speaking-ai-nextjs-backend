@@ -2,8 +2,8 @@ import { logEvent } from "@/lib/observability";
 import { saveReusableAudio, type ReusableAudioDescriptor } from "@/lib/storage/audio";
 import { getTargetTtsProfile, requestTargetSpeech, targetTtsProvider, type TargetSpeechLanguage } from "./aiProvider";
 import { createTargetSpeechCoordinator } from "./targetSpeechCoordinator";
-import { isDeepInfraBusy, streamSpeechWithDeepInfra, synthesizeWithDeepInfra, toDeepInfraTtsAppError } from "./deepInfra";
 import { createTargetSpeechStreams } from "./targetSpeechStreams";
+import { speechStreamProvider, type StreamingSpeechProvider } from "./targetSpeechProviders";
 import { targetSpeechModeFor, type TargetSpeechMode } from "./targetSpeechMode";
 
 /**
@@ -24,17 +24,24 @@ export function targetSpeechDescriptor(language: TargetSpeechLanguage, text: str
 /**
  * AUDIO_TARGET_TTS_DEFERRED=true returns the translation before its speech exists:
  * the response carries a signed /api/audio/target URL and synthesis starts at once.
- * Only with DeepInfra; the Cloudflare voice currently fails, and a deferred URL that
- * fails leaves the app without its device-speech fallback.
+ * Only with DeepInfra or Google; the Cloudflare voice currently fails, and a deferred
+ * URL that fails leaves the app without its device-speech fallback.
  */
 export function isTargetSpeechDeferred() {
-  return process.env.AUDIO_TARGET_TTS_DEFERRED?.trim().toLowerCase() === "true" && targetTtsProvider() === "deepinfra";
+  return process.env.AUDIO_TARGET_TTS_DEFERRED?.trim().toLowerCase() === "true" && streamingProvider() !== undefined;
+}
+
+/** The configured provider when its speech can be deferred and streamed. */
+function streamingProvider(): StreamingSpeechProvider | undefined {
+  const provider = targetTtsProvider();
+  return provider === "deepinfra" || provider === "google" ? provider : undefined;
 }
 
 /**
- * AUDIO_TARGET_TTS_STREAM=true (with deferred speech): synthesis goes through
- * DeepInfra's streaming endpoint and its PCM is sent on as WAV without encoding,
- * so the app's /api/audio/target request starts playing before the clip is finished.
+ * AUDIO_TARGET_TTS_STREAM=true (with deferred speech): synthesis goes through the
+ * provider's streaming API (DeepInfra's stream endpoint, Google's StreamingSynthesize)
+ * and its PCM is sent on as WAV without encoding, so the app's /api/audio/target
+ * request starts playing before the clip is finished.
  */
 export function isTargetSpeechStreaming() {
   return isTargetSpeechDeferred() && process.env.AUDIO_TARGET_TTS_STREAM?.trim().toLowerCase() === "true";
@@ -48,21 +55,16 @@ export function targetSpeechMode(language: string, text: string): TargetSpeechMo
   return targetSpeechModeFor(language, text, { streaming: isTargetSpeechStreaming() });
 }
 
-async function finishedWavSpeech(text: string) {
-  try {
-    return (await synthesizeWithDeepInfra(text, { format: "wav" })).audio;
-  } catch (error) {
-    throw toDeepInfraTtsAppError(error);
-  }
-}
+/** Streams only run while a streaming provider is configured (see isTargetSpeechDeferred). */
+const activeStreamProvider = () => speechStreamProvider(streamingProvider() ?? "deepinfra");
 
 const targetSpeechStreams = createTargetSpeechStreams({
-  openPcm: streamSpeechWithDeepInfra,
+  openPcm: (text, language) => activeStreamProvider().openPcm(text, language),
   // Same format as the stream, so listeners and the cache never mix WAV and MP3.
-  fallback: text => finishedWavSpeech(text),
+  fallback: (text, language) => activeStreamProvider().fallback(text, language),
   // A busy account would refuse the finished clip too, after another wait in the queue.
-  shouldFallback: error => !isDeepInfraBusy(error),
-  toPublicError: toDeepInfraTtsAppError,
+  shouldFallback: error => !activeStreamProvider().isBusy(error),
+  toPublicError: error => activeStreamProvider().toPublicError(error),
   log: (level, event, fields) => logEvent(level, event, fields),
 });
 
