@@ -13,7 +13,7 @@ import { targetSpeechModeFor, type TargetSpeechMode } from "./targetSpeechMode";
 export function targetSpeechDescriptor(language: TargetSpeechLanguage, text: string): ReusableAudioDescriptor {
   const mode = targetSpeechMode(language, text);
   // Google: a clip may use another voice than a stream, and the cache must say which.
-  const profile = getTargetTtsProfile(language, mode === "stream" ? "stream" : "clip");
+  const profile = getTargetTtsProfile(language, mode === "stream" ? "stream" : "clip", text);
   return {
     text: text.normalize("NFKC").replace(/\s+/g, " ").trim(),
     model: profile.model,
@@ -82,6 +82,10 @@ export function subscribeTargetSpeech(text: string, language: TargetSpeechLangua
 // cache and never joins or shares another turn's synthesis. Kept briefly so the
 // app's second download of the same URL gets the same clip.
 // The app's second download follows the first within seconds of playback.
+/** A clip routed to DeepInfra that Google spoke instead (DeepInfra busy or failing). */
+const clipFallbackLogger = (language: string) => (error: unknown) =>
+  logEvent("warn", "target_speech_clip_provider_fallback", { language, from: "deepinfra", to: "google", error });
+
 const UNCACHED_JOB_RETAIN_MS = 20_000;
 const MAX_UNCACHED_JOBS = 1_000;
 const uncachedJobs = new Map<string, Promise<ArrayBuffer>>();
@@ -98,7 +102,7 @@ export function startUncachedTargetSpeech(jobId: string, text: string, language:
   }
   const job = targetSpeechMode(language, text) === "stream"
     ? targetSpeechStreams.start(text, language, uncachedKey(jobId))
-    : requestTargetSpeech(text, language);
+    : requestTargetSpeech(text, language, { onClipFallback: clipFallbackLogger(language) });
   uncachedJobs.set(jobId, job);
   const forget = () => {
     const timer = setTimeout(() => {
@@ -118,7 +122,7 @@ export function subscribeUncachedTargetSpeech(jobId: string) {
 export const targetSpeech = createTargetSpeechCoordinator({
   synthesize: (text, language) => targetSpeechMode(language, text) === "stream"
     ? targetSpeechStreams.start(text, language)
-    : requestTargetSpeech(text, language as TargetSpeechLanguage),
+    : requestTargetSpeech(text, language as TargetSpeechLanguage, { onClipFallback: clipFallbackLogger(language) }),
   save: (text, language, audio) => saveReusableAudio(targetSpeechDescriptor(language as TargetSpeechLanguage, text), audio),
   onSaveError: error => logEvent("error", "target_speech_cache_save_failed", { error }),
 });

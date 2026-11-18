@@ -91,6 +91,8 @@ export function configureDeployment(env, role = "web") {
   if (audioProviders.includes("deepinfra") || targetTts === "deepinfra") required(env, "DEEPINFRA_API_KEY");
   // Google: a service-account key, or Application Default Credentials from a mounted file.
   if (targetTts === "google" && !value(env, "GOOGLE_APPLICATION_CREDENTIALS")) required(env, "GOOGLE_TTS_CREDENTIALS_JSON");
+  // A share of Google's short clips may be spoken by DeepInfra (AUDIO_TARGET_CLIP_DEEPINFRA_SHARE).
+  if (targetTts === "google" && Number(value(env, "AUDIO_TARGET_CLIP_DEEPINFRA_SHARE")) > 0) required(env, "DEEPINFRA_API_KEY");
   if (role === "web") {
     if (!/^[a-f0-9]{32}$/i.test(required(env, "CLOUDFLARE_ACCOUNT_ID"))) fail("CLOUDFLARE_ACCOUNT_ID", "invalid_account_id");
     required(env, "CLOUDFLARE_WORKERS_AI_API_TOKEN");
