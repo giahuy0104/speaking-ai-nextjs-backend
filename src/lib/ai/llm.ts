@@ -23,6 +23,8 @@ import {
   translateVietnameseWithCloudflare,
 } from "./cloudflareText";
 import { claimSingleFlight } from "./singleFlight";
+import { runProviders } from "./cloudflareWorkersAi";
+import { resolveAudioProviders, toDeepInfraAppError, translateWithDeepInfra } from "./deepInfra";
 import { turnContent } from "@/lib/turnContentLog";
 
 export type EnglishGenerationResult = {
@@ -123,6 +125,10 @@ function getProviderFailureReason(error: unknown) {
   if (error instanceof CloudflareTextProviderError) {
     return error.reason;
   }
+  if (error instanceof AppError) {
+    const reason = error.details?.reason;
+    return typeof reason === "string" ? reason : error.code;
+  }
   if (error instanceof InvalidTranslationError) {
     return error.details
       ? `invalid_translation:${error.details}`
@@ -177,20 +183,91 @@ async function translateWithCloudflare(
   }
 }
 
+/** Reasoning models spend tokens before answering; the answer itself is one short sentence. */
+const DEEPINFRA_MAX_COMPLETION_TOKENS = 512;
+
+async function translateWithDeepInfraProvider(
+  vietnameseText: string,
+  instructions: string,
+  signal: AbortSignal,
+  requestId?: string,
+): Promise<ProviderTranslation> {
+  const startedAt = performance.now();
+  try {
+    let result;
+    try {
+      result = await translateWithDeepInfra(vietnameseText, instructions, DEEPINFRA_MAX_COMPLETION_TOKENS, { signal });
+    } catch (error) {
+      throw toDeepInfraAppError(error, "text", performance.now() - startedAt);
+    }
+    const englishText = normalizeTranslationOutput(result.englishText);
+    const missingRequirements = englishText
+      ? findMissingTranslationRequirements(vietnameseText, englishText)
+      : [];
+    if (!englishText || missingRequirements.length > 0) {
+      // A 502, so the next provider (Cloudflare) still gets a chance.
+      const details = missingRequirements.join(",");
+      throw new AppError("LLM_FAILED", "Dịch vụ dịch tạm thời gặp lỗi. Vui lòng thử lại.", 502, {
+        provider: "deepinfra",
+        reason: details ? `invalid_translation:${details}` : "invalid_translation",
+      });
+    }
+    return { englishText, provider: "deepinfra", model: result.model };
+  } finally {
+    logEvent("info", "text_provider_latency", {
+      requestId,
+      provider: "deepinfra",
+      latencyMs: Math.round(performance.now() - startedAt),
+    });
+  }
+}
+
+/**
+ * A Cloudflare failure as the AppError runProviders falls back on (429 or 5xx), so
+ * "cloudflare,deepinfra" still reaches DeepInfra. Keeps the original reason.
+ */
+function toCloudflareFallbackError(error: unknown) {
+  if (error instanceof AppError) return error;
+  const rateLimited = error instanceof CloudflareTextProviderError &&
+    (error.reason === "rate_limited" || error.status === 429);
+  return new AppError("LLM_FAILED", "Dịch vụ dịch tạm thời gặp lỗi. Vui lòng thử lại.", rateLimited ? 429 : 502, {
+    provider: "cloudflare",
+    reason: getProviderFailureReason(error),
+  });
+}
+
+/** The provider an English translation failure came from (Cloudflare unless it says otherwise). */
+function failedTextProvider(error: unknown) {
+  const provider = error instanceof AppError ? error.details?.provider : undefined;
+  return provider === "deepinfra" ? "deepinfra" : "cloudflare";
+}
+
+/** Translates on the providers of AUDIO_TEXT_PROVIDER in priority order (Cloudflare when unset). */
 async function generateWithProviders(
   vietnameseText: string,
   instructions: string,
   requestId?: string,
 ) {
-  const translation = await translateWithCloudflare(
-    vietnameseText,
-    instructions,
-    requestId,
-  );
+  const providers = resolveAudioProviders("text");
+  let firstFailure: unknown;
+  const translation = await runProviders("text", providers, new AbortController().signal, {
+    onProviderFallback: (event) => logEvent("warn", "english_translation_provider_fallback", { requestId, ...event }),
+  }, (provider, cancel) => {
+    const attempt = provider === "deepinfra"
+      ? translateWithDeepInfraProvider(vietnameseText, instructions, cancel, requestId)
+      : translateWithCloudflare(vietnameseText, instructions, requestId).catch((error: unknown) => {
+          throw toCloudflareFallbackError(error);
+        });
+    return attempt.catch((error: unknown) => {
+      firstFailure ??= error;
+      throw error;
+    });
+  });
+  const fallbackUsed = translation.provider !== providers[0];
   return {
     ...translation,
-    fallbackUsed: false,
-    fallbackReason: undefined,
+    fallbackUsed,
+    fallbackReason: fallbackUsed && firstFailure !== undefined ? getProviderFailureReason(firstFailure) : undefined,
   };
 }
 
@@ -289,9 +366,11 @@ export async function generateEnglishSentence(
         };
       } catch (error) {
         const failureReason = getProviderFailureReason(error);
+        const provider = failedTextProvider(error);
+        // The event name stays the same so existing log queries keep working.
         logEvent("error", "cloudflare_text_failed", {
           requestId,
-          provider: "cloudflare",
+          provider,
           failureReason,
           ...turnContent({ sourceText: vietnameseText }),
           error,
@@ -303,7 +382,7 @@ export async function generateEnglishSentence(
           "LLM_FAILED",
           "Dịch vụ dịch tạm thời gặp lỗi. Vui lòng thử lại.",
           503,
-          { provider: "cloudflare", reason: failureReason },
+          { provider, reason: failureReason },
         );
       }
   };

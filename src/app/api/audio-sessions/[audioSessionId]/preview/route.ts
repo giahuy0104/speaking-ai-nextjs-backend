@@ -144,7 +144,8 @@ export async function POST(request: Request, context: RouteContext) {
     const translation = prepared.pipeline.llm.value;
     const translationLatencyMs = prepared.pipeline.llm.latencyMs;
     const speculativeAi =
-      translation.source === "cloudflare" || translation.source === "openai";
+      translation.source === "cloudflare" || translation.source === "openai" ||
+      translation.source === "deepinfra";
     const unsafeTranslation =
       translation.mode === "fallback" ||
       (!speculativeAi && !safeFastSources.has(translation.source));

@@ -20,7 +20,7 @@ const textSources: Array<TextSource | "old"> = [
   "text_cache",
   "cloudflare",
   "openai",
-  "cloudflare",
+  "deepinfra",
   "fallback",
   "old",
 ];
@@ -372,7 +372,7 @@ export function buildLatencyReport(
   );
   const aiItems = measuredConversations.filter(
     (entry) =>
-      ["cloudflare", "openai", "text_cache"].includes(
+      ["cloudflare", "openai", "deepinfra", "text_cache"].includes(
         getTextSource(entry),
       ),
   );

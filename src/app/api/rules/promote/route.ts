@@ -42,7 +42,7 @@ export async function POST(request: Request) {
   }
 
   if (
-    !["cloudflare", "openai", "text_cache"].includes(
+    !["cloudflare", "openai", "deepinfra", "text_cache"].includes(
       conversation.textSource,
     )
   ) {
