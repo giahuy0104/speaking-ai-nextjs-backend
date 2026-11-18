@@ -11,6 +11,7 @@ import {
   transcribeVietnameseAudio,
 } from "./aiProvider";
 import { setDeepInfraTransportForTests } from "./deepInfra";
+import { resetGoogleTtsForTests, setGoogleTtsClientForTests } from "./googleTts";
 import { parseTargetLanguage } from "./targetLanguage";
 import { buildTargetLanguageInstruction } from "./prompts";
 
@@ -26,6 +27,7 @@ const environmentKeys = [
   "DEEPINFRA_API_KEY",
   "DEEPINFRA_TTS_MODEL",
   "DEEPINFRA_TTS_VOICE",
+  "GOOGLE_TTS_VOICE",
 ] as const;
 const originalEnvironment = Object.fromEntries(
   environmentKeys.map((key) => [key, process.env[key]]),
@@ -51,6 +53,8 @@ afterEach(() => {
   restoreEnvironment();
   globalThis.fetch = originalFetch;
   setDeepInfraTransportForTests(undefined);
+  setGoogleTtsClientForTests(undefined);
+  resetGoogleTtsForTests();
 });
 
 test("selects Cloudflare-only profiles", () => {
@@ -327,6 +331,39 @@ test("rejects an invalid speech provider or voice setting before calling anyone"
   process.env.AUDIO_TARGET_TTS_PROVIDER = "openai";
   assert.throws(() => getTargetTtsProfile("ko"), (error: unknown) =>
     error instanceof AppError && error.status === 500 && error.details?.reason === "invalid_provider");
+});
+
+test("target-language speech uses Google Cloud TTS (Chirp 3 HD MP3) when the provider is google", async () => {
+  configureCloudflare();
+  process.env.AUDIO_TARGET_TTS_PROVIDER = "google";
+  globalThis.fetch = async (input) => assert.fail(`unexpected Cloudflare call to ${String(input)}`);
+  const requests: unknown[] = [];
+  setGoogleTtsClientForTests({
+    streamingSynthesize: () => assert.fail("stream not expected"),
+    async synthesizeSpeech(request) { requests.push(request); return [{ audioContent: new Uint8Array([4, 5, 6]) }]; },
+  });
+  assert.deepEqual(getTargetTtsProfile("ko"), {
+    provider: "google", model: "google-cloud-tts", voice: "Chirp3-HD-Aoede-ko", speed: 1, extension: "mp3",
+  });
+  assert.deepEqual(new Uint8Array(await requestTargetSpeech("안녕하세요.", "ko")), new Uint8Array([4, 5, 6]));
+  assert.deepEqual(requests, [{
+    input: { text: "안녕하세요." },
+    voice: { languageCode: "ko-KR", name: "ko-KR-Chirp3-HD-Aoede" },
+    audioConfig: { audioEncoding: "MP3" },
+  }]);
+});
+
+test("Google speech failures become TTS_FAILED with the google provider", async () => {
+  configureCloudflare();
+  process.env.AUDIO_TARGET_TTS_PROVIDER = "google";
+  setGoogleTtsClientForTests({
+    streamingSynthesize: () => assert.fail("stream not expected"),
+    async synthesizeSpeech() { throw Object.assign(new Error("quota echoed text"), { code: 8 }); },
+  });
+  await assert.rejects(() => requestTargetSpeech("Bonjour.", "fr"), (error: unknown) =>
+    error instanceof AppError && error.code === "TTS_FAILED" && error.status === 429 &&
+    error.details?.provider === "google" && error.details?.reason === "rate_limited" &&
+    !String(error.message).includes("echoed"));
 });
 
 test("target-language speech stays on Cloudflare when no provider is configured", () => {

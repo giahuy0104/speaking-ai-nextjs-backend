@@ -5,6 +5,7 @@ import { clientAbortSignal, combineAbortSignals, timeoutSignal } from "./cloudfl
 import type { CloudflareTask } from "./cloudflare/types";
 import { attachFailureDiagnostics } from "./cloudflare/providerError";
 import { deepInfraTtsModel, deepInfraTtsVoice, synthesizeWithDeepInfra, toDeepInfraTtsAppError } from "./deepInfra";
+import { GOOGLE_TTS_MODEL, googleTtsVoice, synthesizeWithGoogle, toGoogleTtsAppError } from "./googleTts";
 
 // `@cf/openai/...` is a model namespace in Cloudflare's catalog. Requests are
 // still sent only to api.cloudflare.com; this does not use an OpenAI account.
@@ -33,7 +34,7 @@ export type TextGenerationResult = {
 };
 
 export type TtsProfile = {
-  provider: AiProvider | "deepinfra";
+  provider: AiProvider | "deepinfra" | "google";
   model: string;
   voice: string;
   speed: number;
@@ -321,22 +322,41 @@ export function getConfiguredTtsProfile(): TtsProfile {
   };
 }
 
-/** zh/ja/ko/fr speech: AUDIO_TARGET_TTS_PROVIDER=deepinfra (Qwen3-TTS) or cloudflare (default, xai/grok-tts). */
-export function targetTtsProvider(): "cloudflare" | "deepinfra" {
+export type TargetTtsProvider = "cloudflare" | "deepinfra" | "google";
+const TARGET_TTS_PROVIDERS: ReadonlySet<string> = new Set(["cloudflare", "deepinfra", "google"]);
+
+/**
+ * zh/ja/ko/fr speech: AUDIO_TARGET_TTS_PROVIDER=cloudflare (default, xai/grok-tts),
+ * deepinfra (Qwen3-TTS) or google (Cloud Text-to-Speech, Chirp 3 HD).
+ */
+export function targetTtsProvider(): TargetTtsProvider {
   const configured = process.env.AUDIO_TARGET_TTS_PROVIDER?.trim().toLowerCase() || "cloudflare";
-  if (configured !== "cloudflare" && configured !== "deepinfra") {
+  if (!TARGET_TTS_PROVIDERS.has(configured)) {
     throw new AppError("TTS_FAILED", "Cấu hình nhà cung cấp AI không hợp lệ.", 500,
       { reason: "invalid_provider", setting: "AUDIO_TARGET_TTS_PROVIDER" });
   }
-  return configured;
+  return configured as TargetTtsProvider;
 }
 
 export function getTargetTtsProfile(language: TargetSpeechLanguage): TtsProfile {
   // The language stays in the voice so the reusable-audio cache never shares a clip
   // between languages that write a sentence the same way (zh/ja kanji).
-  return targetTtsProvider() === "deepinfra"
-    ? { provider: "deepinfra", model: deepInfraTtsModel(), voice: `${deepInfraTtsVoice()}-${language}`, speed: 1, extension: "mp3" }
-    : { provider: "cloudflare", model: multilingualCloudflareTtsModel, voice: `${targetSpeechVoice}-${language}`, speed: 1, extension: "mp3" };
+  switch (targetTtsProvider()) {
+    case "deepinfra":
+      return { provider: "deepinfra", model: deepInfraTtsModel(), voice: `${deepInfraTtsVoice()}-${language}`, speed: 1, extension: "mp3" };
+    case "google":
+      return { provider: "google", model: GOOGLE_TTS_MODEL, voice: `${googleTtsVoice()}-${language}`, speed: 1, extension: "mp3" };
+    default:
+      return { provider: "cloudflare", model: multilingualCloudflareTtsModel, voice: `${targetSpeechVoice}-${language}`, speed: 1, extension: "mp3" };
+  }
+}
+
+async function requestTargetSpeechFromGoogle(text: string, language: TargetSpeechLanguage) {
+  try {
+    return await synthesizeWithGoogle(text, language);
+  } catch (error) {
+    throw toGoogleTtsAppError(error);
+  }
 }
 
 async function requestTargetSpeechFromDeepInfra(text: string) {
@@ -352,7 +372,9 @@ export async function requestTargetSpeech(
   language: TargetSpeechLanguage,
   options: { parentRequestId?: string } = {},
 ): Promise<ArrayBuffer> {
-  if (targetTtsProvider() === "deepinfra") return requestTargetSpeechFromDeepInfra(text);
+  const provider = targetTtsProvider();
+  if (provider === "deepinfra") return requestTargetSpeechFromDeepInfra(text);
+  if (provider === "google") return requestTargetSpeechFromGoogle(text, language);
   const config = requireCloudflareConfig("TTS_FAILED");
   const response = await fetchProvider(
     `https://api.cloudflare.com/client/v4/accounts/${encodeURIComponent(config.accountId)}/ai/run`,
