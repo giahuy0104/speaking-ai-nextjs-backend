@@ -13,6 +13,7 @@ import {
 import type { TargetAudioLanguage } from "@/lib/ai/targetAudioUrl";
 import { isWav } from "@/lib/audio/wav";
 import { loadTestCacheBypassEnabled } from "@/lib/ai/loadTestPersistence";
+import { turnContent } from "@/lib/turnContentLog";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -61,11 +62,11 @@ export async function GET(request: Request) {
   if (live) {
     const latencyMs = Math.round(performance.now() - startedAt);
     job.then(
-      audio => logEvent("info", "target_speech_served", {
+      audio => logEvent("info", "target_speech_served", { ...turnContent({ translatedText: text }),
         requestId, language, joined, streamed: true, byteLength: audio.byteLength, latencyMs,
         totalMs: Math.round(performance.now() - startedAt),
       }),
-      error => logEvent("warn", "target_speech_failed", { requestId, language, joined, streamed: true, latencyMs, error }),
+      error => logEvent("warn", "target_speech_failed", { ...turnContent({ translatedText: text }), requestId, language, joined, streamed: true, latencyMs, error }),
     );
     return withRequestId(new Response(live, {
       status: 200,
@@ -80,7 +81,7 @@ export async function GET(request: Request) {
 
   try {
     const audio = await job;
-    logEvent("info", "target_speech_served", {
+    logEvent("info", "target_speech_served", { ...turnContent({ translatedText: text }),
       requestId, language, joined, streamed: false, mode: targetSpeechMode(language, text), byteLength: audio.byteLength,
       latencyMs: Math.round(performance.now() - startedAt),
     });
@@ -96,7 +97,7 @@ export async function GET(request: Request) {
       },
     }), requestId);
   } catch (error) {
-    logEvent("warn", "target_speech_failed", {
+    logEvent("warn", "target_speech_failed", { ...turnContent({ translatedText: text }),
       requestId, language, joined, latencyMs: Math.round(performance.now() - startedAt), error,
     });
     const responseError = error instanceof AppError
@@ -115,18 +116,18 @@ async function uncachedSpeech(jobId: string, language: TargetAudioLanguage, text
   const live = subscribeUncachedTargetSpeech(jobId);
   const headers = { "Cache-Control": "no-store", "X-Audio-Cache": "bypass" };
   if (live) {
-    logEvent("info", "target_speech_served", { requestId, language, uncached: true, streamed: true, latencyMs: Math.round(performance.now() - startedAt) });
+    logEvent("info", "target_speech_served", { ...turnContent({ translatedText: text }), requestId, language, uncached: true, streamed: true, latencyMs: Math.round(performance.now() - startedAt) });
     return new Response(live, { status: 200, headers: { ...headers, "Content-Type": "audio/wav", "X-Accel-Buffering": "no", "X-Audio-Source": "stream" } });
   }
   try {
     const audio = await job;
-    logEvent("info", "target_speech_served", { requestId, language, uncached: true, streamed: false, byteLength: audio.byteLength, latencyMs: Math.round(performance.now() - startedAt) });
+    logEvent("info", "target_speech_served", { ...turnContent({ translatedText: text }), requestId, language, uncached: true, streamed: false, byteLength: audio.byteLength, latencyMs: Math.round(performance.now() - startedAt) });
     return new Response(audio, {
       status: 200,
       headers: { ...headers, "Content-Type": isWav(audio) ? "audio/wav" : "audio/mpeg", "Content-Length": String(audio.byteLength), "X-Audio-Source": "synthesized" },
     });
   } catch (error) {
-    logEvent("warn", "target_speech_failed", { requestId, language, uncached: true, error });
+    logEvent("warn", "target_speech_failed", { ...turnContent({ translatedText: text }), requestId, language, uncached: true, error });
     return toErrorResponse(error instanceof AppError ? error : new AppError("TTS_FAILED", "Chưa tạo được giọng đọc bản dịch.", 502), requestId);
   }
 }

@@ -16,6 +16,7 @@ import {
   logEvent,
   withRequestId,
 } from "@/lib/observability";
+import { turnContent } from "@/lib/turnContentLog";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -124,7 +125,7 @@ export async function GET(request: Request) {
     speechProfile = speech.profile;
   } catch (error) {
     cacheFillClaim.fail(error);
-    logEvent("error", "tts_stream_request_failed", {
+    logEvent("error", "tts_stream_request_failed", { ...turnContent({ englishText: text }),
       requestId,
       error,
     });
@@ -183,7 +184,7 @@ export async function GET(request: Request) {
     profile: speechProfile,
   }, {
     onFirstChunk: () => {
-      logEvent("info", "tts_stream_first_chunk", {
+      logEvent("info", "tts_stream_first_chunk", { ...turnContent({ englishText: text }),
         requestId,
         provider: speechProfile.provider,
         model: speechProfile.model,
@@ -209,7 +210,7 @@ export async function GET(request: Request) {
 async function uncachedSpeech(text: string, requestId: string, startedAt: number) {
   try {
     const speech = await requestEnglishSpeechAudio(text);
-    logEvent("info", "tts_uncached_stream_started", {
+    logEvent("info", "tts_uncached_stream_started", { ...turnContent({ englishText: text }),
       requestId,
       provider: speech.profile.provider,
       model: speech.profile.model,
@@ -226,7 +227,7 @@ async function uncachedSpeech(text: string, requestId: string, startedAt: number
       },
     }));
   } catch (error) {
-    logEvent("error", "tts_stream_request_failed", { requestId, uncached: true, error });
+    logEvent("error", "tts_stream_request_failed", { ...turnContent({ englishText: text }), requestId, uncached: true, error });
     const responseError = error instanceof AppError
       ? error
       : new AppError("TTS_FAILED", "Không thể truyền luồng âm thanh.", 502);

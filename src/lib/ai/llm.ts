@@ -23,6 +23,7 @@ import {
   translateVietnameseWithCloudflare,
 } from "./cloudflareText";
 import { claimSingleFlight } from "./singleFlight";
+import { turnContent } from "@/lib/turnContentLog";
 
 export type EnglishGenerationResult = {
   englishText: string;
@@ -292,6 +293,7 @@ export async function generateEnglishSentence(
           requestId,
           provider: "cloudflare",
           failureReason,
+          ...turnContent({ sourceText: vietnameseText }),
           error,
         });
 

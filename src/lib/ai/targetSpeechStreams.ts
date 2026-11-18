@@ -1,5 +1,6 @@
 import { pcmStreamToWav, WAV_HEADER_BYTES, withWavSizes } from "@/lib/audio/wav";
 import { createSpeechBroadcast, type SpeechBroadcast } from "./speechBroadcast";
+import { turnContent } from "@/lib/turnContentLog";
 
 /**
  * Streamed zh/ja/ko/fr speech: PCM from DeepInfra's streaming endpoint is sent on
@@ -40,7 +41,7 @@ export function createTargetSpeechStreams(options: TargetSpeechStreamsOptions) {
         const { done, value } = await reader.read();
         if (done) break;
         if (!broadcast.started()) {
-          log("info", "target_speech_stream_first_chunk", { language, latencyMs: Math.round(performance.now() - startedAt) });
+          log("info", "target_speech_stream_first_chunk", { language, ...turnContent({ translatedText: text }), latencyMs: Math.round(performance.now() - startedAt) });
         }
         broadcast.push(value);
         if (!broadcast.live()) {
@@ -53,16 +54,16 @@ export function createTargetSpeechStreams(options: TargetSpeechStreamsOptions) {
       const reported = toPublicError(error);
       // Listeners already hold part of this clip; another voice take cannot continue it.
       if (broadcast.started()) {
-        log("warn", "target_speech_stream_failed", { language, error: reported });
+        log("warn", "target_speech_stream_failed", { language, ...turnContent({ translatedText: text }), error: reported });
         broadcast.fail(reported);
         return;
       }
       if (options.shouldFallback && !options.shouldFallback(error)) {
-        log("warn", "target_speech_stream_failed", { language, error: reported });
+        log("warn", "target_speech_stream_failed", { language, ...turnContent({ translatedText: text }), error: reported });
         broadcast.fail(reported);
         return;
       }
-      log("warn", "target_speech_stream_fallback", { language, error: reported });
+      log("warn", "target_speech_stream_fallback", { language, ...turnContent({ translatedText: text }), error: reported });
       try {
         broadcast.push(new Uint8Array(await options.fallback(text, language)));
         broadcast.finish();

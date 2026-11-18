@@ -7,6 +7,7 @@ import { resolveCloudflareAsrVadPolicy } from "./cloudflareWorkersAiRequest";
 import { sampleVietnameseByContext } from "./prompts";
 import { repairVietnameseChildSpeechLayers } from "./childSpeechTranscriptRepair";
 import { assertVietnameseTranscriptIsUsable } from "./vietnameseTranscriptValidation";
+import { turnContent } from "@/lib/turnContentLog";
 
 function repairVietnameseTranscriptFromChildSpeech(
   text: string,
@@ -59,6 +60,7 @@ function assertVietnameseTranscript(
         reason,
         utteranceDurationMs: options.utteranceDurationMs,
         transcriptLength: text.trim().length,
+        ...turnContent({ sourceText: text }),
       });
     },
   });
