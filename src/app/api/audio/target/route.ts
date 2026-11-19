@@ -13,6 +13,7 @@ import {
 import type { TargetAudioLanguage } from "@/lib/ai/targetAudioUrl";
 import { isWav } from "@/lib/audio/wav";
 import { rewrapWavStreamAsCaf } from "@/lib/audio/caf";
+import { loggedAudioRoute } from "@/lib/audio/audioResponseLogger";
 import { loadTestCacheBypassEnabled } from "@/lib/ai/loadTestPersistence";
 import { turnContent } from "@/lib/turnContentLog";
 
@@ -30,7 +31,7 @@ export const maxDuration = 60;
  * instead (see rewrapWavStreamAsCaf) — AVPlayer rejects a growing WAV outright, but
  * CAF has an official "length not known yet" convention for exactly this case.
  */
-export async function GET(request: Request) {
+async function handleGet(request: Request) {
   const requestId = getRequestId(request);
   const startedAt = performance.now();
   const url = new URL(request.url);
@@ -118,6 +119,9 @@ export async function GET(request: Request) {
     return withRequestId(toErrorResponse(responseError, requestId), requestId);
   }
 }
+
+// Logs the Content-Type actually sent (audio/x-caf, audio/wav or audio/mpeg).
+export const GET = loggedAudioRoute("target", handleGet);
 
 /**
  * Load tests (a signed `job` id): this turn's own synthesis, started by the

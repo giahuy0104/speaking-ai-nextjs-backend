@@ -18,11 +18,15 @@ import {
 } from "@/lib/observability";
 import { turnContent } from "@/lib/turnContentLog";
 import { rewrapWavStreamAsCaf } from "@/lib/audio/caf";
+import { loggedAudioRoute } from "@/lib/audio/audioResponseLogger";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
 
-export async function GET(request: Request) {
+// Logs the Content-Type actually sent (audio/x-caf, audio/wav or audio/mpeg).
+export const GET = loggedAudioRoute("stream", handleGet);
+
+async function handleGet(request: Request) {
   const requestId = getRequestId(request);
   const startedAt = performance.now();
   const url = new URL(request.url);
