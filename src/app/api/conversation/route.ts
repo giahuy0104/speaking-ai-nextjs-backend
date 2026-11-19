@@ -8,6 +8,7 @@ import {
 import { parseTargetLanguage } from "@/lib/ai/targetLanguage";
 import { getCloudflareAudioMaxBytes } from "@/lib/ai/cloudflareWorkersAi";
 import { scheduleConversationPostResponseTasks } from "@/lib/ai/postResponseTasks";
+import { getPreviewSpeculation } from "@/lib/ai/previewSpeculation";
 import { requireInstallationAccess } from "@/lib/installationAuth";
 import { getRequestId, logEvent, withRequestId } from "@/lib/observability";
 import { turnContent } from "@/lib/turnContentLog";
@@ -153,7 +154,9 @@ export async function POST(request: Request) {
     );
     const input = { ...parsedInput, clientId: access.clientId };
     receivedSourceText = input.sourceText;
-    const result = input.targetLanguage === "en"
+    // The translation a preview of this turn already started, when it matches.
+    const speculated = await getPreviewSpeculation().takeForTurn({ ...input, requestId });
+    const result = speculated ?? (input.targetLanguage === "en"
       ? await runConversationPipeline({ ...input, requestId }, {
         deferTextCacheWrite: true,
         // Worker Prepare is the primary iOS Web fast path. If a valid Worker
@@ -164,7 +167,7 @@ export async function POST(request: Request) {
         // browser_streaming here.
           eagerAudioOnCacheMiss: input.asrMode === "browser_streaming",
         })
-      : await runTargetLanguageConversationPipeline({ ...input, requestId });
+      : await runTargetLanguageConversationPipeline({ ...input, requestId }));
     scheduleConversationPostResponseTasks(
       result,
       isMultipart ||
