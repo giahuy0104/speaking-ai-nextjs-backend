@@ -12,6 +12,7 @@ import {
 } from "@/lib/ai/targetSpeech";
 import type { TargetAudioLanguage } from "@/lib/ai/targetAudioUrl";
 import { isWav } from "@/lib/audio/wav";
+import { rewrapWavStreamAsCaf } from "@/lib/audio/caf";
 import { loadTestCacheBypassEnabled } from "@/lib/ai/loadTestPersistence";
 import { turnContent } from "@/lib/turnContentLog";
 
@@ -23,17 +24,28 @@ export const maxDuration = 60;
  * Only signed URLs issued by the conversation pipeline are served (see targetAudioUrl.ts).
  * Order: join the synthesis this backend already started, else the durable cache,
  * else synthesize now. With AUDIO_TARGET_TTS_STREAM a long sentence is uncompressed WAV
- * carrying DeepInfra's PCM as it arrives (no Content-Length); a short sentence, or any
- * sentence without streaming, is the finished MP3 (see targetSpeechMode.ts).
+ * carrying DeepInfra's/Google's PCM as it arrives (no Content-Length); a short sentence,
+ * or any sentence without streaming, is the finished MP3 (see targetSpeechMode.ts).
+ * `?format=caf` (unsigned, iOS-only) re-wraps that same live WAV response as CAF
+ * instead (see rewrapWavStreamAsCaf) — AVPlayer rejects a growing WAV outright, but
+ * CAF has an official "length not known yet" convention for exactly this case.
  */
 export async function GET(request: Request) {
   const requestId = getRequestId(request);
   const startedAt = performance.now();
-  const verified = verifyTargetAudioUrl(new URL(request.url).searchParams);
+  const url = new URL(request.url);
+  const verified = verifyTargetAudioUrl(url.searchParams);
   if (!verified) {
     return withRequestId(toErrorResponse(
       new AppError("FORBIDDEN", "Đường dẫn âm thanh không hợp lệ hoặc đã hết hạn.", 403), requestId), requestId);
   }
+  // Unsigned: the signature only covers lang/text/exp/job, so adding this
+  // never invalidates a URL. iOS's AVPlayer rejects a live WAV response (no
+  // Content-Length) with AVFoundationErrorDomain -11850; CAF has an official
+  // "length not known yet" convention WAV lacks, which it tolerates. The
+  // underlying PCM, the cache and every other client are unaffected either
+  // way (see rewrapWavStreamAsCaf's doc comment).
+  const wantsCaf = url.searchParams.get("format") === "caf";
   const { language, text } = verified;
   if (verified.jobId) {
     // Load-test URLs only work while the dev bypass is on: no uncached paid TTS elsewhere.
@@ -41,7 +53,7 @@ export async function GET(request: Request) {
       return withRequestId(toErrorResponse(
         new AppError("FORBIDDEN", "Đường dẫn âm thanh không hợp lệ hoặc đã hết hạn.", 403), requestId), requestId);
     }
-    return withRequestId(await uncachedSpeech(verified.jobId, language, text, requestId, startedAt), requestId);
+    return withRequestId(await uncachedSpeech(verified.jobId, language, text, requestId, startedAt, wantsCaf), requestId);
   }
 
   let job = targetSpeech.peek(text, language);
@@ -68,10 +80,10 @@ export async function GET(request: Request) {
       }),
       error => logEvent("warn", "target_speech_failed", { ...turnContent({ translatedText: text }), requestId, language, joined, streamed: true, latencyMs, error }),
     );
-    return withRequestId(new Response(live, {
+    return withRequestId(new Response(wantsCaf ? rewrapWavStreamAsCaf(live) : live, {
       status: 200,
       headers: {
-        "Content-Type": "audio/wav",
+        "Content-Type": wantsCaf ? "audio/x-caf" : "audio/wav",
         "Cache-Control": "private, max-age=900",
         "X-Accel-Buffering": "no",
         "X-Audio-Source": "stream",
@@ -111,13 +123,18 @@ export async function GET(request: Request) {
  * Load tests (a signed `job` id): this turn's own synthesis, started by the
  * conversation pipeline. Never served from or written to the cache, never shared.
  */
-async function uncachedSpeech(jobId: string, language: TargetAudioLanguage, text: string, requestId: string, startedAt: number) {
+async function uncachedSpeech(
+  jobId: string, language: TargetAudioLanguage, text: string, requestId: string, startedAt: number, wantsCaf: boolean,
+) {
   const job = startUncachedTargetSpeech(jobId, text, language);
   const live = subscribeUncachedTargetSpeech(jobId);
   const headers = { "Cache-Control": "no-store", "X-Audio-Cache": "bypass" };
   if (live) {
     logEvent("info", "target_speech_served", { ...turnContent({ translatedText: text }), requestId, language, uncached: true, streamed: true, latencyMs: Math.round(performance.now() - startedAt) });
-    return new Response(live, { status: 200, headers: { ...headers, "Content-Type": "audio/wav", "X-Accel-Buffering": "no", "X-Audio-Source": "stream" } });
+    return new Response(wantsCaf ? rewrapWavStreamAsCaf(live) : live, {
+      status: 200,
+      headers: { ...headers, "Content-Type": wantsCaf ? "audio/x-caf" : "audio/wav", "X-Accel-Buffering": "no", "X-Audio-Source": "stream" },
+    });
   }
   try {
     const audio = await job;
