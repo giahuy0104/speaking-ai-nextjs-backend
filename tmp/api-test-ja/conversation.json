@@ -1,0 +1,26 @@
+{
+  "requestId": "80fe9490fefadb6fffd5bd201d955ce3",
+  "clientId": "web_k6_claude_239b3f8e8542",
+  "conversationId": "conv_7d1e34a7",
+  "sessionId": "sess_4d04ba42",
+  "context": "home",
+  "vietnameseText": "Không nghe thấy, sao lại không nghe thấy vậy, Không nghe thấy, sao lại không nghe thấy vậy?",
+  "englishText": "",
+  "targetLanguage": "ja",
+  "translatedText": "聞こえない、どうして聞こえないの、聞こえない、どうして聞こえないの？",
+  "audioUrl": "/api/audio/target?lang=ja&exp=1795085208960&sig=Gyoo07imxaQLi4SEj3PyISlQkkRm-9HJSasK_a5BrNI&job=job_b2eb9e226e814aefbff2d56a7495cc64&node=3000&text=%E8%81%9E%E3%81%93%E3%81%88%E3%81%AA%E3%81%84%E3%80%81%E3%81%A9%E3%81%86%E3%81%97%E3%81%A6%E8%81%9E%E3%81%93%E3%81%88%E3%81%AA%E3%81%84%E3%81%AE%E3%80%81%E8%81%9E%E3%81%93%E3%81%88%E3%81%AA%E3%81%84%E3%80%81%E3%81%A9%E3%81%86%E3%81%97%E3%81%A6%E8%81%9E%E3%81%93%E3%81%88%E3%81%AA%E3%81%84%E3%81%AE%EF%BC%9F",
+  "promptVersion": "v1-faithful-translation-p4-multi-sentence",
+  "processingMode": "ai",
+  "textSource": "cloudflare",
+  "textProvider": "cloudflare",
+  "textModel": "deepseek-ai/DeepSeek-V4-Flash-0731",
+  "audioSource": "cloudflare_tts",
+  "asrMode": "android_streaming",
+  "latency": {
+    "asrMs": 8,
+    "llmMs": 1320,
+    "ttsMs": 1,
+    "timeToFirstAudioMs": 1330
+  },
+  "learning": null
+}

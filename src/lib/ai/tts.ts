@@ -7,7 +7,8 @@ import type { AudioSource } from "@/types/conversation";
 import { isWav, withWavSizes } from "@/lib/audio/wav";
 import { signUncachedEnglishAudio } from "./loadTestPersistence";
 import type { EnglishSpeechResult, TtsProfile } from "./aiProvider";
-import { englishSpeechFallbackProfiles, getEnglishTtsProfile, requestEnglishSpeechAudio } from "./englishSpeech";
+import { englishSpeechFallbackProfiles, englishTtsProvider, getEnglishTtsProfile, requestEnglishSpeechAudio } from "./englishSpeech";
+import { ttsSourceFor } from "./ttsSource";
 
 export type AudioSynthesisResult = {
   audioUrl: string;
@@ -383,7 +384,8 @@ export function getUncachedEnglishAudioStreamUrl(englishText: string): AudioSynt
   const url = getKnownMissAudioStreamUrl(englishText, { bypassCache: true });
   return {
     audioUrl: signed ? `${url}&nocache=${encodeURIComponent(signed)}` : url,
-    source: "cloudflare_tts",
+    // The provider name alone: building its profile would require its credentials here.
+    source: ttsSourceFor(englishTtsProvider()),
     cacheReady: false,
     cacheLookupSkipped: true,
   };
@@ -519,7 +521,7 @@ export async function prepareEnglishAudio(
 
   return {
     audioUrl: getKnownMissAudioStreamUrl(englishText),
-    source: "cloudflare_tts",
+    source: ttsSourceFor(profile.provider),
     cacheReady: false,
     eagerStreamStarted: options.eagerStream === true,
     cacheLookupSkipped: options.knownCacheMiss === true,

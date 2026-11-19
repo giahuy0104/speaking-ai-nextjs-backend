@@ -27,6 +27,7 @@ import {
 import {
   resolveAudioProviders, toDeepInfraAppError, transcribeWithDeepInfra, translateWithDeepInfra, type AudioProvider,
 } from "./deepInfra";
+import { toGoogleTranslateAppError, translateWithGoogle } from "./googleTranslate";
 
 const DEFAULT_MODEL = "@cf/openai/whisper-large-v3-turbo";
 const DEFAULT_TIMEOUT_MS = 6_000;
@@ -49,6 +50,8 @@ export type AudioTranslationOptions = {
   execution?: CloudflareExecutionContext;
   preparedAudio?: ArrayBuffer;
   cacheScope?: string;
+  /** Load tests: skip the shared sentence cache too, so every request translates. */
+  bypassTextCache?: boolean;
   /** Sentence-level translation cache; defaults to the Redis-backed one. */
   textCache?: Pick<typeof audioTranslationCache, "get" | "set">;
   checkpoint?: AudioTranslationCheckpoint;
@@ -469,9 +472,9 @@ async function translateAudioTranscript(checkpoint: AudioTranslationCheckpoint, 
   const startedAt = performance.now();
   const textCache = options.textCache ?? audioTranslationCache;
   // Shared: one entry per sentence for every client, so no client scope is needed.
-  const sharedText = sharedTextCacheEnabled();
+  const sharedText = sharedTextCacheEnabled() && !options.bypassTextCache;
   const textCacheKey = sharedText ? sharedTextCacheKey(sourceLanguage, sourceText)
-    : options.cacheScope && cacheEnabled() ? translationCacheKey(options.cacheScope, sourceLanguage, "text", sourceText) : undefined;
+    : options.cacheScope && cacheEnabled() && !options.bypassTextCache ? translationCacheKey(options.cacheScope, sourceLanguage, "text", sourceText) : undefined;
   const cachedText = textCacheKey && sourceLanguage !== "en" ? await textCache.get(textCacheKey) : null;
   let englishText = cachedText?.englishText ?? sourceText;
   const translationStartedAt = performance.now();
@@ -481,7 +484,9 @@ async function translateAudioTranscript(checkpoint: AudioTranslationCheckpoint, 
     const text: TextRun = { sourceText, instructions: audioTranslationInstructions(sourceLanguage), signal, startedAt, options };
     const translated = await runProviders("text", textProviders, signal, options, (provider, cancel) => {
       const call = { ...text, signal: combineAbortSignals([signal, cancel]) };
-      return provider === "deepinfra" ? translateTextWithDeepInfra(call) : translateTextWithCloudflare(call);
+      return provider === "deepinfra" ? translateTextWithDeepInfra(call)
+        : provider === "google" ? translateTextWithGoogle(call)
+        : translateTextWithCloudflare(call);
     });
     englishText = translated.englishText;
     textModel = translated.model;
@@ -524,6 +529,18 @@ function requireEnglishTranslation(text: string, provider: AudioProvider) {
       { provider, reason: "invalid_translation_language" });
   }
   return englishText;
+}
+
+/** Cloud Translation NMT (no instruction): the fallback when the model providers fail. */
+async function translateTextWithGoogle(run: TextRun): Promise<{ englishText: string; model: string }> {
+  const { sourceText, signal, options } = run;
+  await options.beforeProviderCall?.("text");
+  try {
+    const translated = await translateWithGoogle(sourceText, "en", { signal });
+    return { englishText: requireEnglishTranslation(translated.translatedText, "google"), model: translated.model };
+  } catch (error) {
+    throw toGoogleTranslateAppError(error);
+  }
 }
 
 async function translateTextWithDeepInfra(run: TextRun): Promise<{ englishText: string; model: string }> {

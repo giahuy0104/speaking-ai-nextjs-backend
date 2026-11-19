@@ -179,7 +179,7 @@ export type ConversationLatency = {
 
 export type ProcessingMode = "rule" | "ai" | "fallback";
 
-export type TextProvider = "cloudflare" | "openai" | "deepinfra";
+export type TextProvider = "cloudflare" | "openai" | "deepinfra" | "google";
 
 export type TextSource =
   | "phrase_rule"
@@ -191,9 +191,13 @@ export type TextSource =
   | "cloudflare"
   | "openai"
   | "deepinfra"
+  | "google"
   | "fallback";
 
-export type AudioSource = "cache" | "openai_tts" | "cloudflare_tts" | "device_tts";
+/** Speech synthesized by a server-side provider, named after the provider that spoke it. */
+export type ProviderTtsSource = "cloudflare_tts" | "deepinfra_tts" | "google_tts";
+
+export type AudioSource = "cache" | "openai_tts" | ProviderTtsSource | "device_tts";
 
 export type ConversationReviewStatus =
   "unreviewed" | "approved" | "rejected" | "needs_review";

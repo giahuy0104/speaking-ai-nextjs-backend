@@ -20,6 +20,7 @@ import { turnContent } from "@/lib/turnContentLog";
 import { rewrapWavStreamAsCaf } from "@/lib/audio/caf";
 import { loggedAudioRoute } from "@/lib/audio/audioResponseLogger";
 import { isBoundedRangeRequest } from "@/lib/audio/rangedAudio";
+import type { ProviderTtsSource } from "@/types/conversation";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -118,7 +119,7 @@ async function handleGet(request: Request) {
   }
 
   let upstream: Response;
-  let audioSource: "cloudflare_tts";
+  let audioSource: ProviderTtsSource;
   let speechProfile = profile;
   const upstreamStartedAt = performance.now();
 

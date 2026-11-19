@@ -13,6 +13,7 @@ import {
   deepInfraTextModel, resolveAudioProviders, toDeepInfraAppError, translateWithDeepInfra, type AudioProvider,
 } from "./deepInfra";
 import { buildTargetLanguageInstruction } from "./prompts";
+import { toGoogleTranslateAppError, translateWithGoogle } from "./googleTranslate";
 import { turnContent } from "@/lib/turnContentLog";
 
 type TranslationLanguage = Exclude<TargetLanguage, "en">;
@@ -120,6 +121,23 @@ async function translateOnDeepInfra(input: TargetTranslationInput, instruction: 
   return { translatedText, model: state.model };
 }
 
+/** Cloud Translation NMT: no instruction, so only the sentence and the target language. */
+async function translateOnGoogle(input: TargetTranslationInput, state: AttemptState, signal: AbortSignal) {
+  let raw: string;
+  try {
+    const result = await translateWithGoogle(input.sourceText, input.language, { signal });
+    raw = result.translatedText;
+    state.model = result.model;
+  } catch (error) {
+    throw toGoogleTranslateAppError(error);
+  }
+  const translatedText = normalizeTargetTranslation(raw);
+  state.output = describeOutput(raw, translatedText);
+  const reason = targetTranslationIssue(translatedText, input.language);
+  if (reason) throw invalidTranslation("google", reason, input.language);
+  return { translatedText, model: state.model };
+}
+
 /** Translates on the providers of AUDIO_TEXT_PROVIDER in priority order (Cloudflare when unset). */
 export async function translateTargetLanguage(input: TargetTranslationInput) {
   const startedAt = performance.now();
@@ -142,6 +160,8 @@ export async function translateTargetLanguage(input: TargetTranslationInput) {
       attempts.push(state);
       return provider === "deepinfra"
         ? translateOnDeepInfra(input, instruction, state, cancel)
+        : provider === "google"
+        ? translateOnGoogle(input, state, cancel)
         : translateOnCloudflare(input, instruction, state);
     });
     const winner = attempts.find((attempt) => attempt.model === result.model) ?? attempts[attempts.length - 1];

@@ -15,6 +15,7 @@ import {
   toGoogleTtsAppError,
   type GoogleVoiceKind,
 } from "./googleTts";
+import { ttsSourceFor } from "./ttsSource";
 
 /**
  * The voice of an English sentence (GET /api/audio/stream).
@@ -95,7 +96,7 @@ export function englishSpeechFallbackProfiles(text: string): TtsProfile[] {
 function speechResponse(body: BodyInit, contentType: string, profile: TtsProfile): EnglishSpeechResult {
   return {
     response: new Response(body, { headers: { "Content-Type": contentType } }),
-    source: "cloudflare_tts",
+    source: ttsSourceFor(profile.provider),
     profile,
   };
 }
