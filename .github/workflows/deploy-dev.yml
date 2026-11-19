@@ -1,7 +1,7 @@
 name: Deploy dev
 
 # Push/merge into `dev` deploys that commit to the DEV stack (api-dev.hoamytech.com).
-# Production (can-bang-tai -> api.hoamytech.com) is untouched: different environment,
+# Production (dev -> api.hoamytech.com, workflow deploy.yml) runs from the same branch: different environment,
 # SSH key (forced to HOMI_DEPLOY_ENV=dev), VPS directory, containers and image repo.
 on:
   push:

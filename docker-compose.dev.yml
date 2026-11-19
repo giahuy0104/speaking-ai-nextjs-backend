@@ -1,6 +1,9 @@
 # DEV stack for api-dev.hoamytech.com. Fully separate from production:
 # own Compose project, network, Redis containers/volumes, image repo and port.
 # Lives in /opt/homi/backend-dev on the VPS (root-owned, copied by hand like prod).
+# CPU budget: every dev container is pinned to host cores 6 and 7 (cpuset), so the
+# whole dev stack can never use more than 2 of the 8 cores, even under a load test.
+# Production (4 backends x 1.5 CPU) and Postgres are not pinned.
 #   docker compose --env-file .env.compose -f docker-compose.dev.yml up -d
 name: speaking-ai-dev
 
@@ -18,6 +21,7 @@ x-redis: &redis
     start_period: 5s
   # The pool store client destroys itself when a command takes over 1s.
   cpus: 0.5
+  cpuset: "6,7"
   logging:
     driver: json-file
     options: { max-size: "5m", max-file: "2" }
@@ -46,7 +50,7 @@ services:
       - audio-jobs-data:/data
     mem_limit: 192m
 
-  # Two backends like production. Names/ports must match infra/nginx/nginx.dev.conf
+  # Two backends. Names/ports must match infra/nginx/nginx.dev.conf
   # (upstreams + "/api/audio/stream:<node>" keys) and SERVICES in deploy/lib.sh.
   backend-3000: &backend
     image: speaking-ai-backend-dev:${BACKEND_IMAGE_TAG:-local}
@@ -96,10 +100,9 @@ services:
       start_period: 20s
     stop_grace_period: 75s
     mem_limit: 1g
-    # One Node process runs JS on a single core, so throughput scales with the number
-    # of backends, not with a bigger limit. The 8-core VPS is shared with production:
-    # four dev backends x 1.5 = 6 CPU at most, only while a load test runs.
-    cpus: 1.5
+    # Two backends share the 2 pinned dev cores with the worker, nginx and Redis.
+    cpus: 1
+    cpuset: "6,7"
     logging:
       driver: json-file
       options: { max-size: "10m", max-file: "3" }
@@ -112,25 +115,6 @@ services:
       AUDIO_STREAM_NODE: "3001"
     expose:
       - "3001"
-
-  # Names must match SERVICES in deploy/lib.sh and the upstreams in nginx.dev.conf.
-  backend-3002:
-    <<: *backend
-    environment:
-      <<: *backend-environment
-      PORT: "3002"
-      AUDIO_STREAM_NODE: "3002"
-    expose:
-      - "3002"
-
-  backend-3003:
-    <<: *backend
-    environment:
-      <<: *backend-environment
-      PORT: "3003"
-      AUDIO_STREAM_NODE: "3003"
-    expose:
-      - "3003"
 
   # Durable BullMQ workers; need AUDIO_TRANSLATION_JOBS_ENABLED=true in .env.local.
   # One worker per Cloudflare account: all four pull from the same queue, but each
@@ -169,9 +153,10 @@ services:
       redis-jobs:
         condition: service_healthy
     stop_grace_period: 75s
-    # Four workers share the 4-core VPS with production; each is I/O bound.
+    # I/O bound; shares the 2 pinned dev cores.
     mem_limit: 256m
     cpus: 0.5
+    cpuset: "6,7"
     logging:
       driver: json-file
       options: { max-size: "10m", max-file: "3" }
@@ -207,10 +192,6 @@ services:
         condition: service_healthy
       backend-3001:
         condition: service_healthy
-      backend-3002:
-        condition: service_healthy
-      backend-3003:
-        condition: service_healthy
     healthcheck:
       test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1/healthz"]
       interval: 10s
@@ -220,7 +201,8 @@ services:
     stop_grace_period: 75s
     # Buffers every upload body before proxying; 64m / 0.25 CPU starved under a burst.
     mem_limit: 256m
-    cpus: 1
+    cpus: 0.5
+    cpuset: "6,7"
     logging:
       driver: json-file
       options: { max-size: "10m", max-file: "3" }
