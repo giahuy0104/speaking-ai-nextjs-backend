@@ -1,11 +1,10 @@
 name: Deploy production
 
-# Push/merge into dev deploys that exact commit to production (api.hoamytech.com).
-# The same push also runs "Deploy dev" (api-dev.hoamytech.com); both use one image tag.
-# workflow_dispatch re-deploys the branch head, or a chosen earlier commit.
+# Manual only: automatic deploys on push to dev are turned off (2026-11-19).
+# Pushes to dev still run "Deploy dev" (api-dev.hoamytech.com) as before.
+# To release production, run this workflow by hand (Actions -> Deploy production ->
+# Run workflow, branch dev): it deploys the dev head, or a chosen earlier commit.
 on:
-  push:
-    branches: [dev]
   workflow_dispatch:
     inputs:
       sha:
