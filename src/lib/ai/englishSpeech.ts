@@ -83,6 +83,7 @@ export function getEnglishTtsProfile(text?: string): TtsProfile {
 export function englishSpeechFallbackProfiles(text: string): TtsProfile[] {
   if (englishTtsProvider() === "cloudflare") return [];
   const fallbacks = englishSpeechMode(text) === "stream" ? [googleProfile("clip")] : [];
+  if (!cloudflareFallbackEnabled()) return fallbacks;
   try {
     return [...fallbacks, getConfiguredTtsProfile()];
   } catch {
@@ -135,7 +136,14 @@ export async function requestEnglishSpeechAudio(text: string): Promise<EnglishSp
   try {
     return await googleClip(text);
   } catch (error) {
+    // No Cloudflare for English: the request fails and the app speaks with the device voice.
+    if (!cloudflareFallbackEnabled()) throw toGoogleTtsAppError(error);
     logFallback("google_clip", "cloudflare", error);
   }
   return requestEnglishSpeech(text, getConfiguredTtsProfile());
+}
+
+/** AUDIO_ENGLISH_CLOUDFLARE_FALLBACK=false: Google failures are never spoken by Cloudflare. */
+function cloudflareFallbackEnabled() {
+  return process.env.AUDIO_ENGLISH_CLOUDFLARE_FALLBACK?.trim().toLowerCase() !== "false";
 }

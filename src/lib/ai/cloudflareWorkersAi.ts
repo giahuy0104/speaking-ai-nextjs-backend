@@ -147,7 +147,8 @@ export async function translateAudioToEnglish(
     }
     return translateAudioTranscript(options.checkpoint, options);
   }
-  const asrProviders = resolveAudioProviders("asr");
+  // This route translates into English, so AUDIO_ASR_PROVIDER_EN applies when set.
+  const asrProviders = resolveAudioProviders("asr", "en");
   // Batch translation must tolerate provider queueing under load. Keep the
   // interactive ASR budget independent, and stay below the route's 35s limit.
   const timeoutMs = Math.min(30_000, positiveInteger("CLOUDFLARE_AUDIO_TRANSLATION_TIMEOUT_MS", 20_000));
@@ -475,7 +476,7 @@ async function translateAudioTranscript(checkpoint: AudioTranslationCheckpoint, 
   let englishText = cachedText?.englishText ?? sourceText;
   const translationStartedAt = performance.now();
   let textModel: string | undefined = cachedText?.textModel;
-  const textProviders = resolveAudioProviders("text");
+  const textProviders = resolveAudioProviders("text", "en");
   if (sourceLanguage !== "en" && !cachedText) {
     const text: TextRun = { sourceText, instructions: audioTranslationInstructions(sourceLanguage), signal, startedAt, options };
     const translated = await runProviders("text", textProviders, signal, options, (provider, cancel) => {
@@ -659,13 +660,14 @@ export type ProviderAudioTranscriptionResult = AudioTranscriptionResult & { prov
 
 /**
  * Vietnamese ASR on the providers of AUDIO_ASR_PROVIDER (e.g. "deepinfra,cloudflare"),
- * with the same fallback rules as /api/audio/translate. Used by the zh/ja/ko/fr pipeline.
+ * with the same fallback rules as /api/audio/translate. Used by the conversation pipeline;
+ * `targetLanguage` lets AUDIO_ASR_PROVIDER_<LANG> (e.g. _EN) override the shared list.
  */
 export async function transcribeAudioToVietnameseWithProviders(
   audio: File,
-  options: { vadFilter?: boolean } = {},
+  options: { vadFilter?: boolean; targetLanguage?: string } = {},
 ): Promise<ProviderAudioTranscriptionResult> {
-  const providers = resolveAudioProviders("asr");
+  const providers = resolveAudioProviders("asr", options.targetLanguage);
   const neverAborts = new AbortController().signal;
   return runProviders("asr", providers, neverAborts, {}, async (provider, cancel) => {
     if (provider === "cloudflare") {

@@ -8,10 +8,11 @@ import {
   getEnglishTtsProfile,
   requestEnglishSpeechAudio,
 } from "./englishSpeech";
+import { AppError } from "../appError";
 import { resetGoogleTtsForTests, setGoogleTtsClientForTests, type GoogleTtsClient } from "./googleTts";
 
 const KEYS = [
-  "AUDIO_ENGLISH_TTS_PROVIDER", "AUDIO_ENGLISH_STREAM_MIN_CHARS", "GOOGLE_TTS_VOICE", "GOOGLE_TTS_CLIP_VOICE_EN",
+  "AUDIO_ENGLISH_TTS_PROVIDER", "AUDIO_ENGLISH_STREAM_MIN_CHARS", "AUDIO_ENGLISH_CLOUDFLARE_FALLBACK", "GOOGLE_TTS_VOICE", "GOOGLE_TTS_CLIP_VOICE_EN",
   "CLOUDFLARE_ACCOUNT_ID", "CLOUDFLARE_WORKERS_AI_API_TOKEN", "CLOUDFLARE_TTS_MODEL", "CLOUDFLARE_TTS_SPEAKER",
 ] as const;
 const saved = Object.fromEntries(KEYS.map(key => [key, process.env[key]]));
@@ -178,6 +179,18 @@ test("a Chirp 3 HD stream that Google refuses (429) is spoken as a Neural2 clip 
   assert.deepEqual(calls.clip, ["en-US-Neural2-F"]);
   assert.equal(speech.response.headers.get("content-type"), "audio/mpeg");
   assert.deepEqual(speech.profile, getEnglishTtsProfile(SHORT), "cached as the clip it is");
+});
+
+test("AUDIO_ENGLISH_CLOUDFLARE_FALLBACK=false: a failed Google clip is an error, never Cloudflare", async () => {
+  useGoogle();
+  process.env.AUDIO_ENGLISH_CLOUDFLARE_FALLBACK = "false";
+  fakeGoogle({ clip: async () => { throw grpcError(8); } });
+  const urls = fakeCloudflare();
+  await assert.rejects(requestEnglishSpeechAudio(SHORT), (error: unknown) =>
+    error instanceof AppError && error.code === "TTS_FAILED" && error.status === 429 && error.details?.provider === "google");
+  assert.equal(urls.length, 0);
+  assert.deepEqual(englishSpeechFallbackProfiles(LONG), [getEnglishTtsProfile(SHORT)], "nothing is ever cached as Cloudflare");
+  assert.deepEqual(englishSpeechFallbackProfiles(SHORT), []);
 });
 
 test("when Google fails altogether the sentence falls back to Cloudflare aura-1", async () => {

@@ -50,8 +50,9 @@ export function sharedTextCacheKey(language: string, sourceText: string,
 export function translationCacheKey(scope: string, language: string, kind: "audio" | "text", value: ArrayBuffer | string) {
   const hash = createHash("sha256").update(JSON.stringify([
     AUDIO_TRANSLATION_POLICY_VERSION, kind, scope, language,
-    audioModelCacheIdentity("asr", process.env.CLOUDFLARE_WORKERS_AI_MODEL?.trim() || AUDIO_ASR_MODEL),
-    audioModelCacheIdentity("text", process.env.CLOUDFLARE_TEXT_MODEL?.trim() || AUDIO_TEXT_MODEL),
+    // English translations: the _EN provider lists, when set, decide who made the entry.
+    audioModelCacheIdentity("asr", process.env.CLOUDFLARE_WORKERS_AI_MODEL?.trim() || AUDIO_ASR_MODEL, "en"),
+    audioModelCacheIdentity("text", process.env.CLOUDFLARE_TEXT_MODEL?.trim() || AUDIO_TEXT_MODEL, "en"),
     process.env.AUDIO_TRANSLATION_TRIM_WAV === "true",
   ]));
   hash.update(typeof value === "string" ? value.normalize("NFC").trim() : Buffer.from(value));

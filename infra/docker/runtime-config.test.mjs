@@ -145,6 +145,17 @@ test("English speech defaults to Cloudflare; Google English needs Google credent
   configureDeployment(env);
   assert.equal(env.AUDIO_ENGLISH_TTS_PROVIDER, "google");
 });
+test("English-only provider lists are checked like the shared ones", () => {
+  assert.throws(() => configureDeployment(fixture({ AUDIO_ASR_PROVIDER_EN: "deepseek" })), /AUDIO_ASR_PROVIDER_EN \(cloudflare_or_deepinfra\)/);
+  assert.throws(() => configureDeployment(fixture({ AUDIO_TEXT_PROVIDER_EN: "deepinfra" })), /DEEPINFRA_API_KEY \(required\)/);
+  const env = fixture({ AUDIO_ASR_PROVIDER_EN: " DeepInfra ", AUDIO_TEXT_PROVIDER_EN: "deepinfra", DEEPINFRA_API_KEY: "k" });
+  configureDeployment(env);
+  assert.equal(env.AUDIO_ASR_PROVIDER_EN, "deepinfra");
+  // Unset stays unset: the shared list applies.
+  const plain = fixture();
+  configureDeployment(plain);
+  assert.equal(plain.AUDIO_ASR_PROVIDER_EN, undefined);
+});
 test("sending a share of Google clips to DeepInfra needs the DeepInfra key", () => {
   const google = { AUDIO_TARGET_TTS_PROVIDER: "google", GOOGLE_TTS_CREDENTIALS_JSON: "e30=" };
   assert.throws(() => configureDeployment(fixture({ ...google, AUDIO_TARGET_CLIP_DEEPINFRA_SHARE: "0.33" })),

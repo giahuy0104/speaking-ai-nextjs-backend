@@ -58,8 +58,15 @@ function positiveInteger(name: string, fallback: number) {
  * Providers for a stage in priority order, e.g. "deepinfra,cloudflare": the
  * first one is tried first and each later one is a fallback.
  */
-export function resolveAudioProviders(stage: AudioProviderStage): readonly AudioProvider[] {
-  const name = stage === "asr" ? "AUDIO_ASR_PROVIDER" : "AUDIO_TEXT_PROVIDER";
+/**
+ * A stage's provider list. With a target `language`, AUDIO_ASR_PROVIDER_<LANG> /
+ * AUDIO_TEXT_PROVIDER_<LANG> wins when set (e.g. AUDIO_TEXT_PROVIDER_EN=deepinfra keeps
+ * English off Cloudflare while other languages keep the shared list).
+ */
+export function resolveAudioProviders(stage: AudioProviderStage, language?: string): readonly AudioProvider[] {
+  const shared = stage === "asr" ? "AUDIO_ASR_PROVIDER" : "AUDIO_TEXT_PROVIDER";
+  const own = language ? `${shared}_${language.toUpperCase()}` : undefined;
+  const name = own && process.env[own]?.trim() ? own : shared;
   const entries = (process.env[name] ?? "").split(",").map(entry => entry.trim().toLowerCase()).filter(Boolean);
   const providers: AudioProvider[] = [];
   for (const entry of entries.length ? entries : ["cloudflare"]) {
@@ -81,8 +88,8 @@ export function deepInfraTextModel() {
 }
 
 /** Cache identity for a stage's provider order: Cloudflare-only stays unchanged so existing entries stay valid. */
-export function audioModelCacheIdentity(stage: AudioProviderStage, cloudflareModel: string) {
-  return resolveAudioProviders(stage).map(provider => provider === "cloudflare" ? cloudflareModel
+export function audioModelCacheIdentity(stage: AudioProviderStage, cloudflareModel: string, language?: string) {
+  return resolveAudioProviders(stage, language).map(provider => provider === "cloudflare" ? cloudflareModel
     : `deepinfra:${stage === "asr" ? deepInfraAsrModel() : deepInfraTextModel()}`).join(">");
 }
 
