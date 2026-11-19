@@ -23,7 +23,9 @@ process.env.AUDIO_TARGET_TTS_STREAM = 'true';
 process.env.AUDIO_STREAM_NODE = '';
 if (scenario === 'fallback-voice' || scenario === 'uncached-fallback-voice') process.env.GOOGLE_TTS_FALLBACK_VOICE_ZH = 'Wavenet-A';
 // Load-test turns: signed with a job id, never cached.
-if (scenario === 'uncached-fallback-voice') process.env.LOAD_TEST_BYPASS_AUDIO_CACHE = 'true';
+if (scenario === 'uncached-fallback-voice' || scenario === 'ios-uncached') process.env.LOAD_TEST_BYPASS_AUDIO_CACHE = 'true';
+// iOS (AVPlayer) downloads while Google is still streaming the sentence.
+const iosScenario = scenario === 'ios' || scenario === 'ios-uncached';
 // Every short clip is routed to DeepInfra, which has no key here: Google speaks instead.
 if (scenario === 'deepinfra-clip-fallback') {
   process.env.AUDIO_TARGET_CLIP_DEEPINFRA_SHARE = '1';
@@ -45,6 +47,15 @@ if (scenario === 'deepinfra-clip-fallback') {
         write(_chunk, _encoding, callback) { callback(); },
         final(callback) {
           callback();
+          if (iosScenario) {
+            // Audio now, the rest later: the stream is still live while iOS asks for it.
+            duplex.push({ audioContent: new Uint8Array(4800) });
+            setTimeout(() => {
+              duplex.push({ audioContent: new Uint8Array(4800) });
+              duplex.push(null);
+            }, 200);
+            return;
+          }
           // Before any audio: Google's quota refusal, or (network) the channel dropping.
           duplex.destroy(Object.assign(new Error('refused'), { code: scenario === 'network' ? 14 : 8 }));
         },
@@ -65,8 +76,28 @@ if (scenario === 'deepinfra-clip-fallback') {
   const text = scenario === 'deepinfra-clip-fallback'
     ? '我很开心。'
     : '今天我在学校和朋友们一起玩得非常开心，我们还一起唱歌。';
-  const jobId = scenario === 'uncached-fallback-voice' ? 'load-test-turn-1' : undefined;
+  const jobId = scenario === 'uncached-fallback-voice' || scenario === 'ios-uncached' ? 'load-test-turn-1' : undefined;
   const url = 'http://localhost' + createTargetAudioUrl('zh', text, { jobId });
+  if (iosScenario) {
+    // Both at once, while the stream is live: AVPlayer's range probe and the CAF request.
+    const requests = [
+      new Request(url, { headers: { Range: 'bytes=0-1' } }),
+      new Request(url + '&format=caf'),
+    ];
+    const ios = await Promise.all(requests.map(async request => {
+      const response = await GET(request);
+      const body = new Uint8Array(await response.arrayBuffer());
+      return {
+        status: response.status,
+        source: response.headers.get('x-audio-source'),
+        length: response.headers.get('content-length'),
+        range: response.headers.get('content-range'),
+        bytes: body.byteLength,
+      };
+    }));
+    process.stdout.write(JSON.stringify({ ios, streams, clipVoices }));
+    process.exit(0);
+  }
   const responses = [];
   for (let i = 0; i < 2; i++) {
     const response = await GET(new Request(url));
@@ -86,6 +117,12 @@ if (scenario === 'deepinfra-clip-fallback') {
   process.exit(1);
 });
 `;
+
+type IosResponse = { status: number; source: string | null; length: string | null; range: string | null; bytes: number };
+
+function runIos(scenario: "ios" | "ios-uncached") {
+  return run(scenario) as unknown as { ios: IosResponse[]; streams: number; clipVoices: string[] };
+}
 
 function run(scenario: string) {
   const child = spawnSync(process.execPath, ["--import", "tsx", "--eval", harness], {
@@ -137,6 +174,25 @@ test("a DeepInfra clip that Google spoke instead is served but not cached under 
   assert.deepEqual(result.clipVoices, ["cmn-CN-Chirp3-HD-Aoede"], "spoken once; the second download joins it");
   assert.equal(result.cached, null);
 });
+
+// iOS cannot play a live stream of unknown length (AVPlayer -11850): its range probe
+// and its ?format=caf request must get the finished audio even while the stream runs.
+for (const scenario of ["ios", "ios-uncached"] as const) {
+  test(`${scenario === "ios" ? "a shared sentence" : "a load-test turn"}: iOS gets the finished audio, never the live stream`, () => {
+    const result = runIos(scenario);
+    const [probe, caf] = result.ios;
+    // 44-byte WAV header + 9600 bytes of PCM, once synthesis is done.
+    assert.equal(probe.status, 206);
+    assert.equal(probe.range, "bytes 0-1/9644");
+    assert.equal(probe.length, "2");
+    assert.equal(caf.status, 200);
+    assert.equal(caf.length, "9644");
+    assert.equal(caf.bytes, 9644);
+    for (const response of result.ios) assert.notEqual(response.source, "stream");
+    assert.equal(result.streams, 1, "both requests share one synthesis");
+    assert.deepEqual(result.clipVoices, []);
+  });
+}
 
 test("a network failure is not remembered: the repeat download asks Google again", () => {
   const result = run("network");
