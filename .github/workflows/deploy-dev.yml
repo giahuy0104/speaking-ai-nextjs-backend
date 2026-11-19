@@ -1,7 +1,7 @@
 name: Deploy dev
 
 # Push/merge into `dev` deploys that commit to the DEV stack (api-dev.hoamytech.com).
-# Production (can-bang-tai -> api.hoamytech.com) is untouched: different environment,
+# Production (dev -> api.hoamytech.com, workflow deploy.yml) runs from the same branch: different environment,
 # SSH key (forced to HOMI_DEPLOY_ENV=dev), VPS directory, containers and image repo.
 on:
   push:
@@ -113,10 +113,26 @@ jobs:
           DEPLOY_KNOWN_HOSTS: ${{ secrets.DEPLOY_KNOWN_HOSTS }}
         run: |
           install -m 700 -d ~/.ssh
-          printf '%s\n' "$DEPLOY_SSH_KEY" > ~/.ssh/deploy_key
+          # Accept the key file as-is OR base64 of the whole file on one line
+          # (immune to copy/paste newline damage). Strip CR from Windows pastes.
+          key="$(printf '%s' "$DEPLOY_SSH_KEY" | tr -d '\r')"
+          case "$key" in
+            *"BEGIN OPENSSH PRIVATE KEY"*) printf '%s\n' "$key" > ~/.ssh/deploy_key ;;
+            *) printf '%s' "$key" | tr -d ' \n\t' | base64 -d > ~/.ssh/deploy_key 2>/dev/null || : ;;
+          esac
+          unset key
           chmod 600 ~/.ssh/deploy_key
-          printf '%s\n' "$DEPLOY_KNOWN_HOSTS" > ~/.ssh/known_hosts
+          printf '%s\n' "$DEPLOY_KNOWN_HOSTS" | tr -d '\r' > ~/.ssh/known_hosts
           chmod 644 ~/.ssh/known_hosts
+          # Fail early with a clear message; print only the PUBLIC fingerprint / shape.
+          if ! ssh-keygen -y -f ~/.ssh/deploy_key > /tmp/deploy_key.pub 2>/dev/null; then
+            # `|| true`: grep -c exits 1 on zero matches, which would abort under bash -e.
+            shape="secret_len=${#DEPLOY_SSH_KEY} lines=$(printf '%s\n' "$DEPLOY_SSH_KEY" | wc -l) has_begin=$(printf '%s' "$DEPLOY_SSH_KEY" | grep -c 'BEGIN OPENSSH PRIVATE KEY' || true) has_end=$(printf '%s' "$DEPLOY_SSH_KEY" | grep -c 'END OPENSSH PRIVATE KEY' || true) is_public_key=$(printf '%s' "$DEPLOY_SSH_KEY" | grep -c '^ssh-' || true)"
+            echo "::error::DEPLOY_SSH_KEY (environment: development) is not a valid private key [$shape]"
+            exit 1
+          fi
+          echo "Deploy key fingerprint: $(ssh-keygen -lf /tmp/deploy_key.pub)"
+          echo "Known host keys: $(grep -vc '^#' ~/.ssh/known_hosts)"
       - name: Deploy ${{ env.TARGET_SHA }} to dev
         env:
           DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}

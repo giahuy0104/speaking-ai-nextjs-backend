@@ -1,14 +1,14 @@
 name: Deploy production
 
-# Push/merge into can-bang-tai deploys that exact commit to the VPS.
-# workflow_dispatch re-deploys the branch head, or a chosen earlier commit.
+# Manual only: automatic deploys on push to dev are turned off (2026-11-19).
+# Pushes to dev still run "Deploy dev" (api-dev.hoamytech.com) as before.
+# To release production, run this workflow by hand (Actions -> Deploy production ->
+# Run workflow, branch dev): it deploys the dev head, or a chosen earlier commit.
 on:
-  push:
-    branches: [can-bang-tai]
   workflow_dispatch:
     inputs:
       sha:
-        description: "Full 40-char commit SHA already on can-bang-tai (empty = branch head)"
+        description: "Full 40-char commit SHA already on dev (empty = branch head)"
         required: false
         type: string
       simulate_ready_fail:
@@ -36,10 +36,10 @@ jobs:
     permissions:
       contents: read
     steps:
-      - name: Only deploy can-bang-tai
+      - name: Only deploy dev
         run: |
-          if [ "$GITHUB_REF" != "refs/heads/can-bang-tai" ]; then
-            echo "::error::Deploy is only allowed from can-bang-tai (ref: $GITHUB_REF)"; exit 1
+          if [ "$GITHUB_REF" != "refs/heads/dev" ]; then
+            echo "::error::Deploy is only allowed from dev (ref: $GITHUB_REF)"; exit 1
           fi
           if ! printf '%s' "$TARGET_SHA" | grep -Eq '^[0-9a-f]{40}$'; then
             echo "::error::TARGET_SHA must be a full 40-char lowercase commit SHA"; exit 1
@@ -47,11 +47,11 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - name: Commit must belong to can-bang-tai
+      - name: Commit must belong to dev
         run: |
           git cat-file -e "$TARGET_SHA^{commit}"
-          git merge-base --is-ancestor "$TARGET_SHA" "origin/can-bang-tai" \
-            || { echo "::error::$TARGET_SHA is not on can-bang-tai"; exit 1; }
+          git merge-base --is-ancestor "$TARGET_SHA" "origin/dev" \
+            || { echo "::error::$TARGET_SHA is not on dev"; exit 1; }
 
   verify:
     needs: guard
