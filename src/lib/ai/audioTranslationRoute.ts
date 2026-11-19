@@ -9,7 +9,8 @@ import { requireInstallationAccess, type InstallationAccess } from "@/lib/instal
 import { createStageTimer } from "@/lib/stageTimer";
 import { readBoundedAudioFormData } from "@/lib/ai/cloudflare/upload";
 import { audioTranslationService } from "@/lib/ai/audioTranslationService";
-import { isEagerTranslateTtsEnabled, startEagerEnglishAudio } from "@/lib/ai/tts";
+import { getUncachedEnglishAudioStreamUrl, isEagerTranslateTtsEnabled, startEagerEnglishAudio } from "@/lib/ai/tts";
+import { bypassesAudioCache } from "@/lib/ai/loadTestPersistence";
 import { createDeadline } from "@/lib/ai/cloudflare/deadline";
 import { clientAbortSignal } from "@/lib/ai/cloudflare/abortDiagnostics";
 import { getFailureDiagnostics } from "@/lib/ai/cloudflare/providerError";
@@ -152,7 +153,11 @@ export async function handleAudioTranslation(request: Request, options: { forceA
       if (existing) return accepted(existing);
       if (options.forceAsync) { stages.enter("job_enqueue"); return accepted(await enqueueTranslationJob(jobInput)); }
     }
-    const cacheScope = !access.legacy || process.env.NODE_ENV !== "production" ? access.clientId : undefined;
+    // Load tests (k6 installations, LOAD_TEST_BYPASS_AUDIO_CACHE): no translation cache, no
+    // shared work with identical audio, and a fresh uncached English voice.
+    const cacheBypassed = bypassesAudioCache(access.clientId);
+    const cacheScope = cacheBypassed ? undefined
+      : !access.legacy || process.env.NODE_ENV !== "production" ? access.clientId : undefined;
     const timeoutMs = Math.min(30_000, Math.max(1, Number(process.env.CLOUDFLARE_AUDIO_TRANSLATION_TIMEOUT_MS) || 20_000));
     const { result, cacheStatus } = await audioTranslationService.run({
       audio, sourceLanguage, owner: access.clientId, cacheAllowed: !!cacheScope, flightScope: wantsJobs ? `jobs:${idempotencyKey}` : "sync",
@@ -177,6 +182,7 @@ export async function handleAudioTranslation(request: Request, options: { forceA
             telemetry: (event, fields) => logEvent("info", event, fields) });
           stages.enter("asr_admission");
           return await translateAudioToEnglish(audio, sourceLanguage, { execution: session?.execution, preparedAudio: bytes, cacheScope,
+            bypassTextCache: cacheBypassed,
             beforeProviderCall: async stage => { stages.enter(stage === "asr" ? "asr" : "text_translation"); providerAttempts++; },
             onProviderFallback: event => logEvent("warn", "audio_translation_provider_fallback", { requestId, ...event }),
             onCheckpoint: value => { checkpoint = value; stages.enter(sourceLanguage === "en" ? "validation" : "text_admission"); } });
@@ -209,7 +215,9 @@ export async function handleAudioTranslation(request: Request, options: { forceA
       ...(authLookup ? { authLookup } : {}),
     });
 
-    const englishAudio = startEagerTranslationAudio(result.englishText, requestId);
+    const englishAudio = cacheBypassed
+      ? uncachedTranslationAudio(result.englishText)
+      : startEagerTranslationAudio(result.englishText, requestId);
 
     return withRequestId(
       Response.json({
@@ -251,6 +259,14 @@ export async function handleAudioTranslation(request: Request, options: { forceA
   } finally {
     upload?.release();
   }
+}
+
+/** Load tests: a stream URL that synthesizes fresh speech, never cached or shared. */
+function uncachedTranslationAudio(englishText: string | undefined) {
+  const text = englishText?.trim();
+  if (!text || text.length > 500) return null;
+  const audio = getUncachedEnglishAudioStreamUrl(text);
+  return audio.audioUrl ? { audioUrl: audio.audioUrl, cacheReady: false } : null;
 }
 
 /**

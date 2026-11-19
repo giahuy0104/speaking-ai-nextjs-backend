@@ -17,6 +17,7 @@ import {
   withRequestId,
 } from "@/lib/observability";
 import { turnContent } from "@/lib/turnContentLog";
+import type { ProviderTtsSource } from "@/types/conversation";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -114,7 +115,7 @@ export async function GET(request: Request) {
   }
 
   let upstream: Response;
-  let audioSource: "cloudflare_tts";
+  let audioSource: ProviderTtsSource;
   let speechProfile = profile;
   const upstreamStartedAt = performance.now();
 

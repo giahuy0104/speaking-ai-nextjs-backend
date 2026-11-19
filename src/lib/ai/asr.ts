@@ -8,6 +8,7 @@ import { sampleVietnameseByContext } from "./prompts";
 import { repairVietnameseChildSpeechLayers } from "./childSpeechTranscriptRepair";
 import { assertVietnameseTranscriptIsUsable } from "./vietnameseTranscriptValidation";
 import { turnContent } from "@/lib/turnContentLog";
+import type { AudioProvider } from "./deepInfra";
 
 function repairVietnameseTranscriptFromChildSpeech(
   text: string,
@@ -47,7 +48,7 @@ function assertVietnameseTranscript(
   segments: unknown[] = [],
   options: {
     requestId?: string;
-    provider?: "cloudflare" | "deepinfra" | "device";
+    provider?: AudioProvider | "device";
     utteranceDurationMs?: number;
   } = {},
 ) {

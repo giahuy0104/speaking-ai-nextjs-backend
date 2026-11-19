@@ -4,6 +4,7 @@ import {
   reserveBatchPrefetchAttempt,
   saveBatchPrefetchCandidate,
 } from "@/lib/ai/batchPrefetch";
+import { isProviderTtsSource } from "@/lib/ai/ttsSource";
 import { AppError, toErrorResponse } from "@/lib/errors";
 import { getRequestId, logEvent, withRequestId } from "@/lib/observability";
 import {
@@ -182,11 +183,11 @@ export async function POST(request: Request, context: RouteContext) {
     const audioResult = prepared.pipeline.tts.value;
     if (
       audioResult.source !== "cache" &&
-      audioResult.source !== "cloudflare_tts"
+      !isProviderTtsSource(audioResult.source)
     ) {
       throw new AppError(
         "TTS_FAILED",
-        "Batch prefetch chỉ chấp nhận Cloudflare TTS hoặc audio cache.",
+        "Batch prefetch chỉ chấp nhận TTS của nhà cung cấp hoặc audio cache.",
         503,
       );
     }

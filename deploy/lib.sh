@@ -14,7 +14,8 @@ case "$DEPLOY_ENV" in
     BASE="${HOMI_BACKEND_DIR:-/opt/homi/backend}"
     LOCAL_IMAGE_REPO="speaking-ai-backend"
     PUBLIC_URL="${PUBLIC_URL:-https://api.hoamytech.com}"
-    SERVICES=(backend-3000 backend-3001)
+    # Must match the backends in docker-compose.nginx.yml and the upstreams in nginx.conf.
+    SERVICES=(backend-3000 backend-3001 backend-3002 backend-3003)
     COMPOSE_FILES=(docker-compose.redis.yml docker-compose.nginx.yml)
     DRIFT_PATHS=(docker-compose.redis.yml docker-compose.nginx.yml infra/nginx/nginx.conf infra/redis)
     ENSURE_UP=()
@@ -29,7 +30,7 @@ case "$DEPLOY_ENV" in
     LOCAL_IMAGE_REPO="speaking-ai-backend-dev"
     PUBLIC_URL="${PUBLIC_URL:-https://api-dev.hoamytech.com}"
     # Must match the backends in docker-compose.dev.yml and the upstreams in nginx.dev.conf.
-    SERVICES=(backend-3000 backend-3001 backend-3002 backend-3003)
+    SERVICES=(backend-3000 backend-3001)
     COMPOSE_FILES=(docker-compose.dev.yml)
     DRIFT_PATHS=(docker-compose.dev.yml infra/nginx/nginx.dev.conf infra/redis)
     # First CI deploy: nginx depends on a healthy backend, so start it once if absent.

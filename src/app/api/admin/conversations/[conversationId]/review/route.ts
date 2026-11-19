@@ -9,6 +9,7 @@ import {
   readConversationHistory,
   updateConversationHistory,
 } from "@/lib/history";
+import type { AudioSource } from "@/types/conversation";
 
 export const runtime = "nodejs";
 
@@ -166,7 +167,7 @@ export async function PATCH(request: Request, context: ReviewRouteContext) {
   let audio:
     | {
         audioUrl: string;
-        source: "cache" | "openai_tts" | "cloudflare_tts";
+        source: Exclude<AudioSource, "device_tts">;
       }
     | null = null;
   let audioWarning: string | null = null;

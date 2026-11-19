@@ -11,7 +11,8 @@ import { ConcurrencyLimitTimeoutError, createConcurrencyLimiter, type Concurrenc
  * with AUDIO_ASR_PROVIDER / AUDIO_TEXT_PROVIDER; Cloudflare stays the default.
  */
 
-export type AudioProvider = "cloudflare" | "deepinfra";
+// "google" (Cloud Translation, NMT) serves the text stage only.
+export type AudioProvider = "cloudflare" | "deepinfra" | "google";
 export type AudioProviderStage = "asr" | "text";
 
 const DEFAULT_BASE_URL = "https://api.deepinfra.com/v1/openai";
@@ -70,7 +71,7 @@ export function resolveAudioProviders(stage: AudioProviderStage, language?: stri
   const entries = (process.env[name] ?? "").split(",").map(entry => entry.trim().toLowerCase()).filter(Boolean);
   const providers: AudioProvider[] = [];
   for (const entry of entries.length ? entries : ["cloudflare"]) {
-    if (entry !== "cloudflare" && entry !== "deepinfra") {
+    if (entry !== "cloudflare" && entry !== "deepinfra" && !(entry === "google" && stage === "text")) {
       throw new AppError(stage === "asr" ? "ASR_FAILED" : "LLM_FAILED",
         "Cấu hình nhà cung cấp AI không hợp lệ.", 500, { reason: "invalid_provider", setting: name });
     }
@@ -90,6 +91,7 @@ export function deepInfraTextModel() {
 /** Cache identity for a stage's provider order: Cloudflare-only stays unchanged so existing entries stay valid. */
 export function audioModelCacheIdentity(stage: AudioProviderStage, cloudflareModel: string, language?: string) {
   return resolveAudioProviders(stage, language).map(provider => provider === "cloudflare" ? cloudflareModel
+    : provider === "google" ? "google:nmt"
     : `deepinfra:${stage === "asr" ? deepInfraAsrModel() : deepInfraTextModel()}`).join(">");
 }
 
