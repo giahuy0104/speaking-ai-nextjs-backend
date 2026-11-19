@@ -35,6 +35,21 @@ test("Compose translates host-loopback URLs only in explicit Compose mode", () =
   const url = new URL(env.CLOUDFLARE_POOL_REDIS_URL);
   assert.equal(url.hostname, "redis"); assert.equal(decodeURIComponent(url.password), "password@with/$quotes");
 });
+test("Google TTS quotas are counted in the Compose Redis, unless disabled or Google is not used", () => {
+  const google = { AUDIO_TARGET_TTS_PROVIDER: "google", GOOGLE_TTS_CREDENTIALS_JSON: "e30=" };
+  const env = fixture({ ...google, APP_RUNTIME: "compose", CLOUDFLARE_POOL_REDIS_PASSWORD: "password@with/$quotes" });
+  configureDeployment(env);
+  const url = new URL(env.GOOGLE_TTS_QUOTA_REDIS_URL);
+  assert.equal(url.hostname, "redis"); assert.equal(decodeURIComponent(url.password), "password@with/$quotes");
+  const disabled = fixture({ ...google, APP_RUNTIME: "compose", CLOUDFLARE_POOL_REDIS_PASSWORD: "x", GOOGLE_TTS_QUOTA_ENABLED: "false" });
+  configureDeployment(disabled);
+  assert.equal(disabled.GOOGLE_TTS_QUOTA_REDIS_URL, undefined);
+  const noGoogle = fixture({ APP_RUNTIME: "compose", CLOUDFLARE_POOL_REDIS_PASSWORD: "x" });
+  configureDeployment(noGoogle);
+  assert.equal(noGoogle.GOOGLE_TTS_QUOTA_REDIS_URL, undefined);
+  assert.throws(() => configureDeployment(fixture({ ...google, GOOGLE_TTS_QUOTA_REDIS_URL: "http://redis" })),
+    /GOOGLE_TTS_QUOTA_REDIS_URL \(invalid_url\)/);
+});
 test("enabled Redis stores cannot share a host even with explicit default port or different DB", () => {
   const env = pooled({ AUDIO_TRANSLATION_CACHE_ENABLED: "true", CLOUDFLARE_POOL_REDIS_URL: "redis://same/0", AUDIO_TRANSLATION_CACHE_REDIS_URL: "redis://same:6379/1" });
   assert.throws(() => configureDeployment(env), /requires_separate_redis_instance/);

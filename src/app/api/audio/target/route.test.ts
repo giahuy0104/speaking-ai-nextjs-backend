@@ -22,6 +22,11 @@ process.env.AUDIO_TARGET_TTS_DEFERRED = 'true';
 process.env.AUDIO_TARGET_TTS_STREAM = 'true';
 process.env.AUDIO_STREAM_NODE = '';
 if (scenario === 'fallback-voice') process.env.GOOGLE_TTS_FALLBACK_VOICE_ZH = 'Wavenet-A';
+// Every short clip is routed to DeepInfra, which has no key here: Google speaks instead.
+if (scenario === 'deepinfra-clip-fallback') {
+  process.env.AUDIO_TARGET_CLIP_DEEPINFRA_SHARE = '1';
+  delete process.env.DEEPINFRA_API_KEY;
+}
 
 (async () => {
   const { setGoogleTtsClientForTests } = require('./src/lib/ai/googleTts.ts');
@@ -54,8 +59,10 @@ if (scenario === 'fallback-voice') process.env.GOOGLE_TTS_FALLBACK_VOICE_ZH = 'W
       return [{ audioContent: wav }];
     },
   });
-  // Long enough (>= 20 characters) to stream.
-  const text = '今天我在学校和朋友们一起玩得非常开心，我们还一起唱歌。';
+  // Long enough (>= 20 characters) to stream; the clip scenario uses a short sentence.
+  const text = scenario === 'deepinfra-clip-fallback'
+    ? '我很开心。'
+    : '今天我在学校和朋友们一起玩得非常开心，我们还一起唱歌。';
   const url = 'http://localhost' + createTargetAudioUrl('zh', text);
   const responses = [];
   for (let i = 0; i < 2; i++) {
@@ -63,7 +70,12 @@ if (scenario === 'fallback-voice') process.env.GOOGLE_TTS_FALLBACK_VOICE_ZH = 'W
     const body = new Uint8Array(await response.arrayBuffer());
     responses.push({ status: response.status, type: response.headers.get('content-type'), bytes: body.byteLength });
   }
-  process.stdout.write(JSON.stringify({ responses, streams, clipVoices }));
+  // Saving runs after the response; give it time, then look the sentence up.
+  await new Promise(resolve => setTimeout(resolve, 100));
+  const { getReusableAudioUrl } = require('./src/lib/storage/audio.ts');
+  const { targetSpeechDescriptor } = require('./src/lib/ai/targetSpeech.ts');
+  const cached = await getReusableAudioUrl(targetSpeechDescriptor('zh', text));
+  process.stdout.write(JSON.stringify({ responses, streams, clipVoices, cached }));
   process.exit(0);
 })().catch(error => {
   console.error(error);
@@ -84,6 +96,7 @@ function run(scenario: string) {
     responses: Array<{ status: number; type: string | null; bytes: number }>;
     streams: number;
     clipVoices: string[];
+    cached: string | null;
   };
 }
 
@@ -101,6 +114,14 @@ test("with a fallback voice, a refused stream is spoken by that voice and served
   assert.equal(result.responses[0].bytes, 48);
   assert.deepEqual(result.clipVoices, ["cmn-CN-Wavenet-A"]);
   assert.equal(result.streams, 1);
+  assert.equal(result.cached, null, "the Wavenet take is not cached under the Chirp 3 HD key");
+});
+
+test("a DeepInfra clip that Google spoke instead is served but not cached under DeepInfra's voice", () => {
+  const result = run("deepinfra-clip-fallback");
+  assert.deepEqual(result.responses.map(response => response.status), [200, 200]);
+  assert.deepEqual(result.clipVoices, ["cmn-CN-Chirp3-HD-Aoede"], "spoken once; the second download joins it");
+  assert.equal(result.cached, null);
 });
 
 test("a network failure is not remembered: the repeat download asks Google again", () => {

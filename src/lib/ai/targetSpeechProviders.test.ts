@@ -71,6 +71,8 @@ test("google falls back after its own 429 only to another voice, never after a f
   assert.equal(google.canFallback(new GoogleTtsProviderError("provider_error"), "zh"), true);
   process.env.GOOGLE_TTS_FALLBACK_VOICE_ZH = "Wavenet-A";
   assert.equal(google.canFallback(rateLimited, "zh"), true);
+  assert.equal(google.canFallback(new GoogleTtsProviderError("quota_exceeded", undefined, "chirp3_rpm"), "zh"), true,
+    "our own count of the Chirp 3 HD quota leaves the fallback voice's quota");
   assert.equal(google.canFallback(queueFull, "zh"), false, "the stand-in would wait in the same local queue");
   assert.equal(google.canFallback(rateLimited, "ja"), false);
 });

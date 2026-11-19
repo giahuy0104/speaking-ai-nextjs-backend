@@ -20,6 +20,7 @@ import { requestTargetSpeech } from "./aiProvider";
 import { createTargetAudioUrl } from "./targetAudioUrl";
 import { bypassesAudioCache } from "./loadTestPersistence";
 import {
+  googleClipDescriptor,
   isTargetSpeechDeferred,
   startUncachedTargetSpeech,
   targetSpeech,
@@ -131,8 +132,15 @@ export async function runTargetLanguageConversationPipeline(
         targetSpeech.start(translatedText, language).catch(error => reportAudioUnavailable(error, true));
         return { audioUrl: deferredUrl, source: "cloudflare_tts" as const };
       }
-      const audio = await requestTargetSpeech(translatedText, language, { parentRequestId: input.requestId });
-      const audioUrl = await saveReusableAudio(descriptor, audio);
+      // A DeepInfra clip that Google spoke instead is saved under Google's voice, not
+      // under the DeepInfra key that later lookups would trust.
+      let spokenByGoogle = false;
+      const audio = await requestTargetSpeech(translatedText, language, {
+        parentRequestId: input.requestId,
+        onClipFallback: () => { spokenByGoogle = true; },
+      });
+      const audioUrl = await saveReusableAudio(
+        spokenByGoogle ? googleClipDescriptor(language, translatedText) : descriptor, audio);
       return { audioUrl, source: "cloudflare_tts" as const };
     } catch (error) {
       reportAudioUnavailable(error, false);

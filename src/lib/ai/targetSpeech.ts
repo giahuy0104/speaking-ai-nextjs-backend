@@ -24,6 +24,18 @@ export function targetSpeechDescriptor(language: TargetSpeechLanguage, text: str
   };
 }
 
+/** Cache identity of a short clip Google spoke (without text, the profile skips the DeepInfra share). */
+export function googleClipDescriptor(language: TargetSpeechLanguage, text: string): ReusableAudioDescriptor {
+  const profile = getTargetTtsProfile(language, "clip");
+  return {
+    text: text.normalize("NFKC").replace(/\s+/g, " ").trim(),
+    model: profile.model,
+    voice: profile.voice,
+    speed: profile.speed,
+    extension: profile.extension,
+  };
+}
+
 /**
  * AUDIO_TARGET_TTS_DEFERRED=true returns the translation before its speech exists:
  * the response carries a signed /api/audio/target URL and synthesis starts at once.
@@ -66,9 +78,10 @@ const activeStreamProvider = () => speechStreamProvider(streamingProvider() ?? "
 const sentenceKey = (text: string, language: string) => `${language}\n${text}`;
 
 /**
- * Sentences whose stream was replaced by a clip in another voice (e.g. WaveNet while
- * Chirp 3 HD is rate limited). That clip is served but never cached: the cache key
- * names the stream's voice, and the next request should get Chirp 3 HD again.
+ * Sentences spoken by another voice than their cache key names: a stream replaced by
+ * a fallback clip (e.g. WaveNet while Chirp 3 HD is rate limited), or a DeepInfra clip
+ * that Google spoke because DeepInfra was busy. That audio is served but never cached,
+ * so the next request gets the intended voice again.
  */
 const spokenByFallbackVoice = new Set<string>();
 
@@ -149,12 +162,17 @@ export function subscribeUncachedTargetSpeech(jobId: string) {
 
 export const targetSpeech = createTargetSpeechCoordinator({
   synthesize: (text, language) => {
-    if (targetSpeechMode(language, text) !== "stream") {
-      return requestTargetSpeech(text, language as TargetSpeechLanguage, { onClipFallback: clipFallbackLogger(language) });
-    }
     const key = sentenceKey(text, language);
     spokenByFallbackVoice.delete(key);
-    const job = targetSpeechStreams.start(text, language);
+    const job = targetSpeechMode(language, text) === "stream"
+      ? targetSpeechStreams.start(text, language)
+      : requestTargetSpeech(text, language as TargetSpeechLanguage, {
+        onClipFallback: error => {
+          clipFallbackLogger(language)(error);
+          // The cache key names DeepInfra's voice; Google spoke this clip.
+          spokenByFallbackVoice.add(key);
+        },
+      });
     // A failed job is never saved, so its mark would otherwise stay.
     job.catch(() => spokenByFallbackVoice.delete(key));
     return job;
