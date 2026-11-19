@@ -137,6 +137,19 @@ export function configureDeployment(env, role = "web") {
     if (endpoints.has(endpoint)) fail(key, "requires_separate_redis_instance");
     endpoints.add(endpoint);
   }
+  // Google TTS project quotas are counted for every backend together (googleTtsQuota.ts):
+  // a few small keys under their own namespace, so they may share the pool's Redis.
+  if ((targetTts === "google" || englishTts === "google") && value(env, "GOOGLE_TTS_QUOTA_ENABLED").toLowerCase() !== "false") {
+    if (runtime === "compose" && value(env, "CLOUDFLARE_POOL_REDIS_PASSWORD")) {
+      const url = new URL("redis://redis:6379");
+      url.password = value(env, "CLOUDFLARE_POOL_REDIS_PASSWORD");
+      env.GOOGLE_TTS_QUOTA_REDIS_URL = url.href;
+    }
+    if (value(env, "GOOGLE_TTS_QUOTA_REDIS_URL")) {
+      const url = address(env, "GOOGLE_TTS_QUOTA_REDIS_URL", ["redis:", "rediss:"]);
+      if (url.search) fail("GOOGLE_TTS_QUOTA_REDIS_URL", "invalid_url");
+    }
+  }
   if (jobs) {
     const storage = value(env, "AUDIO_TRANSLATION_JOB_STORAGE") || "r2";
     if (storage !== "r2" && !(runtime === "compose" && storage === "local" && value(env, "AUDIO_TRANSLATION_JOB_SHARED_DIRECTORY"))) fail("AUDIO_TRANSLATION_JOB_STORAGE", "railway_requires_r2");

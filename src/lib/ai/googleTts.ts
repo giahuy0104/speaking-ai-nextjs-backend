@@ -1,6 +1,16 @@
 import type { Duplex } from "node:stream";
 import { AppError } from "../appError";
 import { ConcurrencyLimitTimeoutError, createConcurrencyLimiter, type ConcurrencyLimiter, type ReleaseSlot } from "./concurrencyLimiter";
+import {
+  createGoogleQuota,
+  createMemoryGoogleQuotaStore,
+  createRedisGoogleQuotaStore,
+  googleQuotaEnabled,
+  GoogleQuotaExceededError,
+  type GoogleQuotaGrant,
+  type GoogleQuotaRuleName,
+  type GoogleQuotaStore,
+} from "./googleTtsQuota";
 
 /**
  * Google Cloud Text-to-Speech (gRPC, google.cloud.texttospeech.v1) for the voice of a
@@ -13,10 +23,11 @@ import { ConcurrencyLimitTimeoutError, createConcurrencyLimiter, type Concurrenc
 
 export type GoogleTtsReason =
   | "not_configured" | "invalid_voice" | "unsupported_language" | "timeout" | "network_error"
-  | "rate_limited" | "queue_timeout" | "provider_error" | "invalid_response" | "empty_response";
+  | "rate_limited" | "quota_exceeded" | "queue_timeout" | "provider_error" | "invalid_response" | "empty_response";
 
 export class GoogleTtsProviderError extends Error {
-  constructor(readonly reason: GoogleTtsReason, readonly grpcCode?: number) {
+  /** `quota`: the project quota (googleTtsQuota.ts) that was full, for quota_exceeded. */
+  constructor(readonly reason: GoogleTtsReason, readonly grpcCode?: number, readonly quota?: GoogleQuotaRuleName) {
     super(`Google TTS failed: ${reason}`);
     this.name = "GoogleTtsProviderError";
   }
@@ -85,13 +96,31 @@ export function googleTtsVoice(language: string, kind: GoogleVoiceKind = "stream
   return process.env[`GOOGLE_TTS_CLIP_VOICE_${language.toUpperCase()}`]?.trim() || streamVoice;
 }
 
-/** Full Google voice name, e.g. zh -> cmn-CN-Chirp3-HD-Aoede. */
-export function googleTtsVoiceName(language: string, kind: GoogleVoiceKind = "stream"): string {
+/**
+ * The voice of the WAV clip that stands in for a stream Google refused before its
+ * first byte: GOOGLE_TTS_FALLBACK_VOICE_<LANG> (e.g. ZH=Wavenet-A, JA=Neural2-B),
+ * otherwise the stream voice itself. Chirp 3 HD has its own per-minute quota, so a
+ * Neural2/WaveNet stand-in can still speak while Chirp 3 HD is rate limited.
+ */
+export function googleTtsFallbackVoice(language: string): string {
+  return process.env[`GOOGLE_TTS_FALLBACK_VOICE_${language.toUpperCase()}`]?.trim() || googleTtsVoice(language, "stream");
+}
+
+/** Whether a stream's stand-in clip is spoken by another voice than the stream. */
+export function googleTtsFallbackChangesVoice(language: string): boolean {
+  return googleTtsFallbackVoice(language) !== googleTtsVoice(language, "stream");
+}
+
+function localizedVoiceName(language: string, voice: string): string {
   const locale = LOCALES[language];
   if (!locale) throw new GoogleTtsProviderError("unsupported_language");
-  const voice = googleTtsVoice(language, kind);
   if (!VOICE_PATTERN.test(voice)) throw new GoogleTtsProviderError("invalid_voice");
   return `${locale}-${voice}`;
+}
+
+/** Full Google voice name, e.g. zh -> cmn-CN-Chirp3-HD-Aoede. */
+export function googleTtsVoiceName(language: string, kind: GoogleVoiceKind = "stream"): string {
+  return localizedVoiceName(language, googleTtsVoice(language, kind));
 }
 
 /** Google streams only Chirp 3 HD voices ("only Chirp 3: HD voices are supported for streaming synthesis"). */
@@ -100,21 +129,34 @@ export function googleTtsCanStream(): boolean {
   return VOICE_PATTERN.test(voice) && voice.startsWith("Chirp3-HD-");
 }
 
-function voiceFor(language: string, kind: GoogleVoiceKind) {
-  const name = googleTtsVoiceName(language, kind);
+function voiceFor(language: string, use: GoogleVoiceKind | "fallback") {
+  const name = use === "fallback"
+    ? localizedVoiceName(language, googleTtsFallbackVoice(language))
+    : googleTtsVoiceName(language, use);
   return { languageCode: LOCALES[language], name };
 }
 
 // One client (one gRPC channel, kept warm) and one limiter per process, even if
 // Next loads this module in several bundles.
 const STATE_KEY = Symbol.for("homi.googleTts.state");
-type State = { client?: Promise<GoogleTtsClient>; limiter?: ConcurrencyLimiter };
+type State = {
+  client?: Promise<GoogleTtsClient>;
+  limiter?: ConcurrencyLimiter;
+  quota?: ReturnType<typeof createGoogleQuota>;
+};
 const holder = globalThis as typeof globalThis & { [STATE_KEY]?: State };
 const state = (): State => (holder[STATE_KEY] ??= {});
 let clientOverride: GoogleTtsClient | undefined;
+let quotaStoreOverride: GoogleQuotaStore | undefined;
 
 export function setGoogleTtsClientForTests(client: GoogleTtsClient | undefined) {
   clientOverride = client;
+}
+
+/** Tests count quota in their own store; `undefined` restores the configured one. */
+export function setGoogleTtsQuotaStoreForTests(store: GoogleQuotaStore | undefined) {
+  quotaStoreOverride = store;
+  delete state().quota;
 }
 
 /** Tests change limits through the environment; this rebuilds the limiter and client. */
@@ -166,6 +208,69 @@ function limiter() {
     maxWaitMs: positiveInteger("GOOGLE_TTS_QUEUE_WAIT_MS", DEFAULT_QUEUE_WAIT_MS),
   });
   return current.limiter;
+}
+
+// Redis errors are logged at most this often; after one, Redis is skipped this long so a
+// dead Redis never adds its connect timeout to every voice request.
+const QUOTA_STORE_RETRY_MS = 5_000;
+
+/**
+ * GOOGLE_TTS_QUOTA_REDIS_URL: counts shared by every backend. Without it (tests, one
+ * local backend), counts are per process.
+ */
+function configuredQuotaStore(): GoogleQuotaStore {
+  const url = process.env.GOOGLE_TTS_QUOTA_REDIS_URL?.trim();
+  if (!url) return createMemoryGoogleQuotaStore();
+  let pending: Promise<{ sendCommand(args: readonly string[]): Promise<unknown> }> | undefined;
+  let failedAt = 0;
+  const store = createRedisGoogleQuotaStore(async () => {
+    if (Date.now() - failedAt < QUOTA_STORE_RETRY_MS) throw new Error("quota_store_unavailable");
+    pending ??= import("./cloudflare/redisClient")
+      .then(({ createRedisClient }) => createRedisClient(url, { connectTimeoutMs: 500, commandTimeoutMs: 300 }));
+    return pending;
+  });
+  const failed = () => {
+    // The client closes itself after a failed command; the next call reconnects.
+    pending = undefined;
+    failedAt = Date.now();
+  };
+  return {
+    acquire: (...args) => store.acquire(...args).catch(error => { failed(); throw error; }),
+    releaseLease: (...args) => store.releaseLease(...args).catch(error => { failed(); throw error; }),
+  };
+}
+
+let lastQuotaStoreErrorLogAt = 0;
+
+/** Loaded only when it happens: observability is server-only and this module also runs in plain Node tests. */
+function logQuotaStoreError() {
+  if (Date.now() - lastQuotaStoreErrorLogAt < QUOTA_STORE_RETRY_MS) return;
+  lastQuotaStoreErrorLogAt = Date.now();
+  void import("@/lib/observability")
+    .then(({ logEvent }) => logEvent("warn", "google_tts_quota_store_unavailable", { failOpen: true }))
+    .catch(() => undefined);
+}
+
+function quota() {
+  const current = state();
+  current.quota ??= createGoogleQuota({
+    store: quotaStoreOverride ?? configuredQuotaStore(),
+    onStoreError: logQuotaStoreError,
+  });
+  return current.quota;
+}
+
+const NO_QUOTA: GoogleQuotaGrant = { release: () => undefined };
+
+/** Refused at once (quota_exceeded, HTTP 429) when a project quota is full. */
+async function acquireQuota(voiceName: string, stream: boolean): Promise<GoogleQuotaGrant> {
+  if (!googleQuotaEnabled()) return NO_QUOTA;
+  try {
+    return await quota().acquire({ voiceName, stream });
+  } catch (error) {
+    if (error instanceof GoogleQuotaExceededError) throw new GoogleTtsProviderError("quota_exceeded", undefined, error.rule);
+    throw error;
+  }
 }
 
 async function acquireSlot(signal?: AbortSignal): Promise<ReleaseSlot> {
@@ -224,7 +329,19 @@ export async function streamSpeechWithGoogle(
   const voice = voiceFor(language, "stream");
   // Google would refuse the call; the clip path serves these voices.
   if (!googleTtsCanStream()) throw new GoogleTtsProviderError("invalid_voice");
-  const release = await acquireSlot(options.signal);
+  // The project quota first: a refusal there must not wait in the local queue.
+  const grant = await acquireQuota(voice.name, true);
+  let releaseSlot: ReleaseSlot;
+  try {
+    releaseSlot = await acquireSlot(options.signal);
+  } catch (error) {
+    grant.release();
+    throw error;
+  }
+  const release = () => {
+    releaseSlot();
+    grant.release();
+  };
   let call: Duplex;
   try {
     call = (await googleClient()).streamingSynthesize();
@@ -312,8 +429,10 @@ export async function synthesizeWithGoogle(
   language: string,
   options: { format?: GoogleSpeechFormat; signal?: AbortSignal } = {},
 ): Promise<ArrayBuffer> {
-  // A WAV clip stands in for a stream, so it keeps the stream's voice.
-  const voice = voiceFor(language, options.format === "wav" ? "stream" : "clip");
+  // A WAV clip stands in for a stream: the stream's voice unless a fallback voice is set.
+  const voice = voiceFor(language, options.format === "wav" ? "fallback" : "clip");
+  // A clip holds no lease: its requests-per-minute count is all there is to release.
+  await acquireQuota(voice.name, false);
   const release = await acquireSlot(options.signal);
   try {
     const client = await googleClient();
@@ -336,7 +455,17 @@ export async function synthesizeWithGoogle(
 
 /** Google is refusing work (project quota or full local queue): trying again now hits the same wall. */
 export function isGoogleTtsBusy(error: unknown) {
-  return error instanceof GoogleTtsProviderError && (error.reason === "rate_limited" || error.reason === "queue_timeout");
+  return error instanceof GoogleTtsProviderError &&
+    (error.reason === "rate_limited" || error.reason === "quota_exceeded" || error.reason === "queue_timeout");
+}
+
+/**
+ * A project quota refused (Google's RESOURCE_EXHAUSTED, or our count of it), not the
+ * local queue: another voice's quota may still allow it. A fallback voice under a full
+ * shared quota (all_rpm) is refused again at once, without calling Google.
+ */
+export function isGoogleTtsRateLimited(error: unknown) {
+  return error instanceof GoogleTtsProviderError && (error.reason === "rate_limited" || error.reason === "quota_exceeded");
 }
 
 function statusFor(error: GoogleTtsProviderError) {
@@ -346,6 +475,7 @@ function statusFor(error: GoogleTtsProviderError) {
     case "unsupported_language": return 500;
     case "timeout": return 504;
     case "rate_limited":
+    case "quota_exceeded":
     case "queue_timeout": return 429;
     default: return 502;
   }
@@ -359,5 +489,6 @@ export function toGoogleTtsAppError(error: unknown) {
     stage: "tts",
     reason: error.reason,
     ...(error.grpcCode !== undefined ? { grpcCode: error.grpcCode } : {}),
+    ...(error.quota ? { quota: error.quota } : {}),
   });
 }

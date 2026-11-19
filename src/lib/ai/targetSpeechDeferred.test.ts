@@ -40,7 +40,10 @@ test("no URL is issued without a strong secret or for text longer than the limit
   assert.equal(paramsOf(createTargetAudioUrl("fr", "Bonjour.", { env: { ...env, AUDIO_STREAM_NODE: "bad node!" }, now })!).get("node"), null);
 });
 
-function coordinator(synthesize: (text: string) => Promise<ArrayBuffer>) {
+function coordinator(
+  synthesize: (text: string) => Promise<ArrayBuffer>,
+  shouldRetainFailure?: (error: unknown) => boolean,
+) {
   const saved: string[] = [];
   const timers: Array<() => void> = [];
   const instance = createTargetSpeechCoordinator({
@@ -48,6 +51,7 @@ function coordinator(synthesize: (text: string) => Promise<ArrayBuffer>) {
     save: async text => { saved.push(text); },
     setTimer: callback => { timers.push(callback); },
     maxEntries: 2,
+    shouldRetainFailure,
   });
   return { instance, saved, timers };
 }
@@ -69,15 +73,36 @@ test("requests for the same sentence share one synthesis and the clip is saved o
   assert.equal(instance.peek("Bonjour.", "fr"), undefined);
 });
 
-test("a failed synthesis is dropped at once so the next request retries", async () => {
+test("a failed synthesis is kept briefly so repeated requests fail at once, then retried", async () => {
   let calls = 0;
-  const { instance, saved } = coordinator(async () => { calls++; throw new Error("provider down"); });
+  const { instance, saved, timers } = coordinator(async () => { calls++; throw new Error("provider down"); });
   await assert.rejects(instance.start("안녕.", "ko"), /provider down/);
   await new Promise(resolve => setImmediate(resolve));
+  // The app's second download (and an Nginx retry) joins the failure, no new call.
+  assert.ok(instance.peek("안녕.", "ko"));
+  await assert.rejects(instance.start("안녕.", "ko"), /provider down/);
+  assert.equal(calls, 1);
+  timers.forEach(release => release());
   assert.equal(instance.peek("안녕.", "ko"), undefined);
   await assert.rejects(instance.start("안녕.", "ko"), /provider down/);
   assert.equal(calls, 2);
   assert.deepEqual(saved, []);
+});
+
+test("only failures the caller marks as refusals are kept; others are dropped so the next request retries", async () => {
+  let calls = 0;
+  const { instance, timers } = coordinator(
+    async text => { calls++; throw new Error(text === "busy" ? "refused" : "network"); },
+    error => (error as Error).message === "refused",
+  );
+  await assert.rejects(instance.start("busy", "ja"), /refused/);
+  await assert.rejects(instance.start("flaky", "ja"), /network/);
+  await new Promise(resolve => setImmediate(resolve));
+  assert.ok(instance.peek("busy", "ja"), "a refusal is kept");
+  assert.equal(instance.peek("flaky", "ja"), undefined, "a network error is dropped at once");
+  assert.equal(timers.length, 1, "only the refusal waits for its retention timer");
+  await assert.rejects(instance.start("flaky", "ja"), /network/);
+  assert.equal(calls, 3);
 });
 
 test("the job map is bounded and evicts the oldest sentence first", () => {

@@ -95,3 +95,70 @@ test("a stream refused because the provider is busy does not try the fallback, w
   await assert.rejects(streams.start("今天我很开心。", "zh"), /busy/);
   assert.equal(fallbacks, 0);
 });
+
+test("a listener waiting for the first byte gets the refusal as an error, not an empty stream", async () => {
+  const busy = Object.assign(new Error("busy"), { reason: "rate_limited" });
+  const streams = createTargetSpeechStreams({
+    openPcm: async () => { throw busy; },
+    fallback: async () => new ArrayBuffer(1),
+    shouldFallback: () => false,
+    toPublicError: () => new Error("TTS_FAILED 429"),
+    log: quiet,
+  });
+  const completed = streams.start("今天我很开心。", "zh");
+  await assert.rejects(streams.subscribeWhenAudible("今天我很开心。", "zh"), /TTS_FAILED 429/);
+  await assert.rejects(completed, /TTS_FAILED 429/);
+  assert.equal(await streams.subscribeWhenAudible("今天我很开心。", "zh"), null, "a settled failure has no live stream");
+});
+
+test("a refused stream falls back per language, and a listener waiting for the first byte gets the whole clip", async () => {
+  const clip = new Uint8Array([...wavHeader(SAMPLE_RATE, 4), 1, 2, 3, 4]);
+  const decisions: string[] = [];
+  const fellBack: string[] = [];
+  const streams = createTargetSpeechStreams({
+    openPcm: async () => { throw Object.assign(new Error("rate_limited"), { reason: "rate_limited" }); },
+    fallback: async () => clip.slice().buffer,
+    shouldFallback: (_error, language) => { decisions.push(language); return language === "zh"; },
+    onFallback: (text, language) => fellBack.push(`${language}:${text}`),
+    log: quiet,
+  });
+  const completed = streams.start("今天我很开心。", "zh");
+  const listener = await streams.subscribeWhenAudible("今天我很开心。", "zh");
+  assert.ok(listener);
+  assert.deepEqual(await bytesOf(listener), clip, "the clip settled meanwhile, yet the listener gets every byte");
+  assert.deepEqual(new Uint8Array(await completed), clip);
+  await assert.rejects(streams.start("Bonjour.", "fr"), /rate_limited/);
+  assert.deepEqual(decisions, ["zh", "fr"]);
+  assert.deepEqual(fellBack, ["zh:今天我很开心。"]);
+});
+
+test("onFallback tells a sentence's shared stream from one started under its own key", async () => {
+  const clip = new Uint8Array([...wavHeader(SAMPLE_RATE, 4), 1, 2, 3, 4]);
+  const fellBack: Array<{ text: string; shared: boolean }> = [];
+  const streams = createTargetSpeechStreams({
+    openPcm: async () => { throw new Error("rate_limited"); },
+    fallback: async () => clip.slice().buffer,
+    onFallback: (text, _language, { shared }) => fellBack.push({ text, shared }),
+    log: quiet,
+  });
+  await streams.start("今天我很开心。", "zh");
+  await streams.start("今天我很开心。", "zh", "uncached\nturn-1");
+  assert.deepEqual(fellBack, [
+    { text: "今天我很开心。", shared: true },
+    { text: "今天我很开心。", shared: false },
+  ]);
+});
+
+test("a listener waiting for the first byte of a live stream gets the whole stream", async () => {
+  const streams = createTargetSpeechStreams({
+    openPcm: async () => ({ pcm: pcmOf(0.5), sampleRate: SAMPLE_RATE }),
+    fallback: async () => new ArrayBuffer(1),
+    log: quiet,
+  });
+  const completed = streams.start("안녕하세요.", "ko");
+  const listener = await streams.subscribeWhenAudible("안녕하세요.", "ko");
+  assert.ok(listener);
+  const heard = await bytesOf(listener);
+  assert.equal(heard.byteLength, 44 + Math.round(SAMPLE_RATE * 0.5) * 2);
+  await completed;
+});

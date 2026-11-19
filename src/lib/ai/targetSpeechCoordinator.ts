@@ -15,17 +15,30 @@ export type TargetSpeechCoordinatorOptions = {
   save: (text: string, language: string, audio: ArrayBuffer) => Promise<unknown>;
   onSaveError?: (error: unknown) => void;
   retainMs?: number;
+  /** How long a kept failure is kept, so repeated requests get it at once instead of a new synthesis. */
+  failureRetainMs?: number;
+  /**
+   * Whether a failure is kept at all (default: every failure). Only a refusal that a
+   * retry would hit again (provider busy, quota) is worth keeping; a timeout or a
+   * network error should be retried by the next request.
+   */
+  shouldRetainFailure?: (error: unknown) => boolean;
   maxEntries?: number;
   setTimer?: (callback: () => void, ms: number) => unknown;
 };
 
 const DEFAULT_RETAIN_MS = 60_000;
+// The app downloads a URL twice and Nginx may retry: without this, each failed turn
+// paid for 2-3 syntheses while the provider was already refusing (429). Short, so a
+// sentence is tried again soon after the provider recovers.
+const DEFAULT_FAILURE_RETAIN_MS = 10_000;
 // A burst of distinct sentences must not grow memory without bound (a clip is ~10-50 KB).
 const DEFAULT_MAX_ENTRIES = 500;
 
 export function createTargetSpeechCoordinator(options: TargetSpeechCoordinatorOptions) {
   const jobs = new Map<string, TargetSpeechJob>();
   const retainMs = options.retainMs ?? DEFAULT_RETAIN_MS;
+  const failureRetainMs = options.failureRetainMs ?? DEFAULT_FAILURE_RETAIN_MS;
   const maxEntries = options.maxEntries ?? DEFAULT_MAX_ENTRIES;
   const setTimer = options.setTimer ?? ((callback, ms) => {
     const timer = setTimeout(callback, ms);
@@ -60,8 +73,16 @@ export function createTargetSpeechCoordinator(options: TargetSpeechCoordinatorOp
         return audio;
       });
       jobs.set(key, job);
-      // A failure is dropped at once so the next request can retry; a success is kept briefly.
-      job.then(() => setTimer(() => forget(key, job), retainMs), () => forget(key, job));
+      // A success is kept briefly for a late request. A refusal is kept so the app's
+      // repeated downloads fail fast (to its device voice) instead of asking a provider
+      // that is already refusing; any other failure is dropped so the next request retries.
+      job.then(
+        () => setTimer(() => forget(key, job), retainMs),
+        error => {
+          if (options.shouldRetainFailure && !options.shouldRetainFailure(error)) forget(key, job);
+          else setTimer(() => forget(key, job), failureRetainMs);
+        },
+      );
       return job;
     },
 

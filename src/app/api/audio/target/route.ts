@@ -71,29 +71,31 @@ async function handleGet(request: Request) {
     job = targetSpeech.start(text, language);
   }
 
-  // AUDIO_TARGET_TTS_STREAM: play the WAV while it is still being generated.
-  const live = needsFinishedAudio ? null : subscribeTargetSpeech(text, language);
-  if (live) {
-    const latencyMs = Math.round(performance.now() - startedAt);
-    job.then(
-      audio => logEvent("info", "target_speech_served", { ...turnContent({ translatedText: text }),
-        requestId, language, joined, streamed: true, byteLength: audio.byteLength, latencyMs,
-        totalMs: Math.round(performance.now() - startedAt),
-      }),
-      error => logEvent("warn", "target_speech_failed", { ...turnContent({ translatedText: text }), requestId, language, joined, streamed: true, latencyMs, error }),
-    );
-    return withRequestId(new Response(live, {
-      status: 200,
-      headers: {
-        "Content-Type": "audio/wav",
-        "Cache-Control": "private, max-age=900",
-        "X-Accel-Buffering": "no",
-        "X-Audio-Source": "stream",
-      },
-    }), requestId);
-  }
-
   try {
+    // AUDIO_TARGET_TTS_STREAM: play the WAV while it is still being generated. Waits
+    // for the first byte, so a refusal (Google 429...) is an HTTP error, not a 200
+    // that breaks off (Nginx 502) and that the app or Nginx would retry.
+    const live = needsFinishedAudio ? null : await subscribeTargetSpeech(text, language);
+    if (live) {
+      const latencyMs = Math.round(performance.now() - startedAt);
+      job.then(
+        audio => logEvent("info", "target_speech_served", { ...turnContent({ translatedText: text }),
+          requestId, language, joined, streamed: true, byteLength: audio.byteLength, latencyMs,
+          totalMs: Math.round(performance.now() - startedAt),
+        }),
+        error => logEvent("warn", "target_speech_failed", { ...turnContent({ translatedText: text }), requestId, language, joined, streamed: true, latencyMs, error }),
+      );
+      return withRequestId(new Response(live, {
+        status: 200,
+        headers: {
+          "Content-Type": "audio/wav",
+          "Cache-Control": "private, max-age=900",
+          "X-Accel-Buffering": "no",
+          "X-Audio-Source": "stream",
+        },
+      }), requestId);
+    }
+
     const audio = await job;
     logEvent("info", "target_speech_served", { ...turnContent({ translatedText: text }),
       requestId, language, joined, streamed: false, mode: targetSpeechMode(language, text), byteLength: audio.byteLength,
@@ -130,16 +132,13 @@ async function uncachedSpeech(
   rangeHeader: string | null, needsFinishedAudio: boolean,
 ) {
   const job = startUncachedTargetSpeech(jobId, text, language);
-  const live = needsFinishedAudio ? null : subscribeUncachedTargetSpeech(jobId);
   const headers = { "Cache-Control": "no-store", "X-Audio-Cache": "bypass" };
-  if (live) {
-    logEvent("info", "target_speech_served", { ...turnContent({ translatedText: text }), requestId, language, uncached: true, streamed: true, latencyMs: Math.round(performance.now() - startedAt) });
-    return new Response(live, {
-      status: 200,
-      headers: { ...headers, "Content-Type": "audio/wav", "X-Accel-Buffering": "no", "X-Audio-Source": "stream" },
-    });
-  }
   try {
+    const live = needsFinishedAudio ? null : await subscribeUncachedTargetSpeech(jobId);
+    if (live) {
+      logEvent("info", "target_speech_served", { ...turnContent({ translatedText: text }), requestId, language, uncached: true, streamed: true, latencyMs: Math.round(performance.now() - startedAt) });
+      return new Response(live, { status: 200, headers: { ...headers, "Content-Type": "audio/wav", "X-Accel-Buffering": "no", "X-Audio-Source": "stream" } });
+    }
     const audio = await job;
     logEvent("info", "target_speech_served", { ...turnContent({ translatedText: text }), requestId, language, uncached: true, streamed: false, byteLength: audio.byteLength, latencyMs: Math.round(performance.now() - startedAt) });
     return rangedAudioResponse(new Uint8Array(audio), rangeHeader, {
