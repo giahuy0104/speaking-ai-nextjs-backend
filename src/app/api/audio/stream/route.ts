@@ -19,6 +19,7 @@ import {
 import { turnContent } from "@/lib/turnContentLog";
 import { rewrapWavStreamAsCaf } from "@/lib/audio/caf";
 import { loggedAudioRoute } from "@/lib/audio/audioResponseLogger";
+import { isBoundedRangeRequest } from "@/lib/audio/rangedAudio";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -40,6 +41,11 @@ async function handleGet(request: Request) {
   // no-op whenever the live body isn't WAV (the default Cloudflare provider
   // streams MP3, which AVPlayer already accepts without a Content-Length).
   const wantsCaf = url.searchParams.get("format") === "caf";
+  // iOS (AVPlayer) cannot play a live stream of unknown length: it probes with
+  // `Range: bytes=0-1` and fails with -11850 unless it gets a 206 with the total
+  // size. The iOS app (?format=caf) and any bounded range request therefore wait
+  // for the finished file and are redirected to /api/audio/cache, which serves ranges.
+  const needsFinishedAudio = wantsCaf || isBoundedRangeRequest(request.headers.get("range"));
 
   if (!text || text.length > 500) {
     return Response.json(
@@ -77,26 +83,14 @@ async function handleGet(request: Request) {
   const cacheFillClaim = claimEnglishAudioCacheFill(text);
 
   if (!cacheFillClaim.owner) {
-    let activeStream = subscribeEnglishAudioStream(text);
-    const bootstrap = activeStream ? null : waitForEnglishAudioStream(text);
-    if (!activeStream && bootstrap) {
-      try {
-        await bootstrap;
-        activeStream = subscribeEnglishAudioStream(text);
-      } catch (error) {
-        logEvent("warn", "tts_eager_stream_bootstrap_failed", {
-          requestId,
-          error,
-        });
-      }
-    }
+    const activeStream = needsFinishedAudio ? null : await joinActiveStream(text, requestId);
     if (activeStream) {
       logEvent("info", "tts_active_stream_joined", {
         requestId,
         latencyMs: Math.round(performance.now() - startedAt),
-        eagerBootstrapJoined: Boolean(bootstrap),
+        eagerBootstrapJoined: activeStream.eagerBootstrapJoined,
       });
-      return withRequestId(unbuffered(maybeAsCaf(activeStream, wantsCaf)), requestId);
+      return withRequestId(unbuffered(activeStream.response), requestId);
     }
     try {
       const result = await cacheFillClaim.completion;
@@ -205,11 +199,54 @@ async function handleGet(request: Request) {
       });
     },
   });
+  if (needsFinishedAudio) {
+    // The shared broadcast keeps reading the provider for other listeners and the
+    // cache; only this request's own subscriber is dropped.
+    void streamResponse.body?.cancel().catch(() => undefined);
+    try {
+      const result = await cacheFill;
+      logEvent("info", "tts_finished_audio_redirect", {
+        requestId,
+        audioUrl: result.audioUrl,
+        latencyMs: Math.round(performance.now() - startedAt),
+      });
+      return withRequestId(cacheRedirect(result.audioUrl), requestId);
+    } catch (error) {
+      const responseError =
+        error instanceof AppError
+          ? error
+          : new AppError("TTS_FAILED", "Không thể tạo âm thanh.", 502);
+      return withRequestId(toErrorResponse(responseError, requestId), requestId);
+    }
+  }
   streamResponse.headers.set(
     "Server-Timing",
     `cache;dur=${cacheLookupMs}, tts-headers;dur=${upstreamHeadersMs}`,
   );
-  return withRequestId(unbuffered(maybeAsCaf(streamResponse, wantsCaf)), requestId);
+  return withRequestId(unbuffered(streamResponse), requestId);
+}
+
+/** Joins the stream another request (or the eager start) already opened, if any. */
+async function joinActiveStream(text: string, requestId: string) {
+  const current = subscribeEnglishAudioStream(text);
+  if (current) return { response: current, eagerBootstrapJoined: false };
+  const bootstrap = waitForEnglishAudioStream(text);
+  if (!bootstrap) return null;
+  try {
+    await bootstrap;
+  } catch (error) {
+    logEvent("warn", "tts_eager_stream_bootstrap_failed", { requestId, error });
+    return null;
+  }
+  const joined = subscribeEnglishAudioStream(text);
+  return joined ? { response: joined, eagerBootstrapJoined: true } : null;
+}
+
+function cacheRedirect(audioUrl: string) {
+  return new Response(null, {
+    status: 307,
+    headers: { Location: audioUrl, "Cache-Control": "no-store", "X-Audio-Source": "cache" },
+  });
 }
 
 /**

@@ -1,64 +1,12 @@
 import { audioContentType, getGeneratedAudioRedirect, readGeneratedAudioFile } from "@/lib/storage/audio";
 import { loggedAudioRoute } from "@/lib/audio/audioResponseLogger";
+import { rangedAudioResponse } from "@/lib/audio/rangedAudio";
 
 export const runtime = "nodejs";
 
 type AudioCacheRouteContext = {
   params: Promise<{ fileName: string }>;
 };
-
-type AudioByteRange = {
-  start: number;
-  end: number;
-};
-
-function parseByteRange(
-  rangeHeader: string | null,
-  totalBytes: number,
-): AudioByteRange | null | "invalid" {
-  if (!rangeHeader) {
-    return null;
-  }
-
-  const match = /^bytes=(\d*)-(\d*)$/i.exec(rangeHeader.trim());
-  if (!match || totalBytes <= 0) {
-    return "invalid";
-  }
-
-  const rawStart = match[1];
-  const rawEnd = match[2];
-  if (!rawStart && !rawEnd) {
-    return "invalid";
-  }
-
-  if (!rawStart) {
-    const suffixLength = Number(rawEnd);
-    if (!Number.isSafeInteger(suffixLength) || suffixLength <= 0) {
-      return "invalid";
-    }
-    return {
-      start: Math.max(0, totalBytes - suffixLength),
-      end: totalBytes - 1,
-    };
-  }
-
-  const start = Number(rawStart);
-  const requestedEnd = rawEnd ? Number(rawEnd) : totalBytes - 1;
-  if (
-    !Number.isSafeInteger(start) ||
-    !Number.isSafeInteger(requestedEnd) ||
-    start < 0 ||
-    requestedEnd < start ||
-    start >= totalBytes
-  ) {
-    return "invalid";
-  }
-
-  return {
-    start,
-    end: Math.min(requestedEnd, totalBytes - 1),
-  };
-}
 
 async function serveCachedAudio(
   request: Request,
@@ -87,35 +35,11 @@ async function serveCachedAudio(
     );
   }
 
-  const headers = new Headers({
-    "Accept-Ranges": "bytes",
+  return rangedAudioResponse(audio, request.headers.get("range"), {
     "Cache-Control": "public, max-age=31536000, immutable",
     "Content-Type": audioContentType(fileName),
     "X-Content-Type-Options": "nosniff",
-  });
-  const range = parseByteRange(request.headers.get("range"), audio.byteLength);
-
-  if (range === "invalid") {
-    headers.set("Content-Range", `bytes */${audio.byteLength}`);
-    headers.set("Content-Length", "0");
-    return new Response(null, { status: 416, headers });
-  }
-
-  if (range) {
-    const body = audio.subarray(range.start, range.end + 1);
-    headers.set(
-      "Content-Range",
-      `bytes ${range.start}-${range.end}/${audio.byteLength}`,
-    );
-    headers.set("Content-Length", body.byteLength.toString());
-    return new Response(includeBody ? new Uint8Array(body) : null, {
-      status: 206,
-      headers,
-    });
-  }
-
-  headers.set("Content-Length", audio.byteLength.toString());
-  return new Response(includeBody ? new Uint8Array(audio) : null, { headers });
+  }, includeBody);
 }
 
 // Logs every cached file the app downloads: content type and byte length sent.
