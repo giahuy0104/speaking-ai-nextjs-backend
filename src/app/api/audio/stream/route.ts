@@ -17,6 +17,7 @@ import {
   withRequestId,
 } from "@/lib/observability";
 import { turnContent } from "@/lib/turnContentLog";
+import { rewrapWavStreamAsCaf } from "@/lib/audio/caf";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -30,6 +31,11 @@ export async function GET(request: Request) {
   // The signature, not the single-use token, decides: a retry, probe or another
   // backend must not fall back to the shared cache for a load-test turn.
   const bypassCache = verifyUncachedEnglishAudio(url.searchParams.get("nocache"), text);
+  // Unsigned (this route carries no signature at all) and iOS-only: see the
+  // identical rewrapWavStreamAsCaf note in /api/audio/target/route.ts. A
+  // no-op whenever the live body isn't WAV (the default Cloudflare provider
+  // streams MP3, which AVPlayer already accepts without a Content-Length).
+  const wantsCaf = url.searchParams.get("format") === "caf";
 
   if (!text || text.length > 500) {
     return Response.json(
@@ -44,7 +50,7 @@ export async function GET(request: Request) {
     );
   }
 
-  if (bypassCache) return withRequestId(await uncachedSpeech(text, requestId, startedAt), requestId);
+  if (bypassCache) return withRequestId(await uncachedSpeech(text, requestId, startedAt, wantsCaf), requestId);
 
   const cacheStartedAt = performance.now();
   const cachedUrl = knownCacheMiss
@@ -86,7 +92,7 @@ export async function GET(request: Request) {
         latencyMs: Math.round(performance.now() - startedAt),
         eagerBootstrapJoined: Boolean(bootstrap),
       });
-      return withRequestId(unbuffered(activeStream), requestId);
+      return withRequestId(unbuffered(maybeAsCaf(activeStream, wantsCaf)), requestId);
     }
     try {
       const result = await cacheFillClaim.completion;
@@ -199,7 +205,7 @@ export async function GET(request: Request) {
     "Server-Timing",
     `cache;dur=${cacheLookupMs}, tts-headers;dur=${upstreamHeadersMs}`,
   );
-  return withRequestId(unbuffered(streamResponse), requestId);
+  return withRequestId(unbuffered(maybeAsCaf(streamResponse, wantsCaf)), requestId);
 }
 
 /**
@@ -207,7 +213,7 @@ export async function GET(request: Request) {
  * streamed straight from the provider. No cache read or write, and no joining or
  * sharing a stream with any other listener, so every turn pays a real synthesis.
  */
-async function uncachedSpeech(text: string, requestId: string, startedAt: number) {
+async function uncachedSpeech(text: string, requestId: string, startedAt: number, wantsCaf: boolean) {
   try {
     const speech = await requestEnglishSpeechAudio(text);
     logEvent("info", "tts_uncached_stream_started", { ...turnContent({ englishText: text }),
@@ -217,7 +223,7 @@ async function uncachedSpeech(text: string, requestId: string, startedAt: number
       voice: speech.profile.voice,
       headersMs: Math.round(performance.now() - startedAt),
     });
-    return unbuffered(new Response(speech.response.body, {
+    return unbuffered(maybeAsCaf(new Response(speech.response.body, {
       status: 200,
       headers: {
         "Content-Type": speech.response.headers.get("content-type") ?? "audio/mpeg",
@@ -225,7 +231,7 @@ async function uncachedSpeech(text: string, requestId: string, startedAt: number
         "X-Audio-Source": speech.source,
         "X-Audio-Cache": "bypass",
       },
-    }));
+    }), wantsCaf));
   } catch (error) {
     logEvent("error", "tts_stream_request_failed", { ...turnContent({ englishText: text }), requestId, uncached: true, error });
     const responseError = error instanceof AppError
@@ -243,4 +249,17 @@ async function uncachedSpeech(text: string, requestId: string, startedAt: number
 function unbuffered(response: Response) {
   response.headers.set("X-Accel-Buffering", "no");
   return response;
+}
+
+/** Re-wraps a live WAV response as CAF for one iOS request; everything else is untouched. */
+function maybeAsCaf(response: Response, wantsCaf: boolean): Response {
+  const contentType = response.headers.get("content-type") ?? "";
+  if (!wantsCaf || !response.body || !contentType.toLowerCase().includes("wav")) return response;
+  const headers = new Headers(response.headers);
+  headers.set("Content-Type", "audio/x-caf");
+  return new Response(rewrapWavStreamAsCaf(response.body), {
+    status: response.status,
+    statusText: response.statusText,
+    headers,
+  });
 }
