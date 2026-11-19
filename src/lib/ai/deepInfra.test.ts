@@ -4,7 +4,13 @@ import { AppError } from "../appError";
 import { translateAudioToEnglish } from "./cloudflareWorkersAi";
 import { translationCacheKey } from "./audioTranslationCache";
 import type { CloudflareExecutionContext } from "./cloudflare/types";
-import { getDeepInfraConfig, setDeepInfraTransportForTests, transcribeWithDeepInfra } from "./deepInfra";
+import {
+  DeepInfraProviderError,
+  getDeepInfraConfig,
+  resetDeepInfraStageLimitersForTests,
+  setDeepInfraTransportForTests,
+  transcribeWithDeepInfra,
+} from "./deepInfra";
 import { createServer } from "node:http";
 import type { AddressInfo } from "node:net";
 
@@ -97,7 +103,8 @@ test("DeepInfra audio translation provider", async (t) => {
     assert.equal(calls, 0);
   });
 
-  await t.test("keeps ASR rate limits as 429 and hides upstream text", async () => {
+  await t.test("keeps ASR rate limits as 429 after one retry and hides upstream text", async () => {
+    process.env.DEEPINFRA_429_RETRY_DELAY_MS = "1";
     let calls = 0;
     globalThis.fetch = async () => { calls++; return Response.json({ detail: "private provider text" }, { status: 429 }); };
 
@@ -105,7 +112,63 @@ test("DeepInfra audio translation provider", async (t) => {
       e instanceof AppError && e.code === "ASR_FAILED" && e.status === 429 &&
       e.details?.provider === "deepinfra" && e.details?.upstreamStatus === 429 &&
       !JSON.stringify(e.details).includes("private provider text"));
+    assert.equal(calls, 2, "one retry after the 429, then the refusal is reported");
+  });
+
+  await t.test("a 429 retried once succeeds without failing the turn", async () => {
+    process.env.DEEPINFRA_429_RETRY_DELAY_MS = "1";
+    const urls: string[] = [];
+    globalThis.fetch = async (url) => {
+      urls.push(String(url));
+      if (String(url) === ASR_URL && urls.filter(seen => seen === ASR_URL).length === 1) {
+        return Response.json({ detail: "busy" }, { status: 429 });
+      }
+      return String(url) === ASR_URL ? asrResponse("Con chào cô.") : chatResponse("Hello, teacher.");
+    };
+    const result = await translateAudioToEnglish(audio, "vi");
+    assert.equal(result.englishText, "Hello, teacher.");
+    assert.deepEqual(urls, [ASR_URL, ASR_URL, CHAT_URL]);
+  });
+
+  await t.test("DEEPINFRA_429_RETRIES=0 reports the first 429; other errors are never retried", async () => {
+    process.env.DEEPINFRA_429_RETRIES = "0";
+    let calls = 0;
+    globalThis.fetch = async () => { calls++; return Response.json({}, { status: 429 }); };
+    await assert.rejects(translateAudioToEnglish(audio, "vi"), (e: unknown) => e instanceof AppError && e.status === 429);
     assert.equal(calls, 1);
+    delete process.env.DEEPINFRA_429_RETRIES;
+    calls = 0;
+    globalThis.fetch = async () => { calls++; return Response.json({}, { status: 503 }); };
+    await assert.rejects(translateAudioToEnglish(audio, "vi"), (e: unknown) => e instanceof AppError && e.status === 502);
+    assert.equal(calls, 1);
+  });
+
+  await t.test("calls over the per-backend cap wait for a slot, then give up with queue_timeout", async () => {
+    process.env.DEEPINFRA_ASR_MAX_CONCURRENCY = "1";
+    process.env.DEEPINFRA_ASR_QUEUE_WAIT_MS = "30";
+    resetDeepInfraStageLimitersForTests();
+    let calls = 0;
+    let answer!: () => void;
+    globalThis.fetch = async () => {
+      calls++;
+      if (calls === 1) await new Promise<void>(resolve => { answer = resolve; });
+      return asrResponse("Con chào cô.");
+    };
+    try {
+      const first = transcribeWithDeepInfra(audio, "speech.wav", "vi");
+      // The second call waits behind the first, then is refused without reaching DeepInfra.
+      await assert.rejects(transcribeWithDeepInfra(audio, "speech.wav", "vi"),
+        (e: unknown) => e instanceof DeepInfraProviderError && e.reason === "queue_timeout");
+      assert.equal(calls, 1);
+      // A waiting call gets the slot as soon as it frees.
+      const third = transcribeWithDeepInfra(audio, "speech.wav", "vi");
+      answer();
+      assert.equal((await first).text, "Con chào cô.");
+      assert.equal((await third).text, "Con chào cô.");
+      assert.equal(calls, 2);
+    } finally {
+      resetDeepInfraStageLimitersForTests();
+    }
   });
 
   await t.test("reports a slow ASR call as a 504 timeout", async () => {
@@ -231,7 +294,8 @@ test("DeepInfra first, Cloudflare fallback", async (t) => {
     assert.deepEqual(urls, [ASR_URL, CHAT_URL]);
   });
 
-  await t.test("falls back to Cloudflare ASR when DeepInfra is rate limited, keeping DeepInfra for text", async () => {
+  await t.test("falls back to Cloudflare ASR when DeepInfra stays rate limited, keeping DeepInfra for text", async () => {
+    process.env.DEEPINFRA_429_RETRIES = "0";
     const urls: string[] = [];
     globalThis.fetch = async (url) => {
       const target = String(url); urls.push(target);
