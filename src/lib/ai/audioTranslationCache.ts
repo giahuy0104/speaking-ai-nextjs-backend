@@ -64,30 +64,42 @@ export interface TranslationCacheStore {
   set(key: string, value: string, ttlSeconds: number): Promise<void>;
 }
 
-// One connection per process. Cache errors fail open, with a short reconnect
-// cooldown; quota errors still fail closed in the independent admission store.
-export function redisTranslationCache(url: () => string | undefined = () => process.env.AUDIO_TRANSLATION_CACHE_REDIS_URL): TranslationCacheStore {
+/**
+ * One lazy connection to the cache Redis per caller. Errors fail open (the caller
+ * treats them as a miss) with a short reconnect cooldown; quota errors still fail
+ * closed in the independent admission store.
+ */
+export function lazyCacheRedisCommand(
+  url: () => string | undefined = () => process.env.AUDIO_TRANSLATION_CACHE_REDIS_URL,
+  unavailableEvent = "audio_translation_cache_unavailable",
+  timeouts: { connectTimeoutMs: number; commandTimeoutMs: number } = { connectTimeoutMs: 1_000, commandTimeoutMs: 1_000 },
+) {
   let pending: Promise<PoolRedisClient> | undefined;
   let client: PoolRedisClient | undefined;
   let retryAt = 0;
-  async function command(args: string[]) {
+  return async function command(args: string[]) {
     if (Date.now() < retryAt) throw new Error("cache_unavailable");
     const address = url();
     if (!address) throw new Error("cache_not_configured");
     const quotaUrl = process.env.CLOUDFLARE_POOL_REDIS_URL;
     if (quotaUrl && redisEndpointIdentity(address) === redisEndpointIdentity(quotaUrl)) throw new Error("cache_requires_separate_redis_instance");
     try {
-      client = await (pending ??= createRedisClient(address, { connectTimeoutMs: 1_000, commandTimeoutMs: 1_000 }));
+      client = await (pending ??= createRedisClient(address, timeouts));
       return await client.sendCommand(args);
     } catch {
-      if (Date.now() >= retryAt) console.info(JSON.stringify({ event: "audio_translation_cache_unavailable", reason: "cache_unavailable" }));
+      if (Date.now() >= retryAt) console.info(JSON.stringify({ event: unavailableEvent, reason: "cache_unavailable" }));
       retryAt = Date.now() + 5_000;
       const old = client;
       client = undefined; pending = undefined;
       await old?.close().catch(() => {});
       throw new Error("cache_unavailable");
     }
-  }
+  };
+}
+
+// One connection per process.
+export function redisTranslationCache(url: () => string | undefined = () => process.env.AUDIO_TRANSLATION_CACHE_REDIS_URL): TranslationCacheStore {
+  const command = lazyCacheRedisCommand(url);
   return {
     async get(key) { const reply = await command(["GET", key]); return typeof reply === "string" ? reply : null; },
     async set(key, value, ttlSeconds) { await command(["SET", key, value, "EX", String(ttlSeconds)]); },

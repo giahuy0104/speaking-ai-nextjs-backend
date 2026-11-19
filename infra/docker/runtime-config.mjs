@@ -56,6 +56,8 @@ export function configureDeployment(env, role = "web") {
   const cache = flag(env, "AUDIO_TRANSLATION_CACHE_ENABLED");
   // Sentence-level cache shared by every client; it uses the cache Redis but not the pool.
   const sharedTextCache = flag(env, "AUDIO_TRANSLATION_SHARED_TEXT_CACHE_ENABLED");
+  // Early translation from previews: every backend reads the same results in the cache Redis.
+  const previewSpeculation = flag(env, "AUDIO_PREVIEW_SPECULATION_ENABLED");
   const jobs = flag(env, "AUDIO_TRANSLATION_JOBS_ENABLED");
   const sharedLegacy = flag(env, "CLOUDFLARE_POOL_SHARE_LEGACY_ACCOUNT");
   const routeLegacy = flag(env, "CLOUDFLARE_POOL_ROUTE_LEGACY_ACCOUNT");
@@ -127,7 +129,7 @@ export function configureDeployment(env, role = "web") {
   const endpoints = new Set();
   const redisSettings = [
     ...(pool ? [["CLOUDFLARE_POOL_REDIS_URL", "redis"]] : []),
-    ...(cache || sharedTextCache ? [["AUDIO_TRANSLATION_CACHE_REDIS_URL", "redis-cache"]] : []),
+    ...(cache || sharedTextCache || previewSpeculation ? [["AUDIO_TRANSLATION_CACHE_REDIS_URL", "redis-cache"]] : []),
     ...(jobs ? [["AUDIO_TRANSLATION_JOBS_REDIS_URL", "redis-jobs"]] : []),
   ];
   for (const [key, host] of redisSettings) {

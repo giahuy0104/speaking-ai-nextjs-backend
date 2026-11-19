@@ -35,6 +35,10 @@ export type BenchmarkMetadata = {
   asrConfidence?: number;
   asrFirstDeltaMs?: number;
   asrFinalAfterStopMs?: number;
+  /** Set by the server: the turn reused the translation it started from a preview. */
+  previewSpeculationUsed?: boolean;
+  /** Set by the server: how long the final request waited for that translation. */
+  previewSpeculationWaitMs?: number;
   workerAsrPilotRttMs?: number;
   workerAsrPilotAsrMs?: number;
   workerAsrPilotAudioBytes?: number;

@@ -62,6 +62,17 @@ test("the shared sentence cache alone gets the Compose cache Redis and must not 
   const shared = pooled({ AUDIO_TRANSLATION_SHARED_TEXT_CACHE_ENABLED: "true", CLOUDFLARE_POOL_REDIS_URL: "redis://same/0", AUDIO_TRANSLATION_CACHE_REDIS_URL: "redis://same:6379/1" });
   assert.throws(() => configureDeployment(shared), /requires_separate_redis_instance/);
 });
+test("early translation from previews gets the Compose cache Redis on its own", () => {
+  const env = pooled({ APP_RUNTIME: "compose", AUDIO_PREVIEW_SPECULATION_ENABLED: "true", CLOUDFLARE_POOL_REDIS_PASSWORD: "audit-only-password" });
+  configureDeployment(env);
+  assert.equal(new URL(env.AUDIO_TRANSLATION_CACHE_REDIS_URL).hostname, "redis-cache");
+  assert.equal(env.AUDIO_TRANSLATION_SHARED_TEXT_CACHE_ENABLED, "false");
+  const off = pooled({ APP_RUNTIME: "compose", CLOUDFLARE_POOL_REDIS_PASSWORD: "audit-only-password" });
+  configureDeployment(off);
+  assert.equal(off.AUDIO_TRANSLATION_CACHE_REDIS_URL, undefined);
+  assert.equal(off.AUDIO_PREVIEW_SPECULATION_ENABLED, "false");
+  assert.throws(() => configureDeployment(pooled({ AUDIO_PREVIEW_SPECULATION_ENABLED: "yes" })), /use_true_or_false/);
+});
 test("Railway jobs require R2 while explicit Compose shared-volume jobs remain supported", () => {
   const env = pooled({ AUDIO_TRANSLATION_JOBS_ENABLED: "true", AUDIO_TRANSLATION_JOBS_REDIS_URL: "redis://jobs:6379", AUDIO_TRANSLATION_JOB_STORAGE: "local", AUDIO_TRANSLATION_JOB_SHARED_DIRECTORY: "/app/shared" });
   assert.throws(() => configureDeployment(env), /railway_requires_r2/);
