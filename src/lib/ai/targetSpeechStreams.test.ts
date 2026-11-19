@@ -132,6 +132,23 @@ test("a refused stream falls back per language, and a listener waiting for the f
   assert.deepEqual(fellBack, ["zh:今天我很开心。"]);
 });
 
+test("onFallback tells a sentence's shared stream from one started under its own key", async () => {
+  const clip = new Uint8Array([...wavHeader(SAMPLE_RATE, 4), 1, 2, 3, 4]);
+  const fellBack: Array<{ text: string; shared: boolean }> = [];
+  const streams = createTargetSpeechStreams({
+    openPcm: async () => { throw new Error("rate_limited"); },
+    fallback: async () => clip.slice().buffer,
+    onFallback: (text, _language, { shared }) => fellBack.push({ text, shared }),
+    log: quiet,
+  });
+  await streams.start("今天我很开心。", "zh");
+  await streams.start("今天我很开心。", "zh", "uncached\nturn-1");
+  assert.deepEqual(fellBack, [
+    { text: "今天我很开心。", shared: true },
+    { text: "今天我很开心。", shared: false },
+  ]);
+});
+
 test("a listener waiting for the first byte of a live stream gets the whole stream", async () => {
   const streams = createTargetSpeechStreams({
     openPcm: async () => ({ pcm: pcmOf(0.5), sampleRate: SAMPLE_RATE }),

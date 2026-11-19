@@ -85,13 +85,20 @@ const sentenceKey = (text: string, language: string) => `${language}\n${text}`;
  */
 const spokenByFallbackVoice = new Set<string>();
 
+/** How many sentences are marked as spoken by a fallback voice (each must be cleared). */
+export function fallbackVoiceMarkCountForTests() {
+  return spokenByFallbackVoice.size;
+}
+
 const targetSpeechStreams = createTargetSpeechStreams({
   openPcm: (text, language) => activeStreamProvider().openPcm(text, language),
   // Same format as the stream, so listeners and the cache never mix WAV and MP3.
   fallback: (text, language) => activeStreamProvider().fallback(text, language),
   shouldFallback: (error, language) => activeStreamProvider().canFallback(error, language),
-  onFallback: (text, language) => {
-    if (!activeStreamProvider().fallbackKeepsVoice(language)) spokenByFallbackVoice.add(sentenceKey(text, language));
+  // Only the coordinator's job reaches save(), which clears the mark. A load-test turn
+  // (its own key) is never saved, so marking it would leak one entry per turn.
+  onFallback: (text, language, { shared }) => {
+    if (shared && !activeStreamProvider().fallbackKeepsVoice(language)) spokenByFallbackVoice.add(sentenceKey(text, language));
   },
   toPublicError: error => activeStreamProvider().toPublicError(error),
   log: (level, event, fields) => logEvent(level, event, fields),
