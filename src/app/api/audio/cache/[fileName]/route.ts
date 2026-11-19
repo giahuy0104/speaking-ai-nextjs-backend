@@ -1,5 +1,4 @@
 import { audioContentType, getGeneratedAudioRedirect, readGeneratedAudioFile } from "@/lib/storage/audio";
-import { loggedAudioRoute } from "@/lib/audio/audioResponseLogger";
 
 export const runtime = "nodejs";
 
@@ -118,9 +117,12 @@ async function serveCachedAudio(
   return new Response(includeBody ? new Uint8Array(audio) : null, { headers });
 }
 
-// Logs the Content-Type actually sent (audio/mpeg or audio/wav).
-export const GET = loggedAudioRoute("cache", (request: Request, context: AudioCacheRouteContext) =>
-  serveCachedAudio(request, context, true));
+export async function GET(
+  request: Request,
+  context: AudioCacheRouteContext,
+) {
+  return serveCachedAudio(request, context, true);
+}
 
 export async function HEAD(
   request: Request,
