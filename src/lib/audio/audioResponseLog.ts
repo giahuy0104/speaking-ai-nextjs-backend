@@ -26,12 +26,15 @@ export function audioResponseLogFields(
 ): Record<string, unknown> {
   const userAgent = request.headers.get("user-agent");
   const location = response.headers.get("location");
+  const contentLength = response.headers.get("content-length");
   return {
     requestId: response.headers.get("x-request-id"),
     route,
     status: response.status,
     contentType: response.headers.get("content-type"),
     audioSource: response.headers.get("x-audio-source"),
+    // Known for finished files and clips; null for a live stream (length unknown yet).
+    byteLength: contentLength === null ? null : Number(contentLength),
     requestedFormat: new URL(request.url).searchParams.get("format"),
     platform: clientPlatform(userAgent),
     userAgent: userAgent ? userAgent.slice(0, MAX_USER_AGENT_LENGTH) : null,

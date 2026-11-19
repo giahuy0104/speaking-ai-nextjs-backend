@@ -37,6 +37,7 @@ test("audioResponseLogFields reports the content type sent and the format asked 
     status: 200,
     contentType: "audio/x-caf",
     audioSource: "stream",
+    byteLength: null,
     requestedFormat: "caf",
     platform: "ios",
     userAgent: "AppleCoreMedia/1.0 (iPhone)",
@@ -64,7 +65,7 @@ test("audioResponseLogFields truncates a very long user agent", () => {
 
 test("withAudioResponseLog logs once and returns the handler's response untouched", async () => {
   const logged: Record<string, unknown>[] = [];
-  const original = new Response("x", { headers: { "Content-Type": "audio/mpeg" } });
+  const original = new Response("x", { headers: { "Content-Type": "audio/mpeg", "Content-Length": "20937" } });
   const handler = withAudioResponseLog("cache", async () => original, fields => { logged.push(fields); });
 
   const response = await handler(request("https://api.test/api/audio/cache/a.mp3"));
@@ -73,4 +74,5 @@ test("withAudioResponseLog logs once and returns the handler's response untouche
   assert.equal(logged.length, 1);
   assert.equal(logged[0].route, "cache");
   assert.equal(logged[0].contentType, "audio/mpeg");
+  assert.equal(logged[0].byteLength, 20937);
 });
