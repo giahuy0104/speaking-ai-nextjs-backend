@@ -1,0 +1,30 @@
+== nginx: per 10s bucket, route x status
+bash: line 3: node: command not found
+== backend warn/error events with reasons
+bash: line 8: node: command not found
+== info events of interest
+   2946 "event":"audio_response_sent"
+   2946 "event":"conversation_pipeline_completed"
+   1099 "event":"english_speech_provider_fallback"
+     33 "event":"google_tts_quota_store_unavailable"
+   1472 "event":"tts_uncached_stream_started"
+    388 "voice":"Chirp3-HD-Aoede-en"
+   1084 "voice":"Neural2-F-en"
+== a sample 429 audio error line
+{"timestamp":"2026-11-19T16:44:25.051Z","level":"error","event":"tts_stream_request_failed","englishText":"Let's go for a walk!","requestId":"b537fec626b4a7ac123c9fd1c40073fe","uncached":true,"error":{"name":"AppError","message":"Chưa tạo được giọng đọc bản dịch."}}
+{"timestamp":"2026-11-19T16:44:25.800Z","level":"error","event":"tts_stream_request_failed","englishText":"The morning is truly peaceful.","requestId":"2bfc5f8b954398c7cf60254a69e35ae9","uncached":true,"error":{"name":"AppError","message":"Chưa tạo được giọng đọc bản dịch."}}
+== a sample 503 conversation error
+{"timestamp":"2026-11-19T16:44:38.931Z","level":"warn","event":"conversation_request_failed","requestId":"k6-mobile-952f5eb674c3e16c","sourceText":"Tôi thích uống cà phê","error":{"name":"AppError","message":"Dịch vụ dịch tạm thời gặp lỗi. Vui lòng thử lại."}}
+{"timestamp":"2026-11-19T16:44:39.857Z","level":"warn","event":"conversation_request_failed","requestId":"k6-mobile-87eefb1f3d9c757f","sourceText":"Tôi thích uống cà phê","error":{"name":"AppError","message":"Dịch vụ dịch tạm thời gặp lỗi. Vui lòng thử lại."}}
+== nginx errors
+== host nginx errors
+== restarts
+speaking-ai-dev-audio-worker-a-1 Up 10 minutes
+speaking-ai-dev-backend-3003-1 Up 10 minutes (healthy)
+speaking-ai-dev-backend-3002-1 Up 10 minutes (healthy)
+speaking-ai-dev-backend-3001-1 Up 10 minutes (healthy)
+speaking-ai-dev-backend-3000-1 Up 10 minutes (healthy)
+speaking-ai-dev-nginx-1 Up 3 hours (healthy)
+speaking-ai-dev-redis-cache-1 Up 3 hours (healthy)
+speaking-ai-dev-redis-1 Up 3 hours (healthy)
+speaking-ai-dev-redis-jobs-1 Up 3 hours (healthy)

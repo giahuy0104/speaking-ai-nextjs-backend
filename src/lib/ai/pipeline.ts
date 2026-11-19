@@ -19,6 +19,7 @@ import { getFailureDiagnostics } from "./cloudflare/providerError";
 import { requestTargetSpeech, targetTtsProvider } from "./aiProvider";
 import { ttsSourceFor } from "./ttsSource";
 import { createTargetAudioUrl } from "./targetAudioUrl";
+import { startSegmentedSpeechUrl } from "./segmentedSpeech";
 import { bypassesAudioCache } from "./loadTestPersistence";
 import {
   googleClipDescriptor,
@@ -110,6 +111,12 @@ export async function runTargetLanguageConversationPipeline(
     try {
       // Named after the provider that speaks this sentence (AUDIO_TARGET_TTS_PROVIDER).
       const speechSource = ttsSourceFor(targetTtsProvider());
+      // AUDIO_SEGMENTED_SPEECH_TEST (dev): clauses synthesized in parallel, one WAV.
+      const segmentedUrl = startSegmentedSpeechUrl(language, translatedText, input.requestId);
+      if (segmentedUrl) {
+        deferred = true;
+        return { audioUrl: segmentedUrl, source: speechSource };
+      }
       if (audioCacheBypassed) {
         // Like a real turn (translation first, then the signed URL), but this turn's
         // own synthesis: no cache read or write, no sharing with other turns.
@@ -288,7 +295,21 @@ export async function prepareConversationPipeline(
     !prefetchedAudio &&
     (options.streamAudioOnCacheMiss || llm.value.source === "cloudflare" || llm.value.source === "deepinfra" ||
       getAudioStorageBackend() === "cloudinary");
-  const tts = cacheBypassed
+  // AUDIO_SEGMENTED_SPEECH_TEST (dev): clauses synthesized in parallel, one WAV.
+  const segmentedUrl = prefetchedAudio
+    ? undefined
+    : startSegmentedSpeechUrl("en", llm.value.englishText, input.requestId);
+  const tts = segmentedUrl
+    ? {
+        value: {
+          audioUrl: segmentedUrl,
+          source: ttsSourceFor(targetTtsProvider()),
+          cacheReady: false,
+          cacheLookupSkipped: true,
+        } satisfies AudioSynthesisResult,
+        latencyMs: 0,
+      }
+    : cacheBypassed
     ? { value: getUncachedEnglishAudioStreamUrl(llm.value.englishText), latencyMs: 0 }
     : prefetchedAudio
     ? { value: prefetchedAudio, latencyMs: 0 }
