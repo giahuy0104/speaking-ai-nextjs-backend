@@ -104,6 +104,24 @@ const targetSpeechStreams = createTargetSpeechStreams({
   log: (level, event, fields) => logEvent(level, event, fields),
 });
 
+/** Whether this language can stream with the configured provider (segmented speech). */
+export function canStreamSpeech(language: string) {
+  return isTargetSpeechStreaming() && activeStreamProvider().canStream(language);
+}
+
+/**
+ * One streamed synthesis under its own key (a segment of segmentedSpeech.ts): never
+ * cached and never joined by another sentence. Resolves with the whole WAV.
+ */
+export function startKeyedSpeechStream(key: string, text: string, language: string): Promise<ArrayBuffer> {
+  return targetSpeechStreams.start(text, language, key);
+}
+
+/** The live WAV of a keyed stream; null once it has settled. */
+export function subscribeKeyedSpeechStream(key: string) {
+  return targetSpeechStreams.subscribeKey(key);
+}
+
 /**
  * WAV from its first byte while synthesis is still running; null once it has settled.
  * Resolves only when the first byte exists and rejects when the speech fails before

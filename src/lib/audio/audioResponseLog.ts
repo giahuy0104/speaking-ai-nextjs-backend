@@ -5,7 +5,7 @@
  * Written when the headers are ready; a live stream keeps flowing after that.
  */
 
-export type AudioRoute = "stream" | "target" | "cache";
+export type AudioRoute = "stream" | "target" | "cache" | "segments";
 export type ClientPlatform = "ios" | "android" | "unknown";
 
 const MAX_USER_AGENT_LENGTH = 160;

@@ -1,0 +1,731 @@
+k6 start 16:42:39 UTC
+
+         /\      Grafana   /‾‾/  
+    /\  /  \     |\  __   /  /   
+   /  \/    \    | |/ /  /   ‾‾\ 
+  /          \   |   (  |  (‾)  |
+ / __________ \  |_|\_\  \_____/ 
+
+
+     execution: local
+        script: scripts/k6/mobile-turn-loop.js
+        output: -
+
+     scenarios: (100.00%) 1 scenario, 1000 max VUs, 1m41s max duration (incl. graceful stop):
+              * users: Up to 1000 looping VUs for 1m1s over 2 stages (gracefulRampDown: 30s, exec: userLoop, gracefulStop: 40s)
+
+
+Run     [ 100% ] setup()
+users   [   0% ]
+
+Run     [ 100% ] setup()
+users   [   0% ]
+
+Run     [ 100% ] setup()
+users   [   0% ]
+
+Run     [ 100% ] setup()
+users   [   0% ]
+
+Run     [ 100% ] setup()
+users   [   0% ]
+
+Run     [ 100% ] setup()
+users   [   0% ]
+
+Run     [ 100% ] setup()
+users   [   0% ]
+
+Run     [ 100% ] setup()
+users   [   0% ]
+
+Run     [ 100% ] setup()
+users   [   0% ]
+
+Run     [ 100% ] setup()
+users   [   0% ]
+
+Run     [ 100% ] setup()
+users   [   0% ]
+
+Run     [ 100% ] setup()
+users   [   0% ]
+
+Run     [ 100% ] setup()
+users   [   0% ]
+
+Run     [ 100% ] setup()
+users   [   0% ]
+
+Run     [ 100% ] setup()
+users   [   0% ]
+
+Run     [ 100% ] setup()
+users   [   0% ]
+
+Run     [ 100% ] setup()
+users   [   0% ]
+
+Run     [ 100% ] setup()
+users   [   0% ]
+
+Run     [ 100% ] setup()
+users   [   0% ]
+
+Run     [ 100% ] setup()
+users   [   0% ]
+
+Run     [ 100% ] setup()
+users   [   0% ]
+
+Run     [ 100% ] setup()
+users   [   0% ]
+
+Run     [ 100% ] setup()
+users   [   0% ]
+
+Run     [ 100% ] setup()
+users   [   0% ]
+
+Run     [ 100% ] setup()
+users   [   0% ]
+
+Run     [ 100% ] setup()
+users   [   0% ]
+
+Run     [ 100% ] setup()
+users   [   0% ]
+
+Run     [ 100% ] setup()
+users   [   0% ]
+
+Run     [ 100% ] setup()
+users   [   0% ]
+
+Run     [ 100% ] setup()
+users   [   0% ]
+
+Run     [ 100% ] setup()
+users   [   0% ]
+
+Run     [ 100% ] setup()
+users   [   0% ]
+
+Run     [ 100% ] setup()
+users   [   0% ]
+
+Run     [ 100% ] setup()
+users   [   0% ]
+
+Run     [ 100% ] setup()
+users   [   0% ]
+
+Run     [ 100% ] setup()
+users   [   0% ]
+
+Run     [ 100% ] setup()
+users   [   0% ]
+
+Run     [ 100% ] setup()
+users   [   0% ]
+
+Run     [ 100% ] setup()
+users   [   0% ]
+
+Run     [ 100% ] setup()
+users   [   0% ]
+
+Run     [ 100% ] setup()
+users   [   0% ]
+
+Run     [ 100% ] setup()
+users   [   0% ]
+
+Run     [ 100% ] setup()
+users   [   0% ]
+
+Run     [ 100% ] setup()
+users   [   0% ]
+
+Run     [ 100% ] setup()
+users   [   0% ]
+
+Run     [ 100% ] setup()
+users   [   0% ]
+
+Run     [ 100% ] setup()
+users   [   0% ]
+
+Run     [ 100% ] setup()
+users   [   0% ]
+
+Run     [ 100% ] setup()
+users   [   0% ]
+
+Run     [ 100% ] setup()
+users   [   0% ]
+
+Run     [ 100% ] setup()
+users   [   0% ]
+
+Run     [ 100% ] setup()
+users   [   0% ]
+
+Run     [ 100% ] setup()
+users   [   0% ]
+
+Run     [ 100% ] setup()
+users   [   0% ]
+
+Run     [ 100% ] setup()
+users   [   0% ]
+
+Run     [ 100% ] setup()
+users   [   0% ]
+
+Run     [ 100% ] setup()
+users   [   0% ]
+
+Run     [ 100% ] setup()
+users   [   0% ]
+
+Run     [ 100% ] setup()
+users   [   0% ]
+
+Run     [ 100% ] setup()
+users   [   0% ]
+
+Run     [ 100% ] setup()
+users   [   0% ]
+
+Run     [ 100% ] setup()
+users   [   0% ]
+
+Run     [ 100% ] setup()
+users   [   0% ]
+
+Run     [ 100% ] setup()
+users   [   0% ]
+
+Run     [ 100% ] setup()
+users   [   0% ]
+
+Run     [ 100% ] setup()
+users   [   0% ]
+time="2026-11-19T23:43:45+07:00" level=info msg="mobile flow -> https://api-dev.hoamytech.com | stages=1000x1s ramp=60s | langs=en:1 | clips=10 | tokens=50" source=console
+
+running (1m06.4s), 0004/1000 VUs, 0 complete and 0 interrupted iterations
+users   [   0% ] 0004/1000 VUs  0m00.3s/1m01.0s
+
+running (1m07.4s), 0021/1000 VUs, 0 complete and 0 interrupted iterations
+users   [   2% ] 0021/1000 VUs  0m01.3s/1m01.0s
+
+running (1m08.4s), 0037/1000 VUs, 0 complete and 0 interrupted iterations
+users   [   4% ] 0037/1000 VUs  0m02.3s/1m01.0s
+
+running (1m09.4s), 0054/1000 VUs, 0 complete and 0 interrupted iterations
+users   [   5% ] 0054/1000 VUs  0m03.3s/1m01.0s
+
+running (1m10.4s), 0071/1000 VUs, 0 complete and 0 interrupted iterations
+users   [   7% ] 0071/1000 VUs  0m04.3s/1m01.0s
+
+running (1m11.4s), 0087/1000 VUs, 0 complete and 0 interrupted iterations
+users   [   9% ] 0087/1000 VUs  0m05.3s/1m01.0s
+
+running (1m12.4s), 0104/1000 VUs, 0 complete and 0 interrupted iterations
+users   [  10% ] 0104/1000 VUs  0m06.3s/1m01.0s
+
+running (1m13.4s), 0121/1000 VUs, 0 complete and 0 interrupted iterations
+users   [  12% ] 0121/1000 VUs  0m07.3s/1m01.0s
+
+running (1m14.4s), 0137/1000 VUs, 0 complete and 0 interrupted iterations
+users   [  14% ] 0137/1000 VUs  0m08.3s/1m01.0s
+
+running (1m15.4s), 0154/1000 VUs, 5 complete and 0 interrupted iterations
+users   [  15% ] 0154/1000 VUs  0m09.3s/1m01.0s
+
+running (1m16.4s), 0171/1000 VUs, 22 complete and 0 interrupted iterations
+users   [  17% ] 0171/1000 VUs  0m10.3s/1m01.0s
+
+running (1m17.4s), 0187/1000 VUs, 29 complete and 0 interrupted iterations
+users   [  18% ] 0187/1000 VUs  0m11.3s/1m01.0s
+
+running (1m18.4s), 0204/1000 VUs, 40 complete and 0 interrupted iterations
+users   [  20% ] 0204/1000 VUs  0m12.3s/1m01.0s
+
+running (1m19.4s), 0221/1000 VUs, 54 complete and 0 interrupted iterations
+users   [  22% ] 0221/1000 VUs  0m13.3s/1m01.0s
+
+running (1m20.4s), 0237/1000 VUs, 69 complete and 0 interrupted iterations
+users   [  23% ] 0237/1000 VUs  0m14.3s/1m01.0s
+
+running (1m21.4s), 0254/1000 VUs, 80 complete and 0 interrupted iterations
+users   [  25% ] 0254/1000 VUs  0m15.3s/1m01.0s
+
+running (1m22.4s), 0271/1000 VUs, 98 complete and 0 interrupted iterations
+users   [  27% ] 0271/1000 VUs  0m16.3s/1m01.0s
+
+running (1m23.4s), 0287/1000 VUs, 114 complete and 0 interrupted iterations
+users   [  28% ] 0287/1000 VUs  0m17.3s/1m01.0s
+
+running (1m24.4s), 0304/1000 VUs, 147 complete and 0 interrupted iterations
+users   [  30% ] 0304/1000 VUs  0m18.3s/1m01.0s
+
+running (1m25.4s), 0321/1000 VUs, 173 complete and 0 interrupted iterations
+users   [  32% ] 0321/1000 VUs  0m19.3s/1m01.0s
+
+running (1m26.4s), 0337/1000 VUs, 203 complete and 0 interrupted iterations
+users   [  33% ] 0337/1000 VUs  0m20.3s/1m01.0s
+
+running (1m27.4s), 0354/1000 VUs, 218 complete and 0 interrupted iterations
+users   [  35% ] 0354/1000 VUs  0m21.3s/1m01.0s
+
+running (1m28.4s), 0371/1000 VUs, 252 complete and 0 interrupted iterations
+users   [  37% ] 0371/1000 VUs  0m22.3s/1m01.0s
+
+running (1m29.4s), 0387/1000 VUs, 279 complete and 0 interrupted iterations
+users   [  38% ] 0387/1000 VUs  0m23.3s/1m01.0s
+
+running (1m30.4s), 0404/1000 VUs, 302 complete and 0 interrupted iterations
+users   [  40% ] 0404/1000 VUs  0m24.3s/1m01.0s
+
+running (1m31.4s), 0421/1000 VUs, 339 complete and 0 interrupted iterations
+users   [  41% ] 0421/1000 VUs  0m25.3s/1m01.0s
+
+running (1m32.4s), 0437/1000 VUs, 368 complete and 0 interrupted iterations
+users   [  43% ] 0437/1000 VUs  0m26.3s/1m01.0s
+
+running (1m33.4s), 0454/1000 VUs, 405 complete and 0 interrupted iterations
+users   [  45% ] 0454/1000 VUs  0m27.3s/1m01.0s
+
+running (1m34.4s), 0471/1000 VUs, 445 complete and 0 interrupted iterations
+users   [  46% ] 0471/1000 VUs  0m28.3s/1m01.0s
+
+running (1m35.4s), 0487/1000 VUs, 479 complete and 0 interrupted iterations
+users   [  48% ] 0487/1000 VUs  0m29.3s/1m01.0s
+
+running (1m36.4s), 0504/1000 VUs, 507 complete and 0 interrupted iterations
+users   [  50% ] 0504/1000 VUs  0m30.3s/1m01.0s
+
+running (1m37.4s), 0521/1000 VUs, 536 complete and 0 interrupted iterations
+users   [  51% ] 0521/1000 VUs  0m31.3s/1m01.0s
+
+running (1m38.4s), 0537/1000 VUs, 566 complete and 0 interrupted iterations
+users   [  53% ] 0537/1000 VUs  0m32.3s/1m01.0s
+
+running (1m39.4s), 0554/1000 VUs, 581 complete and 0 interrupted iterations
+users   [  55% ] 0554/1000 VUs  0m33.3s/1m01.0s
+
+running (1m40.4s), 0571/1000 VUs, 606 complete and 0 interrupted iterations
+users   [  56% ] 0571/1000 VUs  0m34.3s/1m01.0s
+
+running (1m41.4s), 0587/1000 VUs, 632 complete and 0 interrupted iterations
+users   [  58% ] 0587/1000 VUs  0m35.3s/1m01.0s
+
+running (1m42.4s), 0604/1000 VUs, 662 complete and 0 interrupted iterations
+users   [  59% ] 0604/1000 VUs  0m36.3s/1m01.0s
+
+running (1m43.4s), 0621/1000 VUs, 684 complete and 0 interrupted iterations
+users   [  61% ] 0621/1000 VUs  0m37.3s/1m01.0s
+
+running (1m44.4s), 0637/1000 VUs, 715 complete and 0 interrupted iterations
+users   [  63% ] 0637/1000 VUs  0m38.3s/1m01.0s
+
+running (1m45.4s), 0654/1000 VUs, 755 complete and 0 interrupted iterations
+users   [  64% ] 0654/1000 VUs  0m39.3s/1m01.0s
+
+running (1m46.4s), 0671/1000 VUs, 786 complete and 0 interrupted iterations
+users   [  66% ] 0671/1000 VUs  0m40.3s/1m01.0s
+
+running (1m47.4s), 0687/1000 VUs, 859 complete and 0 interrupted iterations
+users   [  68% ] 0687/1000 VUs  0m41.3s/1m01.0s
+
+running (1m48.4s), 0704/1000 VUs, 957 complete and 0 interrupted iterations
+users   [  69% ] 0704/1000 VUs  0m42.3s/1m01.0s
+
+running (1m49.4s), 0721/1000 VUs, 1052 complete and 0 interrupted iterations
+users   [  71% ] 0721/1000 VUs  0m43.3s/1m01.0s
+
+running (1m50.4s), 0737/1000 VUs, 1168 complete and 0 interrupted iterations
+users   [  73% ] 0737/1000 VUs  0m44.3s/1m01.0s
+
+running (1m51.4s), 0754/1000 VUs, 1270 complete and 0 interrupted iterations
+users   [  74% ] 0754/1000 VUs  0m45.3s/1m01.0s
+
+running (1m52.4s), 0771/1000 VUs, 1337 complete and 0 interrupted iterations
+users   [  76% ] 0771/1000 VUs  0m46.3s/1m01.0s
+
+running (1m53.4s), 0787/1000 VUs, 1398 complete and 0 interrupted iterations
+users   [  77% ] 0787/1000 VUs  0m47.3s/1m01.0s
+time="2026-11-19T23:44:33+07:00" level=warning msg="Request Failed" error="Post \"https://api-dev.hoamytech.com/api/conversation/preview\": EOF"
+time="2026-11-19T23:44:34+07:00" level=warning msg="Request Failed" error="Post \"https://api-dev.hoamytech.com/api/conversation/preview\": EOF"
+
+running (1m54.4s), 0804/1000 VUs, 1460 complete and 0 interrupted iterations
+users   [  79% ] 0804/1000 VUs  0m48.3s/1m01.0s
+time="2026-11-19T23:44:34+07:00" level=warning msg="Request Failed" error="Post \"https://api-dev.hoamytech.com/api/conversation/preview\": EOF"
+time="2026-11-19T23:44:34+07:00" level=warning msg="Request Failed" error="Post \"https://api-dev.hoamytech.com/api/conversation\": EOF"
+time="2026-11-19T23:44:35+07:00" level=warning msg="Request Failed" error="Post \"https://api-dev.hoamytech.com/api/conversation\": EOF"
+time="2026-11-19T23:44:35+07:00" level=warning msg="Request Failed" error="Post \"https://api-dev.hoamytech.com/api/conversation\": EOF"
+
+running (1m55.4s), 0821/1000 VUs, 1493 complete and 0 interrupted iterations
+users   [  81% ] 0821/1000 VUs  0m49.3s/1m01.0s
+time="2026-11-19T23:44:35+07:00" level=warning msg="Request Failed" error="Post \"https://api-dev.hoamytech.com/api/conversation\": EOF"
+time="2026-11-19T23:44:35+07:00" level=warning msg="Request Failed" error="Post \"https://api-dev.hoamytech.com/api/conversation\": EOF"
+time="2026-11-19T23:44:35+07:00" level=warning msg="Request Failed" error="Post \"https://api-dev.hoamytech.com/api/conversation\": EOF"
+time="2026-11-19T23:44:35+07:00" level=warning msg="Request Failed" error="Post \"https://api-dev.hoamytech.com/api/conversation\": EOF"
+time="2026-11-19T23:44:35+07:00" level=warning msg="Request Failed" error="Post \"https://api-dev.hoamytech.com/api/conversation\": EOF"
+
+running (1m56.4s), 0837/1000 VUs, 1530 complete and 0 interrupted iterations
+users   [  82% ] 0837/1000 VUs  0m50.3s/1m01.0s
+time="2026-11-19T23:44:36+07:00" level=warning msg="Request Failed" error="Post \"https://api-dev.hoamytech.com/api/conversation\": EOF"
+
+running (1m57.4s), 0854/1000 VUs, 1590 complete and 0 interrupted iterations
+users   [  84% ] 0854/1000 VUs  0m51.3s/1m01.0s
+time="2026-11-19T23:44:37+07:00" level=warning msg="Request Failed" error="Post \"https://api-dev.hoamytech.com/api/conversation/preview\": request timeout"
+time="2026-11-19T23:44:37+07:00" level=warning msg="Request Failed" error="Post \"https://api-dev.hoamytech.com/api/conversation/preview\": request timeout"
+time="2026-11-19T23:44:37+07:00" level=warning msg="Request Failed" error="Post \"https://api-dev.hoamytech.com/api/conversation/preview\": request timeout"
+time="2026-11-19T23:44:37+07:00" level=warning msg="Request Failed" error="Post \"https://api-dev.hoamytech.com/api/conversation/preview\": request timeout"
+time="2026-11-19T23:44:37+07:00" level=warning msg="Request Failed" error="Post \"https://api-dev.hoamytech.com/api/conversation/preview\": request timeout"
+time="2026-11-19T23:44:37+07:00" level=warning msg="Request Failed" error="Post \"https://api-dev.hoamytech.com/api/conversation/preview\": request timeout"
+time="2026-11-19T23:44:38+07:00" level=warning msg="Request Failed" error="Post \"https://api-dev.hoamytech.com/api/conversation/preview\": request timeout"
+time="2026-11-19T23:44:38+07:00" level=warning msg="Request Failed" error="Post \"https://api-dev.hoamytech.com/api/conversation/preview\": request timeout"
+time="2026-11-19T23:44:38+07:00" level=warning msg="Request Failed" error="Post \"https://api-dev.hoamytech.com/api/conversation/preview\": request timeout"
+time="2026-11-19T23:44:38+07:00" level=warning msg="Request Failed" error="Post \"https://api-dev.hoamytech.com/api/conversation/preview\": request timeout"
+
+running (1m58.4s), 0871/1000 VUs, 1643 complete and 0 interrupted iterations
+users   [  86% ] 0871/1000 VUs  0m52.3s/1m01.0s
+time="2026-11-19T23:44:38+07:00" level=warning msg="Request Failed" error="Post \"https://api-dev.hoamytech.com/api/conversation/preview\": request timeout"
+time="2026-11-19T23:44:38+07:00" level=warning msg="Request Failed" error="Post \"https://api-dev.hoamytech.com/api/conversation/preview\": request timeout"
+time="2026-11-19T23:44:38+07:00" level=warning msg="Request Failed" error="Post \"https://api-dev.hoamytech.com/api/conversation/preview\": request timeout"
+time="2026-11-19T23:44:38+07:00" level=warning msg="Request Failed" error="Post \"https://api-dev.hoamytech.com/api/conversation/preview\": request timeout"
+time="2026-11-19T23:44:38+07:00" level=warning msg="Request Failed" error="Post \"https://api-dev.hoamytech.com/api/conversation/preview\": request timeout"
+time="2026-11-19T23:44:38+07:00" level=warning msg="Request Failed" error="Post \"https://api-dev.hoamytech.com/api/conversation/preview\": request timeout"
+time="2026-11-19T23:44:38+07:00" level=warning msg="Request Failed" error="Post \"https://api-dev.hoamytech.com/api/conversation/preview\": request timeout"
+time="2026-11-19T23:44:38+07:00" level=warning msg="Request Failed" error="Post \"https://api-dev.hoamytech.com/api/conversation/preview\": request timeout"
+time="2026-11-19T23:44:38+07:00" level=warning msg="Request Failed" error="Post \"https://api-dev.hoamytech.com/api/conversation/preview\": request timeout"
+time="2026-11-19T23:44:38+07:00" level=warning msg="Request Failed" error="Post \"https://api-dev.hoamytech.com/api/conversation/preview\": request timeout"
+time="2026-11-19T23:44:38+07:00" level=warning msg="Request Failed" error="Post \"https://api-dev.hoamytech.com/api/conversation/preview\": request timeout"
+time="2026-11-19T23:44:38+07:00" level=warning msg="Request Failed" error="Post \"https://api-dev.hoamytech.com/api/conversation/preview\": request timeout"
+time="2026-11-19T23:44:38+07:00" level=warning msg="Request Failed" error="Post \"https://api-dev.hoamytech.com/api/conversation/preview\": request timeout"
+time="2026-11-19T23:44:38+07:00" level=warning msg="Request Failed" error="Post \"https://api-dev.hoamytech.com/api/conversation/preview\": request timeout"
+time="2026-11-19T23:44:38+07:00" level=warning msg="Request Failed" error="Post \"https://api-dev.hoamytech.com/api/conversation/preview\": request timeout"
+time="2026-11-19T23:44:38+07:00" level=warning msg="Request Failed" error="Post \"https://api-dev.hoamytech.com/api/conversation/preview\": request timeout"
+time="2026-11-19T23:44:38+07:00" level=warning msg="Request Failed" error="Post \"https://api-dev.hoamytech.com/api/conversation/preview\": request timeout"
+time="2026-11-19T23:44:38+07:00" level=warning msg="Request Failed" error="Post \"https://api-dev.hoamytech.com/api/conversation/preview\": request timeout"
+time="2026-11-19T23:44:38+07:00" level=warning msg="Request Failed" error="Post \"https://api-dev.hoamytech.com/api/conversation/preview\": request timeout"
+time="2026-11-19T23:44:38+07:00" level=warning msg="Request Failed" error="Post \"https://api-dev.hoamytech.com/api/conversation/preview\": request timeout"
+time="2026-11-19T23:44:38+07:00" level=warning msg="Request Failed" error="Post \"https://api-dev.hoamytech.com/api/conversation/preview\": request timeout"
+time="2026-11-19T23:44:38+07:00" level=warning msg="Request Failed" error="Post \"https://api-dev.hoamytech.com/api/conversation/preview\": request timeout"
+time="2026-11-19T23:44:38+07:00" level=warning msg="Request Failed" error="Post \"https://api-dev.hoamytech.com/api/conversation/preview\": request timeout"
+time="2026-11-19T23:44:38+07:00" level=warning msg="Request Failed" error="Post \"https://api-dev.hoamytech.com/api/conversation/preview\": request timeout"
+time="2026-11-19T23:44:39+07:00" level=warning msg="Request Failed" error="Post \"https://api-dev.hoamytech.com/api/conversation/preview\": request timeout"
+time="2026-11-19T23:44:39+07:00" level=warning msg="Request Failed" error="Post \"https://api-dev.hoamytech.com/api/conversation/preview\": request timeout"
+time="2026-11-19T23:44:39+07:00" level=warning msg="Request Failed" error="Post \"https://api-dev.hoamytech.com/api/conversation/preview\": request timeout"
+time="2026-11-19T23:44:39+07:00" level=warning msg="Request Failed" error="Post \"https://api-dev.hoamytech.com/api/conversation/preview\": request timeout"
+time="2026-11-19T23:44:39+07:00" level=warning msg="Request Failed" error="Post \"https://api-dev.hoamytech.com/api/conversation/preview\": request timeout"
+time="2026-11-19T23:44:39+07:00" level=warning msg="Request Failed" error="Post \"https://api-dev.hoamytech.com/api/conversation/preview\": request timeout"
+time="2026-11-19T23:44:39+07:00" level=warning msg="Request Failed" error="Post \"https://api-dev.hoamytech.com/api/conversation/preview\": request timeout"
+time="2026-11-19T23:44:39+07:00" level=warning msg="Request Failed" error="Post \"https://api-dev.hoamytech.com/api/conversation/preview\": request timeout"
+time="2026-11-19T23:44:39+07:00" level=warning msg="Request Failed" error="Post \"https://api-dev.hoamytech.com/api/conversation/preview\": request timeout"
+time="2026-11-19T23:44:39+07:00" level=warning msg="Request Failed" error="Post \"https://api-dev.hoamytech.com/api/conversation/preview\": request timeout"
+time="2026-11-19T23:44:39+07:00" level=warning msg="Request Failed" error="Post \"https://api-dev.hoamytech.com/api/conversation/preview\": request timeout"
+time="2026-11-19T23:44:39+07:00" level=warning msg="Request Failed" error="Post \"https://api-dev.hoamytech.com/api/conversation/preview\": request timeout"
+time="2026-11-19T23:44:39+07:00" level=warning msg="Request Failed" error="Post \"https://api-dev.hoamytech.com/api/conversation/preview\": request timeout"
+time="2026-11-19T23:44:39+07:00" level=warning msg="Request Failed" error="Post \"https://api-dev.hoamytech.com/api/conversation/preview\": request timeout"
+
+running (1m59.4s), 0887/1000 VUs, 1672 complete and 0 interrupted iterations
+users   [  87% ] 0887/1000 VUs  0m53.3s/1m01.0s
+time="2026-11-19T23:44:39+07:00" level=warning msg="Request Failed" error="Post \"https://api-dev.hoamytech.com/api/conversation/preview\": request timeout"
+time="2026-11-19T23:44:39+07:00" level=warning msg="Request Failed" error="Post \"https://api-dev.hoamytech.com/api/conversation/preview\": request timeout"
+time="2026-11-19T23:44:39+07:00" level=warning msg="Request Failed" error="Post \"https://api-dev.hoamytech.com/api/conversation/preview\": request timeout"
+time="2026-11-19T23:44:39+07:00" level=warning msg="Request Failed" error="Post \"https://api-dev.hoamytech.com/api/conversation/preview\": request timeout"
+time="2026-11-19T23:44:39+07:00" level=warning msg="Request Failed" error="Post \"https://api-dev.hoamytech.com/api/conversation/preview\": request timeout"
+time="2026-11-19T23:44:39+07:00" level=warning msg="Request Failed" error="Post \"https://api-dev.hoamytech.com/api/conversation/preview\": request timeout"
+time="2026-11-19T23:44:39+07:00" level=warning msg="Request Failed" error="Post \"https://api-dev.hoamytech.com/api/conversation/preview\": request timeout"
+time="2026-11-19T23:44:39+07:00" level=warning msg="Request Failed" error="Post \"https://api-dev.hoamytech.com/api/conversation/preview\": request timeout"
+time="2026-11-19T23:44:39+07:00" level=warning msg="Request Failed" error="Post \"https://api-dev.hoamytech.com/api/conversation/preview\": request timeout"
+time="2026-11-19T23:44:39+07:00" level=warning msg="Request Failed" error="Post \"https://api-dev.hoamytech.com/api/conversation/preview\": request timeout"
+time="2026-11-19T23:44:39+07:00" level=warning msg="Request Failed" error="Post \"https://api-dev.hoamytech.com/api/conversation/preview\": request timeout"
+time="2026-11-19T23:44:39+07:00" level=warning msg="Request Failed" error="Post \"https://api-dev.hoamytech.com/api/conversation/preview\": request timeout"
+time="2026-11-19T23:44:39+07:00" level=warning msg="Request Failed" error="Post \"https://api-dev.hoamytech.com/api/conversation/preview\": request timeout"
+time="2026-11-19T23:44:39+07:00" level=warning msg="Request Failed" error="Post \"https://api-dev.hoamytech.com/api/conversation/preview\": request timeout"
+time="2026-11-19T23:44:39+07:00" level=warning msg="Request Failed" error="Post \"https://api-dev.hoamytech.com/api/conversation/preview\": request timeout"
+time="2026-11-19T23:44:39+07:00" level=warning msg="Request Failed" error="Post \"https://api-dev.hoamytech.com/api/conversation/preview\": request timeout"
+time="2026-11-19T23:44:39+07:00" level=warning msg="Request Failed" error="Post \"https://api-dev.hoamytech.com/api/conversation/preview\": request timeout"
+time="2026-11-19T23:44:39+07:00" level=warning msg="Request Failed" error="Post \"https://api-dev.hoamytech.com/api/conversation/preview\": request timeout"
+time="2026-11-19T23:44:39+07:00" level=warning msg="Request Failed" error="Post \"https://api-dev.hoamytech.com/api/conversation/preview\": request timeout"
+time="2026-11-19T23:44:39+07:00" level=warning msg="Request Failed" error="Post \"https://api-dev.hoamytech.com/api/conversation/preview\": request timeout"
+time="2026-11-19T23:44:39+07:00" level=warning msg="Request Failed" error="Post \"https://api-dev.hoamytech.com/api/conversation/preview\": request timeout"
+time="2026-11-19T23:44:40+07:00" level=warning msg="Request Failed" error="Post \"https://api-dev.hoamytech.com/api/conversation/preview\": request timeout"
+time="2026-11-19T23:44:40+07:00" level=warning msg="Request Failed" error="Post \"https://api-dev.hoamytech.com/api/conversation/preview\": request timeout"
+time="2026-11-19T23:44:40+07:00" level=warning msg="Request Failed" error="Post \"https://api-dev.hoamytech.com/api/conversation/preview\": request timeout"
+
+running (2m00.4s), 0904/1000 VUs, 1718 complete and 0 interrupted iterations
+users   [  89% ] 0904/1000 VUs  0m54.3s/1m01.0s
+time="2026-11-19T23:44:40+07:00" level=warning msg="Request Failed" error="Post \"https://api-dev.hoamytech.com/api/conversation/preview\": request timeout"
+time="2026-11-19T23:44:40+07:00" level=warning msg="Request Failed" error="Post \"https://api-dev.hoamytech.com/api/conversation/preview\": request timeout"
+time="2026-11-19T23:44:40+07:00" level=warning msg="Request Failed" error="Post \"https://api-dev.hoamytech.com/api/conversation/preview\": request timeout"
+time="2026-11-19T23:44:40+07:00" level=warning msg="Request Failed" error="Post \"https://api-dev.hoamytech.com/api/conversation/preview\": request timeout"
+time="2026-11-19T23:44:40+07:00" level=warning msg="Request Failed" error="Post \"https://api-dev.hoamytech.com/api/conversation/preview\": request timeout"
+time="2026-11-19T23:44:40+07:00" level=warning msg="Request Failed" error="Post \"https://api-dev.hoamytech.com/api/conversation/preview\": request timeout"
+time="2026-11-19T23:44:40+07:00" level=warning msg="Request Failed" error="Post \"https://api-dev.hoamytech.com/api/conversation/preview\": request timeout"
+time="2026-11-19T23:44:40+07:00" level=warning msg="Request Failed" error="Post \"https://api-dev.hoamytech.com/api/conversation/preview\": request timeout"
+time="2026-11-19T23:44:40+07:00" level=warning msg="Request Failed" error="Post \"https://api-dev.hoamytech.com/api/conversation/preview\": request timeout"
+time="2026-11-19T23:44:40+07:00" level=warning msg="Request Failed" error="Post \"https://api-dev.hoamytech.com/api/conversation/preview\": request timeout"
+time="2026-11-19T23:44:40+07:00" level=warning msg="Request Failed" error="Post \"https://api-dev.hoamytech.com/api/conversation/preview\": request timeout"
+time="2026-11-19T23:44:40+07:00" level=warning msg="Request Failed" error="Post \"https://api-dev.hoamytech.com/api/conversation/preview\": request timeout"
+time="2026-11-19T23:44:40+07:00" level=warning msg="Request Failed" error="Post \"https://api-dev.hoamytech.com/api/conversation\": EOF"
+time="2026-11-19T23:44:40+07:00" level=warning msg="Request Failed" error="Post \"https://api-dev.hoamytech.com/api/conversation/preview\": request timeout"
+time="2026-11-19T23:44:41+07:00" level=warning msg="Request Failed" error="Post \"https://api-dev.hoamytech.com/api/conversation/preview\": request timeout"
+time="2026-11-19T23:44:41+07:00" level=warning msg="Request Failed" error="Post \"https://api-dev.hoamytech.com/api/conversation/preview\": request timeout"
+time="2026-11-19T23:44:41+07:00" level=warning msg="Request Failed" error="Post \"https://api-dev.hoamytech.com/api/conversation/preview\": request timeout"
+time="2026-11-19T23:44:41+07:00" level=warning msg="Request Failed" error="Post \"https://api-dev.hoamytech.com/api/conversation/preview\": request timeout"
+time="2026-11-19T23:44:41+07:00" level=warning msg="Request Failed" error="Post \"https://api-dev.hoamytech.com/api/conversation/preview\": request timeout"
+time="2026-11-19T23:44:41+07:00" level=warning msg="Request Failed" error="Post \"https://api-dev.hoamytech.com/api/conversation/preview\": request timeout"
+time="2026-11-19T23:44:41+07:00" level=warning msg="Request Failed" error="Post \"https://api-dev.hoamytech.com/api/conversation/preview\": request timeout"
+time="2026-11-19T23:44:41+07:00" level=warning msg="Request Failed" error="Post \"https://api-dev.hoamytech.com/api/conversation/preview\": request timeout"
+
+running (2m01.4s), 0921/1000 VUs, 1765 complete and 0 interrupted iterations
+users   [  91% ] 0921/1000 VUs  0m55.3s/1m01.0s
+time="2026-11-19T23:44:41+07:00" level=warning msg="Request Failed" error="Post \"https://api-dev.hoamytech.com/api/conversation/preview\": request timeout"
+time="2026-11-19T23:44:41+07:00" level=warning msg="Request Failed" error="Post \"https://api-dev.hoamytech.com/api/conversation/preview\": request timeout"
+time="2026-11-19T23:44:41+07:00" level=warning msg="Request Failed" error="Post \"https://api-dev.hoamytech.com/api/conversation/preview\": request timeout"
+time="2026-11-19T23:44:41+07:00" level=warning msg="Request Failed" error="Post \"https://api-dev.hoamytech.com/api/conversation/preview\": request timeout"
+time="2026-11-19T23:44:41+07:00" level=warning msg="Request Failed" error="Post \"https://api-dev.hoamytech.com/api/conversation/preview\": request timeout"
+time="2026-11-19T23:44:41+07:00" level=warning msg="Request Failed" error="Post \"https://api-dev.hoamytech.com/api/conversation/preview\": request timeout"
+time="2026-11-19T23:44:41+07:00" level=warning msg="Request Failed" error="Post \"https://api-dev.hoamytech.com/api/conversation/preview\": request timeout"
+time="2026-11-19T23:44:41+07:00" level=warning msg="Request Failed" error="Post \"https://api-dev.hoamytech.com/api/conversation/preview\": request timeout"
+time="2026-11-19T23:44:41+07:00" level=warning msg="Request Failed" error="Post \"https://api-dev.hoamytech.com/api/conversation/preview\": request timeout"
+time="2026-11-19T23:44:41+07:00" level=warning msg="Request Failed" error="Post \"https://api-dev.hoamytech.com/api/conversation/preview\": request timeout"
+time="2026-11-19T23:44:41+07:00" level=warning msg="Request Failed" error="Post \"https://api-dev.hoamytech.com/api/conversation/preview\": request timeout"
+time="2026-11-19T23:44:41+07:00" level=warning msg="Request Failed" error="Post \"https://api-dev.hoamytech.com/api/conversation/preview\": request timeout"
+time="2026-11-19T23:44:41+07:00" level=warning msg="Request Failed" error="Post \"https://api-dev.hoamytech.com/api/conversation/preview\": request timeout"
+time="2026-11-19T23:44:41+07:00" level=warning msg="Request Failed" error="Post \"https://api-dev.hoamytech.com/api/conversation/preview\": request timeout"
+time="2026-11-19T23:44:41+07:00" level=warning msg="Request Failed" error="Post \"https://api-dev.hoamytech.com/api/conversation/preview\": request timeout"
+time="2026-11-19T23:44:41+07:00" level=warning msg="Request Failed" error="Post \"https://api-dev.hoamytech.com/api/conversation/preview\": request timeout"
+time="2026-11-19T23:44:41+07:00" level=warning msg="Request Failed" error="Post \"https://api-dev.hoamytech.com/api/conversation/preview\": request timeout"
+time="2026-11-19T23:44:41+07:00" level=warning msg="Request Failed" error="Post \"https://api-dev.hoamytech.com/api/conversation/preview\": request timeout"
+time="2026-11-19T23:44:41+07:00" level=warning msg="Request Failed" error="Post \"https://api-dev.hoamytech.com/api/conversation/preview\": request timeout"
+time="2026-11-19T23:44:41+07:00" level=warning msg="Request Failed" error="Post \"https://api-dev.hoamytech.com/api/conversation/preview\": request timeout"
+time="2026-11-19T23:44:41+07:00" level=warning msg="Request Failed" error="Post \"https://api-dev.hoamytech.com/api/conversation/preview\": request timeout"
+time="2026-11-19T23:44:41+07:00" level=warning msg="Request Failed" error="Post \"https://api-dev.hoamytech.com/api/conversation/preview\": request timeout"
+time="2026-11-19T23:44:41+07:00" level=warning msg="Request Failed" error="Post \"https://api-dev.hoamytech.com/api/conversation/preview\": request timeout"
+time="2026-11-19T23:44:41+07:00" level=warning msg="Request Failed" error="Post \"https://api-dev.hoamytech.com/api/conversation/preview\": request timeout"
+time="2026-11-19T23:44:41+07:00" level=warning msg="Request Failed" error="Post \"https://api-dev.hoamytech.com/api/conversation/preview\": request timeout"
+time="2026-11-19T23:44:42+07:00" level=warning msg="Request Failed" error="Post \"https://api-dev.hoamytech.com/api/conversation/preview\": request timeout"
+time="2026-11-19T23:44:42+07:00" level=warning msg="Request Failed" error="Post \"https://api-dev.hoamytech.com/api/conversation/preview\": request timeout"
+time="2026-11-19T23:44:42+07:00" level=warning msg="Request Failed" error="Post \"https://api-dev.hoamytech.com/api/conversation/preview\": request timeout"
+time="2026-11-19T23:44:42+07:00" level=warning msg="Request Failed" error="Post \"https://api-dev.hoamytech.com/api/conversation/preview\": request timeout"
+time="2026-11-19T23:44:42+07:00" level=warning msg="Request Failed" error="Post \"https://api-dev.hoamytech.com/api/conversation/preview\": request timeout"
+time="2026-11-19T23:44:42+07:00" level=warning msg="Request Failed" error="Post \"https://api-dev.hoamytech.com/api/conversation/preview\": request timeout"
+time="2026-11-19T23:44:42+07:00" level=warning msg="Request Failed" error="Post \"https://api-dev.hoamytech.com/api/conversation/preview\": request timeout"
+time="2026-11-19T23:44:42+07:00" level=warning msg="Request Failed" error="Post \"https://api-dev.hoamytech.com/api/conversation/preview\": request timeout"
+time="2026-11-19T23:44:42+07:00" level=warning msg="Request Failed" error="Post \"https://api-dev.hoamytech.com/api/conversation/preview\": request timeout"
+
+running (2m02.4s), 0937/1000 VUs, 1824 complete and 0 interrupted iterations
+users   [  92% ] 0937/1000 VUs  0m56.3s/1m01.0s
+time="2026-11-19T23:44:42+07:00" level=warning msg="Request Failed" error="Post \"https://api-dev.hoamytech.com/api/conversation/preview\": request timeout"
+time="2026-11-19T23:44:42+07:00" level=warning msg="Request Failed" error="Post \"https://api-dev.hoamytech.com/api/conversation/preview\": request timeout"
+time="2026-11-19T23:44:42+07:00" level=warning msg="Request Failed" error="Post \"https://api-dev.hoamytech.com/api/conversation/preview\": request timeout"
+time="2026-11-19T23:44:42+07:00" level=warning msg="Request Failed" error="Post \"https://api-dev.hoamytech.com/api/conversation/preview\": request timeout"
+time="2026-11-19T23:44:42+07:00" level=warning msg="Request Failed" error="Post \"https://api-dev.hoamytech.com/api/conversation/preview\": request timeout"
+time="2026-11-19T23:44:42+07:00" level=warning msg="Request Failed" error="Post \"https://api-dev.hoamytech.com/api/conversation/preview\": request timeout"
+time="2026-11-19T23:44:42+07:00" level=warning msg="Request Failed" error="Post \"https://api-dev.hoamytech.com/api/conversation/preview\": request timeout"
+time="2026-11-19T23:44:42+07:00" level=warning msg="Request Failed" error="Post \"https://api-dev.hoamytech.com/api/conversation/preview\": request timeout"
+time="2026-11-19T23:44:42+07:00" level=warning msg="Request Failed" error="Post \"https://api-dev.hoamytech.com/api/conversation/preview\": request timeout"
+time="2026-11-19T23:44:42+07:00" level=warning msg="Request Failed" error="Post \"https://api-dev.hoamytech.com/api/conversation/preview\": request timeout"
+time="2026-11-19T23:44:42+07:00" level=warning msg="Request Failed" error="Post \"https://api-dev.hoamytech.com/api/conversation/preview\": request timeout"
+time="2026-11-19T23:44:42+07:00" level=warning msg="Request Failed" error="Post \"https://api-dev.hoamytech.com/api/conversation/preview\": request timeout"
+time="2026-11-19T23:44:42+07:00" level=warning msg="Request Failed" error="Post \"https://api-dev.hoamytech.com/api/conversation/preview\": request timeout"
+time="2026-11-19T23:44:42+07:00" level=warning msg="Request Failed" error="Post \"https://api-dev.hoamytech.com/api/conversation/preview\": request timeout"
+time="2026-11-19T23:44:42+07:00" level=warning msg="Request Failed" error="Post \"https://api-dev.hoamytech.com/api/conversation/preview\": request timeout"
+time="2026-11-19T23:44:43+07:00" level=warning msg="Request Failed" error="Post \"https://api-dev.hoamytech.com/api/conversation/preview\": request timeout"
+time="2026-11-19T23:44:43+07:00" level=warning msg="Request Failed" error="Post \"https://api-dev.hoamytech.com/api/conversation/preview\": request timeout"
+time="2026-11-19T23:44:43+07:00" level=warning msg="Request Failed" error="Post \"https://api-dev.hoamytech.com/api/conversation/preview\": request timeout"
+time="2026-11-19T23:44:43+07:00" level=warning msg="Request Failed" error="Post \"https://api-dev.hoamytech.com/api/conversation/preview\": request timeout"
+
+running (2m03.4s), 0954/1000 VUs, 1870 complete and 0 interrupted iterations
+users   [  94% ] 0954/1000 VUs  0m57.3s/1m01.0s
+time="2026-11-19T23:44:43+07:00" level=warning msg="Request Failed" error="Post \"https://api-dev.hoamytech.com/api/conversation/preview\": request timeout"
+time="2026-11-19T23:44:43+07:00" level=warning msg="Request Failed" error="Post \"https://api-dev.hoamytech.com/api/conversation/preview\": request timeout"
+time="2026-11-19T23:44:43+07:00" level=warning msg="Request Failed" error="Post \"https://api-dev.hoamytech.com/api/conversation/preview\": request timeout"
+time="2026-11-19T23:44:43+07:00" level=warning msg="Request Failed" error="Post \"https://api-dev.hoamytech.com/api/conversation\": EOF"
+time="2026-11-19T23:44:43+07:00" level=warning msg="Request Failed" error="Post \"https://api-dev.hoamytech.com/api/conversation/preview\": request timeout"
+time="2026-11-19T23:44:43+07:00" level=warning msg="Request Failed" error="Post \"https://api-dev.hoamytech.com/api/conversation/preview\": request timeout"
+time="2026-11-19T23:44:43+07:00" level=warning msg="Request Failed" error="Post \"https://api-dev.hoamytech.com/api/conversation/preview\": request timeout"
+time="2026-11-19T23:44:43+07:00" level=warning msg="Request Failed" error="Post \"https://api-dev.hoamytech.com/api/conversation/preview\": request timeout"
+time="2026-11-19T23:44:43+07:00" level=warning msg="Request Failed" error="Post \"https://api-dev.hoamytech.com/api/conversation/preview\": request timeout"
+time="2026-11-19T23:44:43+07:00" level=warning msg="Request Failed" error="Post \"https://api-dev.hoamytech.com/api/conversation/preview\": request timeout"
+time="2026-11-19T23:44:43+07:00" level=warning msg="Request Failed" error="Post \"https://api-dev.hoamytech.com/api/conversation/preview\": request timeout"
+time="2026-11-19T23:44:43+07:00" level=warning msg="Request Failed" error="Post \"https://api-dev.hoamytech.com/api/conversation/preview\": request timeout"
+time="2026-11-19T23:44:43+07:00" level=warning msg="Request Failed" error="Post \"https://api-dev.hoamytech.com/api/conversation/preview\": request timeout"
+time="2026-11-19T23:44:43+07:00" level=warning msg="Request Failed" error="Post \"https://api-dev.hoamytech.com/api/conversation/preview\": request timeout"
+
+running (2m04.4s), 0971/1000 VUs, 1922 complete and 0 interrupted iterations
+users   [  96% ] 0971/1000 VUs  0m58.3s/1m01.0s
+time="2026-11-19T23:44:44+07:00" level=warning msg="Request Failed" error="Post \"https://api-dev.hoamytech.com/api/conversation/preview\": request timeout"
+time="2026-11-19T23:44:44+07:00" level=warning msg="Request Failed" error="Post \"https://api-dev.hoamytech.com/api/conversation/preview\": request timeout"
+time="2026-11-19T23:44:44+07:00" level=warning msg="Request Failed" error="Post \"https://api-dev.hoamytech.com/api/conversation/preview\": request timeout"
+time="2026-11-19T23:44:44+07:00" level=warning msg="Request Failed" error="Post \"https://api-dev.hoamytech.com/api/conversation/preview\": request timeout"
+time="2026-11-19T23:44:44+07:00" level=warning msg="Request Failed" error="Post \"https://api-dev.hoamytech.com/api/conversation/preview\": request timeout"
+time="2026-11-19T23:44:44+07:00" level=warning msg="Request Failed" error="Post \"https://api-dev.hoamytech.com/api/conversation/preview\": request timeout"
+time="2026-11-19T23:44:44+07:00" level=warning msg="Request Failed" error="Post \"https://api-dev.hoamytech.com/api/conversation/preview\": request timeout"
+time="2026-11-19T23:44:44+07:00" level=warning msg="Request Failed" error="Post \"https://api-dev.hoamytech.com/api/conversation/preview\": request timeout"
+time="2026-11-19T23:44:44+07:00" level=warning msg="Request Failed" error="Post \"https://api-dev.hoamytech.com/api/conversation/preview\": request timeout"
+time="2026-11-19T23:44:44+07:00" level=warning msg="Request Failed" error="Post \"https://api-dev.hoamytech.com/api/conversation/preview\": request timeout"
+time="2026-11-19T23:44:44+07:00" level=warning msg="Request Failed" error="Post \"https://api-dev.hoamytech.com/api/conversation/preview\": request timeout"
+time="2026-11-19T23:44:45+07:00" level=warning msg="Request Failed" error="Post \"https://api-dev.hoamytech.com/api/conversation/preview\": request timeout"
+time="2026-11-19T23:44:45+07:00" level=warning msg="Request Failed" error="Post \"https://api-dev.hoamytech.com/api/conversation/preview\": request timeout"
+
+running (2m05.4s), 0987/1000 VUs, 1978 complete and 0 interrupted iterations
+users   [  97% ] 0987/1000 VUs  0m59.3s/1m01.0s
+time="2026-11-19T23:44:45+07:00" level=warning msg="Request Failed" error="Post \"https://api-dev.hoamytech.com/api/conversation/preview\": request timeout"
+time="2026-11-19T23:44:45+07:00" level=warning msg="Request Failed" error="Post \"https://api-dev.hoamytech.com/api/conversation/preview\": request timeout"
+time="2026-11-19T23:44:45+07:00" level=warning msg="Request Failed" error="Post \"https://api-dev.hoamytech.com/api/conversation/preview\": request timeout"
+time="2026-11-19T23:44:45+07:00" level=warning msg="Request Failed" error="Post \"https://api-dev.hoamytech.com/api/conversation/preview\": request timeout"
+time="2026-11-19T23:44:45+07:00" level=warning msg="Request Failed" error="Post \"https://api-dev.hoamytech.com/api/conversation/preview\": request timeout"
+time="2026-11-19T23:44:45+07:00" level=warning msg="Request Failed" error="Post \"https://api-dev.hoamytech.com/api/conversation/preview\": request timeout"
+time="2026-11-19T23:44:45+07:00" level=warning msg="Request Failed" error="Post \"https://api-dev.hoamytech.com/api/conversation/preview\": request timeout"
+time="2026-11-19T23:44:45+07:00" level=warning msg="Request Failed" error="Post \"https://api-dev.hoamytech.com/api/conversation/preview\": request timeout"
+time="2026-11-19T23:44:46+07:00" level=warning msg="Request Failed" error="Post \"https://api-dev.hoamytech.com/api/conversation/preview\": request timeout"
+
+running (2m06.4s), 1000/1000 VUs, 2016 complete and 0 interrupted iterations
+users   [  99% ] 1000/1000 VUs  1m00.3s/1m01.0s
+time="2026-11-19T23:44:46+07:00" level=warning msg="Request Failed" error="Post \"https://api-dev.hoamytech.com/api/conversation/preview\": request timeout"
+time="2026-11-19T23:44:46+07:00" level=warning msg="Request Failed" error="Post \"https://api-dev.hoamytech.com/api/conversation/preview\": request timeout"
+time="2026-11-19T23:44:46+07:00" level=warning msg="Request Failed" error="Post \"https://api-dev.hoamytech.com/api/conversation/preview\": request timeout"
+
+running (2m07.4s), 0992/1000 VUs, 2078 complete and 0 interrupted iterations
+users ↓ [ 100% ] 1000/1000 VUs  1m1s
+time="2026-11-19T23:44:47+07:00" level=warning msg="Request Failed" error="Post \"https://api-dev.hoamytech.com/api/conversation/preview\": request timeout"
+time="2026-11-19T23:44:47+07:00" level=warning msg="Request Failed" error="Post \"https://api-dev.hoamytech.com/api/conversation/preview\": request timeout"
+time="2026-11-19T23:44:47+07:00" level=warning msg="Request Failed" error="Post \"https://api-dev.hoamytech.com/api/conversation/preview\": request timeout"
+time="2026-11-19T23:44:47+07:00" level=warning msg="Request Failed" error="Post \"https://api-dev.hoamytech.com/api/conversation/preview\": request timeout"
+time="2026-11-19T23:44:48+07:00" level=warning msg="Request Failed" error="Post \"https://api-dev.hoamytech.com/api/conversation/preview\": request timeout"
+
+running (2m08.4s), 0927/1000 VUs, 2143 complete and 0 interrupted iterations
+users ↓ [ 100% ] 1000/1000 VUs  1m1s
+time="2026-11-19T23:44:48+07:00" level=warning msg="Request Failed" error="Post \"https://api-dev.hoamytech.com/api/conversation/preview\": request timeout"
+time="2026-11-19T23:44:48+07:00" level=warning msg="Request Failed" error="Post \"https://api-dev.hoamytech.com/api/conversation/preview\": request timeout"
+time="2026-11-19T23:44:48+07:00" level=warning msg="Request Failed" error="Post \"https://api-dev.hoamytech.com/api/conversation/preview\": request timeout"
+time="2026-11-19T23:44:48+07:00" level=warning msg="Request Failed" error="Post \"https://api-dev.hoamytech.com/api/conversation/preview\": request timeout"
+time="2026-11-19T23:44:48+07:00" level=warning msg="Request Failed" error="Post \"https://api-dev.hoamytech.com/api/conversation/preview\": request timeout"
+time="2026-11-19T23:44:48+07:00" level=warning msg="Request Failed" error="Post \"https://api-dev.hoamytech.com/api/conversation/preview\": request timeout"
+time="2026-11-19T23:44:48+07:00" level=warning msg="Request Failed" error="Post \"https://api-dev.hoamytech.com/api/conversation/preview\": request timeout"
+time="2026-11-19T23:44:48+07:00" level=warning msg="Request Failed" error="Post \"https://api-dev.hoamytech.com/api/conversation/preview\": request timeout"
+time="2026-11-19T23:44:48+07:00" level=warning msg="Request Failed" error="Post \"https://api-dev.hoamytech.com/api/conversation/preview\": request timeout"
+time="2026-11-19T23:44:49+07:00" level=warning msg="Request Failed" error="Post \"https://api-dev.hoamytech.com/api/conversation/preview\": request timeout"
+time="2026-11-19T23:44:49+07:00" level=warning msg="Request Failed" error="Post \"https://api-dev.hoamytech.com/api/conversation/preview\": request timeout"
+
+running (2m09.4s), 0865/1000 VUs, 2205 complete and 0 interrupted iterations
+users ↓ [ 100% ] 1000/1000 VUs  1m1s
+time="2026-11-19T23:44:49+07:00" level=warning msg="Request Failed" error="Post \"https://api-dev.hoamytech.com/api/conversation/preview\": request timeout"
+time="2026-11-19T23:44:49+07:00" level=warning msg="Request Failed" error="Post \"https://api-dev.hoamytech.com/api/conversation/preview\": request timeout"
+time="2026-11-19T23:44:49+07:00" level=warning msg="Request Failed" error="Post \"https://api-dev.hoamytech.com/api/conversation/preview\": request timeout"
+time="2026-11-19T23:44:49+07:00" level=warning msg="Request Failed" error="Post \"https://api-dev.hoamytech.com/api/conversation/preview\": request timeout"
+time="2026-11-19T23:44:49+07:00" level=warning msg="Request Failed" error="Post \"https://api-dev.hoamytech.com/api/conversation/preview\": request timeout"
+time="2026-11-19T23:44:49+07:00" level=warning msg="Request Failed" error="Post \"https://api-dev.hoamytech.com/api/conversation/preview\": request timeout"
+time="2026-11-19T23:44:49+07:00" level=warning msg="Request Failed" error="Post \"https://api-dev.hoamytech.com/api/conversation/preview\": request timeout"
+
+running (2m10.4s), 0818/1000 VUs, 2252 complete and 0 interrupted iterations
+users ↓ [ 100% ] 1000/1000 VUs  1m1s
+time="2026-11-19T23:44:50+07:00" level=warning msg="Request Failed" error="Post \"https://api-dev.hoamytech.com/api/conversation/preview\": request timeout"
+time="2026-11-19T23:44:50+07:00" level=warning msg="Request Failed" error="Post \"https://api-dev.hoamytech.com/api/conversation/preview\": request timeout"
+time="2026-11-19T23:44:50+07:00" level=warning msg="Request Failed" error="Post \"https://api-dev.hoamytech.com/api/conversation/preview\": request timeout"
+time="2026-11-19T23:44:50+07:00" level=warning msg="Request Failed" error="Post \"https://api-dev.hoamytech.com/api/conversation/preview\": request timeout"
+time="2026-11-19T23:44:50+07:00" level=warning msg="Request Failed" error="Post \"https://api-dev.hoamytech.com/api/conversation/preview\": request timeout"
+time="2026-11-19T23:44:50+07:00" level=warning msg="Request Failed" error="Post \"https://api-dev.hoamytech.com/api/conversation/preview\": request timeout"
+time="2026-11-19T23:44:50+07:00" level=warning msg="Request Failed" error="Post \"https://api-dev.hoamytech.com/api/conversation/preview\": request timeout"
+time="2026-11-19T23:44:50+07:00" level=warning msg="Request Failed" error="Post \"https://api-dev.hoamytech.com/api/conversation/preview\": request timeout"
+
+running (2m11.4s), 0774/1000 VUs, 2296 complete and 0 interrupted iterations
+users ↓ [ 100% ] 1000/1000 VUs  1m1s
+time="2026-11-19T23:44:51+07:00" level=warning msg="Request Failed" error="Post \"https://api-dev.hoamytech.com/api/conversation/preview\": request timeout"
+time="2026-11-19T23:44:51+07:00" level=warning msg="Request Failed" error="Post \"https://api-dev.hoamytech.com/api/conversation/preview\": request timeout"
+time="2026-11-19T23:44:51+07:00" level=warning msg="Request Failed" error="Post \"https://api-dev.hoamytech.com/api/conversation/preview\": request timeout"
+time="2026-11-19T23:44:51+07:00" level=warning msg="Request Failed" error="Post \"https://api-dev.hoamytech.com/api/conversation/preview\": request timeout"
+time="2026-11-19T23:44:52+07:00" level=warning msg="Request Failed" error="Post \"https://api-dev.hoamytech.com/api/conversation/preview\": request timeout"
+
+running (2m12.4s), 0713/1000 VUs, 2357 complete and 0 interrupted iterations
+users ↓ [ 100% ] 1000/1000 VUs  1m1s
+time="2026-11-19T23:44:52+07:00" level=warning msg="Request Failed" error="Post \"https://api-dev.hoamytech.com/api/conversation/preview\": request timeout"
+time="2026-11-19T23:44:52+07:00" level=warning msg="Request Failed" error="Post \"https://api-dev.hoamytech.com/api/conversation/preview\": request timeout"
+time="2026-11-19T23:44:52+07:00" level=warning msg="Request Failed" error="Post \"https://api-dev.hoamytech.com/api/conversation/preview\": request timeout"
+time="2026-11-19T23:44:52+07:00" level=warning msg="Request Failed" error="Post \"https://api-dev.hoamytech.com/api/conversation/preview\": request timeout"
+time="2026-11-19T23:44:52+07:00" level=warning msg="Request Failed" error="Post \"https://api-dev.hoamytech.com/api/conversation/preview\": request timeout"
+time="2026-11-19T23:44:52+07:00" level=warning msg="Request Failed" error="Post \"https://api-dev.hoamytech.com/api/conversation/preview\": request timeout"
+
+running (2m13.4s), 0636/1000 VUs, 2434 complete and 0 interrupted iterations
+users ↓ [ 100% ] 1000/1000 VUs  1m1s
+time="2026-11-19T23:44:53+07:00" level=warning msg="Request Failed" error="Post \"https://api-dev.hoamytech.com/api/conversation/preview\": request timeout"
+
+running (2m14.4s), 0591/1000 VUs, 2479 complete and 0 interrupted iterations
+users ↓ [ 100% ] 1000/1000 VUs  1m1s
+
+running (2m15.4s), 0533/1000 VUs, 2537 complete and 0 interrupted iterations
+users ↓ [ 100% ] 1000/1000 VUs  1m1s
+
+running (2m16.4s), 0498/1000 VUs, 2572 complete and 0 interrupted iterations
+users ↓ [ 100% ] 1000/1000 VUs  1m1s
+
+running (2m17.4s), 0469/1000 VUs, 2601 complete and 0 interrupted iterations
+users ↓ [ 100% ] 1000/1000 VUs  1m1s
+
+running (2m18.4s), 0450/1000 VUs, 2620 complete and 0 interrupted iterations
+users ↓ [ 100% ] 1000/1000 VUs  1m1s
+
+running (2m19.4s), 0423/1000 VUs, 2647 complete and 0 interrupted iterations
+users ↓ [ 100% ] 1000/1000 VUs  1m1s
+
+running (2m20.4s), 0390/1000 VUs, 2680 complete and 0 interrupted iterations
+users ↓ [ 100% ] 1000/1000 VUs  1m1s
+
+running (2m21.4s), 0340/1000 VUs, 2730 complete and 0 interrupted iterations
+users ↓ [ 100% ] 1000/1000 VUs  1m1s
+
+running (2m22.4s), 0291/1000 VUs, 2779 complete and 0 interrupted iterations
+users ↓ [ 100% ] 1000/1000 VUs  1m1s
+
+running (2m23.4s), 0242/1000 VUs, 2828 complete and 0 interrupted iterations
+users ↓ [ 100% ] 1000/1000 VUs  1m1s
+
+running (2m24.4s), 0185/1000 VUs, 2885 complete and 0 interrupted iterations
+users ↓ [ 100% ] 1000/1000 VUs  1m1s
+
+running (2m25.4s), 0150/1000 VUs, 2920 complete and 0 interrupted iterations
+users ↓ [ 100% ] 1000/1000 VUs  1m1s
+
+running (2m26.4s), 0116/1000 VUs, 2954 complete and 0 interrupted iterations
+users ↓ [ 100% ] 1000/1000 VUs  1m1s
+
+running (2m27.4s), 0092/1000 VUs, 2978 complete and 0 interrupted iterations
+users ↓ [ 100% ] 1000/1000 VUs  1m1s
+
+running (2m28.4s), 0080/1000 VUs, 2990 complete and 0 interrupted iterations
+users ↓ [ 100% ] 1000/1000 VUs  1m1s
+
+running (2m29.4s), 0067/1000 VUs, 3003 complete and 0 interrupted iterations
+users ↓ [ 100% ] 1000/1000 VUs  1m1s
+
+running (2m30.4s), 0051/1000 VUs, 3019 complete and 0 interrupted iterations
+users ↓ [ 100% ] 1000/1000 VUs  1m1s
+
+running (2m31.4s), 0034/1000 VUs, 3036 complete and 0 interrupted iterations
+users ↓ [ 100% ] 1000/1000 VUs  1m1s
+
+running (2m32.4s), 0021/1000 VUs, 3049 complete and 0 interrupted iterations
+users ↓ [ 100% ] 1000/1000 VUs  1m1s
+
+running (2m33.4s), 0001/1000 VUs, 3069 complete and 0 interrupted iterations
+users ↓ [ 100% ] 1000/1000 VUs  1m1s
+
+voice end -> playable audio (ms, med/p95/max), by user count and language
+users 1000: ok 50.0% of 66 | voice made by server 100.0% | no audio URL 0.0%
+  server llm 1306/2890/4518 (n=65) | server tts (when made) 0/0/0 (n=65)
+  all   playable 4306/12461/14336 (n=33) | text 2192/3988/8843 (n=65)
+  en    playable 4306/12461/14336 (n=33) | text 2192/3988/8843 (n=65) | ready(no URL) - | conv 1652/3426/8235 (n=66) | ttfb 1632/10439/10857 (n=33)
+HTTP status: {step:conversation,status:200}=2946 {step:preview,status:0}=230 {step:conversation,status:0}=11 {step:audio,status:200}=1472 {step:preview,status:200}=2840 {step:conversation,status:503}=113 {step:audio,status:429}=1474
+
+running (2m33.6s), 0000/1000 VUs, 3070 complete and 0 interrupted iterations
+users ✓ [ 100% ] 0000/1000 VUs  1m1s
+k6 exit=0 at 16:45:13

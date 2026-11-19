@@ -27,6 +27,8 @@
 //                       random rate each turn) or "10"; a turn that runs longer than its
 //                       slot starts the next one at once. Unset: the next turn starts
 //                       as soon as the clip has finished playing.
+//   THINK               pause after each turn before the next, e.g. "1s-5s" (random in the
+//                       range each turn) or "3s". Unset: no pause.
 //
 // k6 does not stream response bodies: the first audio byte is the response's
 // time to first byte, and "playable" (first 100 ms of sound) is interpolated
@@ -217,13 +219,29 @@ function clipSeconds(contentType, bytes) {
   return bytes / MP3_BYTES_PER_S;
 }
 
+const THINK = (() => {
+  if (!__ENV.THINK) return null;
+  const [low, high = low] = String(__ENV.THINK).split("-").map(seconds);
+  if (!(high >= low)) fail(`THINK "${__ENV.THINK}" must look like 3s or 1s-5s`);
+  return { low, high };
+})();
+
+function think() {
+  if (THINK) sleep(THINK.low + Math.random() * (THINK.high - THINK.low));
+}
+
 export function userLoop(data) {
-  if (!TURNS_PER_MIN) return runTurn(data);
+  if (!TURNS_PER_MIN) {
+    runTurn(data);
+    think();
+    return;
+  }
   const rate = TURNS_PER_MIN.low + Math.random() * (TURNS_PER_MIN.high - TURNS_PER_MIN.low);
   const slotEndsAt = Date.now() + 60000 / rate;
   runTurn(data);
   const leftS = (slotEndsAt - Date.now()) / 1000;
   if (leftS > 0) sleep(leftS);
+  think();
 }
 
 function runTurn(data) {

@@ -249,6 +249,36 @@ export const audioPaths: OpenApiObject = {
       },
     },
   },
+  "/api/audio/segments": {
+    get: {
+      tags: [TTS_TAG],
+      summary: "Audio bản dịch ghép nhiều đoạn (bản thử, chỉ dev)",
+      description:
+        "Chỉ bật khi `AUDIO_SEGMENTED_SPEECH_TEST=true` (tắt thì 403). Bản dịch có từ 2 vế (dấu , 、 。 ! ?) được tách " +
+        "tối đa 3 đoạn, các đoạn được tạo giọng cùng lúc ngay khi dịch xong, rồi ghép thành một WAV " +
+        "(24 kHz mono 16-bit, 80 ms lặng giữa các đoạn). Chỉ chấp nhận URL do server ký (hết hạn sau 15 phút). " +
+        "Không có `format=caf` và không có Range có điểm cuối: WAV phát dần (chunked), đoạn 1 phát trước khi các đoạn sau xong. " +
+        "iOS (`format=caf` hoặc `Range: bytes=0-1`): file hoàn chỉnh có `Content-Length` và byte range. Không lưu cache.",
+      operationId: "getSegmentedSpeech",
+      parameters: [
+        queryParam("lang", "Ngôn ngữ của bản dịch.", { type: "string", enum: ["en", "zh", "ja", "ko", "fr"] }, true),
+        queryParam("s", "Một đoạn của bản dịch, lặp lại theo thứ tự (2–3 đoạn, tổng 300 ký tự).", { type: "string" }, true),
+        queryParam("job", "Mã lần tạo giọng, do server tạo.", { type: "string" }, true),
+        queryParam("exp", "Hạn dùng (ms Unix), do server tạo.", { type: "string" }, true),
+        queryParam("sig", "Chữ ký base64url, do server tạo.", { type: "string" }, true),
+        queryParam("node", "Gợi ý định tuyến backend, do server tạo."),
+        queryParam("format", "`caf` (app iOS): trả file hoàn chỉnh thay vì phát dần.", { type: "string", enum: ["caf"] }),
+      ],
+      responses: {
+        "200": binaryResponse("Một WAV gồm các đoạn theo thứ tự.", ["audio/wav"], {
+          "X-Audio-Source": { schema: { type: "string", example: "segments" } },
+        }),
+        "206": binaryResponse("Một khoảng byte của file hoàn chỉnh (iOS).", ["audio/wav"]),
+        "403": errorResponse("Tính năng tắt, URL sai chữ ký hoặc hết hạn (`FORBIDDEN`)."),
+        "502": errorResponse("TTS lỗi (`TTS_FAILED`)."),
+      },
+    },
+  },
   "/api/audio/target/url": {
     post: {
       tags: [TTS_TAG],
