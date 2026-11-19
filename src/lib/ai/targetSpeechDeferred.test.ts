@@ -69,11 +69,16 @@ test("requests for the same sentence share one synthesis and the clip is saved o
   assert.equal(instance.peek("Bonjour.", "fr"), undefined);
 });
 
-test("a failed synthesis is dropped at once so the next request retries", async () => {
+test("a failed synthesis is kept briefly so repeated requests fail at once, then retried", async () => {
   let calls = 0;
-  const { instance, saved } = coordinator(async () => { calls++; throw new Error("provider down"); });
+  const { instance, saved, timers } = coordinator(async () => { calls++; throw new Error("provider down"); });
   await assert.rejects(instance.start("안녕.", "ko"), /provider down/);
   await new Promise(resolve => setImmediate(resolve));
+  // The app's second download (and an Nginx retry) joins the failure, no new call.
+  assert.ok(instance.peek("안녕.", "ko"));
+  await assert.rejects(instance.start("안녕.", "ko"), /provider down/);
+  assert.equal(calls, 1);
+  timers.forEach(release => release());
   assert.equal(instance.peek("안녕.", "ko"), undefined);
   await assert.rejects(instance.start("안녕.", "ko"), /provider down/);
   assert.equal(calls, 2);

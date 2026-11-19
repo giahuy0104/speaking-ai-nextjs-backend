@@ -16,7 +16,9 @@ export type TargetSpeechStreamsOptions = {
   /** The finished-clip path, used only when the stream fails before its first byte. */
   fallback: (text: string, language: string) => Promise<ArrayBuffer>;
   /** False when the finished-clip path would fail the same way (provider busy); default true. */
-  shouldFallback?: (error: unknown) => boolean;
+  shouldFallback?: (error: unknown, language: string) => boolean;
+  /** Called before the fallback clip is requested for this sentence. */
+  onFallback?: (text: string, language: string) => void;
   /** Maps a provider error to the one listeners and logs see. */
   toPublicError?: (error: unknown) => unknown;
   log?: (level: "info" | "warn", event: string, fields: Record<string, unknown>) => void;
@@ -58,12 +60,13 @@ export function createTargetSpeechStreams(options: TargetSpeechStreamsOptions) {
         broadcast.fail(reported);
         return;
       }
-      if (options.shouldFallback && !options.shouldFallback(error)) {
+      if (options.shouldFallback && !options.shouldFallback(error, language)) {
         log("warn", "target_speech_stream_failed", { language, ...turnContent({ translatedText: text }), error: reported });
         broadcast.fail(reported);
         return;
       }
       log("warn", "target_speech_stream_fallback", { language, ...turnContent({ translatedText: text }), error: reported });
+      options.onFallback?.(text, language);
       try {
         broadcast.push(new Uint8Array(await options.fallback(text, language)));
         broadcast.finish();
@@ -76,6 +79,20 @@ export function createTargetSpeechStreams(options: TargetSpeechStreamsOptions) {
   function subscribeKey(key: string): ReadableStream<Uint8Array> | null {
     const broadcast = live.get(key);
     return broadcast?.live() ? broadcast.subscribe() : null;
+  }
+
+  /**
+   * Like subscribeKey, but resolves only once the first byte exists, so the caller can
+   * still answer with an HTTP error. Rejects with the stream's (public) error when it
+   * fails before any byte, fallback included.
+   */
+  async function subscribeKeyWhenAudible(key: string): Promise<ReadableStream<Uint8Array> | null> {
+    const broadcast = live.get(key);
+    if (!broadcast?.live()) return null;
+    await broadcast.audible;
+    // Holds every byte so far even if the clip settled meanwhile (a fallback clip
+    // is pushed and finished at once).
+    return broadcast.subscribe();
   }
 
   return {
@@ -101,5 +118,12 @@ export function createTargetSpeechStreams(options: TargetSpeechStreamsOptions) {
 
     /** Same as subscribe, for a stream started with its own key. */
     subscribeKey,
+
+    /** subscribe, waiting for the first byte (see subscribeKeyWhenAudible). */
+    subscribeWhenAudible(text: string, language: string) {
+      return subscribeKeyWhenAudible(keyFor(text, language));
+    },
+
+    subscribeKeyWhenAudible,
   };
 }

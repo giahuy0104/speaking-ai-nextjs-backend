@@ -62,19 +62,34 @@ export function targetSpeechMode(language: string, text: string): TargetSpeechMo
 /** Streams only run while a streaming provider is configured (see isTargetSpeechDeferred). */
 const activeStreamProvider = () => speechStreamProvider(streamingProvider() ?? "deepinfra");
 
+const sentenceKey = (text: string, language: string) => `${language}\n${text}`;
+
+/**
+ * Sentences whose stream was replaced by a clip in another voice (e.g. WaveNet while
+ * Chirp 3 HD is rate limited). That clip is served but never cached: the cache key
+ * names the stream's voice, and the next request should get Chirp 3 HD again.
+ */
+const spokenByFallbackVoice = new Set<string>();
+
 const targetSpeechStreams = createTargetSpeechStreams({
   openPcm: (text, language) => activeStreamProvider().openPcm(text, language),
   // Same format as the stream, so listeners and the cache never mix WAV and MP3.
   fallback: (text, language) => activeStreamProvider().fallback(text, language),
-  // A busy account would refuse the finished clip too, after another wait in the queue.
-  shouldFallback: error => !activeStreamProvider().isBusy(error),
+  shouldFallback: (error, language) => activeStreamProvider().canFallback(error, language),
+  onFallback: (text, language) => {
+    if (!activeStreamProvider().fallbackKeepsVoice(language)) spokenByFallbackVoice.add(sentenceKey(text, language));
+  },
   toPublicError: error => activeStreamProvider().toPublicError(error),
   log: (level, event, fields) => logEvent(level, event, fields),
 });
 
-/** WAV from its first byte while synthesis is still running; null once it has settled. */
+/**
+ * WAV from its first byte while synthesis is still running; null once it has settled.
+ * Resolves only when the first byte exists and rejects when the speech fails before
+ * it, so the route can still answer with an HTTP error instead of a broken 200.
+ */
 export function subscribeTargetSpeech(text: string, language: TargetSpeechLanguage) {
-  return targetSpeechStreams.subscribe(text, language);
+  return targetSpeechStreams.subscribeWhenAudible(text, language);
 }
 
 // Load tests (k6 installations with LOAD_TEST_BYPASS_AUDIO_CACHE): each turn gets its
@@ -104,25 +119,38 @@ export function startUncachedTargetSpeech(jobId: string, text: string, language:
     ? targetSpeechStreams.start(text, language, uncachedKey(jobId))
     : requestTargetSpeech(text, language, { onClipFallback: clipFallbackLogger(language) });
   uncachedJobs.set(jobId, job);
+  // A failure is kept too: the app's second download of a failed turn gets the same
+  // error at once instead of paying for (and queueing) another synthesis.
   const forget = () => {
     const timer = setTimeout(() => {
       if (uncachedJobs.get(jobId) === job) uncachedJobs.delete(jobId);
     }, UNCACHED_JOB_RETAIN_MS);
     (timer as { unref?: () => void }).unref?.();
   };
-  job.then(forget, () => uncachedJobs.delete(jobId));
+  job.then(forget, forget);
   return job;
 }
 
-/** The live WAV of a load-test turn, from its first byte; null once it has settled. */
+/** The live WAV of a load-test turn once its first byte exists (see subscribeTargetSpeech). */
 export function subscribeUncachedTargetSpeech(jobId: string) {
-  return targetSpeechStreams.subscribeKey(uncachedKey(jobId));
+  return targetSpeechStreams.subscribeKeyWhenAudible(uncachedKey(jobId));
 }
 
 export const targetSpeech = createTargetSpeechCoordinator({
-  synthesize: (text, language) => targetSpeechMode(language, text) === "stream"
-    ? targetSpeechStreams.start(text, language)
-    : requestTargetSpeech(text, language as TargetSpeechLanguage, { onClipFallback: clipFallbackLogger(language) }),
-  save: (text, language, audio) => saveReusableAudio(targetSpeechDescriptor(language as TargetSpeechLanguage, text), audio),
+  synthesize: (text, language) => {
+    if (targetSpeechMode(language, text) !== "stream") {
+      return requestTargetSpeech(text, language as TargetSpeechLanguage, { onClipFallback: clipFallbackLogger(language) });
+    }
+    const key = sentenceKey(text, language);
+    spokenByFallbackVoice.delete(key);
+    const job = targetSpeechStreams.start(text, language);
+    // A failed job is never saved, so its mark would otherwise stay.
+    job.catch(() => spokenByFallbackVoice.delete(key));
+    return job;
+  },
+  save: async (text, language, audio) => {
+    if (spokenByFallbackVoice.delete(sentenceKey(text, language))) return;
+    await saveReusableAudio(targetSpeechDescriptor(language as TargetSpeechLanguage, text), audio);
+  },
   onSaveError: error => logEvent("error", "target_speech_cache_save_failed", { error }),
 });

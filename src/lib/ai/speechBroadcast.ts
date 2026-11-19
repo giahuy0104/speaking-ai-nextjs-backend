@@ -15,6 +15,12 @@ export type SpeechBroadcast = Readonly<{
   /** True until finish() or fail(). */
   live(): boolean;
   subscribe(): ReadableStream<Uint8Array>;
+  /**
+   * Resolves at the first byte; rejects with the error when the clip fails before
+   * any byte. A response can wait on it, so a refusal still becomes an HTTP error
+   * instead of a 200 that breaks off with no audio.
+   */
+  audible: Promise<void>;
   completed: Promise<ArrayBuffer>;
 }>;
 
@@ -33,6 +39,13 @@ export function createSpeechBroadcast(maxBytes: number): SpeechBroadcast {
   });
   // Listeners report the error themselves; this keeps an unobserved rejection quiet.
   completed.catch(() => undefined);
+  let resolveAudible!: () => void;
+  let rejectAudible!: (error: unknown) => void;
+  const audible = new Promise<void>((resolve, reject) => {
+    resolveAudible = resolve;
+    rejectAudible = reject;
+  });
+  audible.catch(() => undefined);
 
   const notify = () => {
     const waiting = wake;
@@ -44,7 +57,11 @@ export function createSpeechBroadcast(maxBytes: number): SpeechBroadcast {
     if (state.kind !== "live") return;
     state = next;
     if (next.kind === "done") resolveCompleted(concat(chunks, total));
-    else if (next.kind === "failed") rejectCompleted(next.error);
+    else if (next.kind === "failed") {
+      rejectCompleted(next.error);
+      // No effect once a byte was pushed: `audible` already resolved.
+      rejectAudible(next.error);
+    }
     notify();
   };
 
@@ -57,6 +74,7 @@ export function createSpeechBroadcast(maxBytes: number): SpeechBroadcast {
       }
       chunks.push(chunk);
       total += chunk.byteLength;
+      resolveAudible();
       notify();
     },
     finish() {
@@ -95,6 +113,7 @@ export function createSpeechBroadcast(maxBytes: number): SpeechBroadcast {
         },
       });
     },
+    audible,
     completed,
   };
 }

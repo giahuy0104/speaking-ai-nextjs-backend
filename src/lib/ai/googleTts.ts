@@ -85,13 +85,31 @@ export function googleTtsVoice(language: string, kind: GoogleVoiceKind = "stream
   return process.env[`GOOGLE_TTS_CLIP_VOICE_${language.toUpperCase()}`]?.trim() || streamVoice;
 }
 
-/** Full Google voice name, e.g. zh -> cmn-CN-Chirp3-HD-Aoede. */
-export function googleTtsVoiceName(language: string, kind: GoogleVoiceKind = "stream"): string {
+/**
+ * The voice of the WAV clip that stands in for a stream Google refused before its
+ * first byte: GOOGLE_TTS_FALLBACK_VOICE_<LANG> (e.g. ZH=Wavenet-A, JA=Neural2-B),
+ * otherwise the stream voice itself. Chirp 3 HD has its own per-minute quota, so a
+ * Neural2/WaveNet stand-in can still speak while Chirp 3 HD is rate limited.
+ */
+export function googleTtsFallbackVoice(language: string): string {
+  return process.env[`GOOGLE_TTS_FALLBACK_VOICE_${language.toUpperCase()}`]?.trim() || googleTtsVoice(language, "stream");
+}
+
+/** Whether a stream's stand-in clip is spoken by another voice than the stream. */
+export function googleTtsFallbackChangesVoice(language: string): boolean {
+  return googleTtsFallbackVoice(language) !== googleTtsVoice(language, "stream");
+}
+
+function localizedVoiceName(language: string, voice: string): string {
   const locale = LOCALES[language];
   if (!locale) throw new GoogleTtsProviderError("unsupported_language");
-  const voice = googleTtsVoice(language, kind);
   if (!VOICE_PATTERN.test(voice)) throw new GoogleTtsProviderError("invalid_voice");
   return `${locale}-${voice}`;
+}
+
+/** Full Google voice name, e.g. zh -> cmn-CN-Chirp3-HD-Aoede. */
+export function googleTtsVoiceName(language: string, kind: GoogleVoiceKind = "stream"): string {
+  return localizedVoiceName(language, googleTtsVoice(language, kind));
 }
 
 /** Google streams only Chirp 3 HD voices ("only Chirp 3: HD voices are supported for streaming synthesis"). */
@@ -100,8 +118,10 @@ export function googleTtsCanStream(): boolean {
   return VOICE_PATTERN.test(voice) && voice.startsWith("Chirp3-HD-");
 }
 
-function voiceFor(language: string, kind: GoogleVoiceKind) {
-  const name = googleTtsVoiceName(language, kind);
+function voiceFor(language: string, use: GoogleVoiceKind | "fallback") {
+  const name = use === "fallback"
+    ? localizedVoiceName(language, googleTtsFallbackVoice(language))
+    : googleTtsVoiceName(language, use);
   return { languageCode: LOCALES[language], name };
 }
 
@@ -312,8 +332,8 @@ export async function synthesizeWithGoogle(
   language: string,
   options: { format?: GoogleSpeechFormat; signal?: AbortSignal } = {},
 ): Promise<ArrayBuffer> {
-  // A WAV clip stands in for a stream, so it keeps the stream's voice.
-  const voice = voiceFor(language, options.format === "wav" ? "stream" : "clip");
+  // A WAV clip stands in for a stream: the stream's voice unless a fallback voice is set.
+  const voice = voiceFor(language, options.format === "wav" ? "fallback" : "clip");
   const release = await acquireSlot(options.signal);
   try {
     const client = await googleClient();
@@ -337,6 +357,11 @@ export async function synthesizeWithGoogle(
 /** Google is refusing work (project quota or full local queue): trying again now hits the same wall. */
 export function isGoogleTtsBusy(error: unknown) {
   return error instanceof GoogleTtsProviderError && (error.reason === "rate_limited" || error.reason === "queue_timeout");
+}
+
+/** Google itself refused (RESOURCE_EXHAUSTED), not the local queue: another voice's quota may still allow it. */
+export function isGoogleTtsRateLimited(error: unknown) {
+  return error instanceof GoogleTtsProviderError && error.reason === "rate_limited";
 }
 
 function statusFor(error: GoogleTtsProviderError) {

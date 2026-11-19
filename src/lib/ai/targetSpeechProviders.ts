@@ -1,5 +1,13 @@
 import { isDeepInfraBusy, streamSpeechWithDeepInfra, synthesizeWithDeepInfra, toDeepInfraTtsAppError } from "./deepInfra";
-import { googleTtsCanStream, isGoogleTtsBusy, streamSpeechWithGoogle, synthesizeWithGoogle, toGoogleTtsAppError } from "./googleTts";
+import {
+  googleTtsCanStream,
+  googleTtsFallbackChangesVoice,
+  isGoogleTtsBusy,
+  isGoogleTtsRateLimited,
+  streamSpeechWithGoogle,
+  synthesizeWithGoogle,
+  toGoogleTtsAppError,
+} from "./googleTts";
 import type { PcmSpeech } from "./targetSpeechStreams";
 
 /** The providers whose speech can stream (AUDIO_TARGET_TTS_STREAM=true). */
@@ -9,8 +17,10 @@ export type SpeechStreamProvider = Readonly<{
   openPcm: (text: string, language: string) => Promise<PcmSpeech>;
   /** A finished WAV clip in the stream's format, for a stream that fails before its first byte. */
   fallback: (text: string, language: string) => Promise<ArrayBuffer>;
-  /** The provider refuses work: the finished-clip path would fail the same way. */
-  isBusy: (error: unknown) => boolean;
+  /** Whether `fallback` can still succeed after this stream error (false: it would hit the same limit). */
+  canFallback: (error: unknown, language: string) => boolean;
+  /** Whether `fallback` speaks with the stream's voice, so its clip may be cached as the stream's. */
+  fallbackKeepsVoice: (language: string) => boolean;
   toPublicError: (error: unknown) => unknown;
   /** Whether this language's voice can stream; otherwise its speech is a finished clip. */
   canStream: (language: string) => boolean;
@@ -26,7 +36,8 @@ const PROVIDERS: Readonly<Record<StreamingSpeechProvider, SpeechStreamProvider>>
         throw toDeepInfraTtsAppError(error);
       }
     },
-    isBusy: isDeepInfraBusy,
+    canFallback: error => !isDeepInfraBusy(error),
+    fallbackKeepsVoice: () => true,
     toPublicError: toDeepInfraTtsAppError,
     canStream: () => true,
   },
@@ -39,7 +50,11 @@ const PROVIDERS: Readonly<Record<StreamingSpeechProvider, SpeechStreamProvider>>
         throw toGoogleTtsAppError(error);
       }
     },
-    isBusy: isGoogleTtsBusy,
+    // Google's 429 for Chirp 3 HD leaves a fallback voice (Neural2/WaveNet, its own quota)
+    // usable. A full local queue does not: the stand-in would wait in the same queue.
+    canFallback: (error, language) =>
+      !isGoogleTtsBusy(error) || (isGoogleTtsRateLimited(error) && googleTtsFallbackChangesVoice(language)),
+    fallbackKeepsVoice: language => !googleTtsFallbackChangesVoice(language),
     toPublicError: toGoogleTtsAppError,
     canStream: () => googleTtsCanStream(),
   },
