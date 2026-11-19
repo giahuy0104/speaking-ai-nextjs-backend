@@ -13,6 +13,7 @@ import { resetGoogleTtsForTests, setGoogleTtsClientForTests, type GoogleTtsClien
 
 const KEYS = [
   "AUDIO_ENGLISH_TTS_PROVIDER", "AUDIO_ENGLISH_STREAM_MIN_CHARS", "AUDIO_ENGLISH_CLOUDFLARE_FALLBACK", "GOOGLE_TTS_VOICE", "GOOGLE_TTS_CLIP_VOICE_EN",
+  "GOOGLE_TTS_CLIP_OVERFLOW_VOICE_EN",
   "CLOUDFLARE_ACCOUNT_ID", "CLOUDFLARE_WORKERS_AI_API_TOKEN", "CLOUDFLARE_TTS_MODEL", "CLOUDFLARE_TTS_SPEAKER",
 ] as const;
 const saved = Object.fromEntries(KEYS.map(key => [key, process.env[key]]));
@@ -179,6 +180,85 @@ test("a Chirp 3 HD stream that Google refuses (429) is spoken as a Neural2 clip 
   assert.deepEqual(calls.clip, ["en-US-Neural2-F"]);
   assert.equal(speech.response.headers.get("content-type"), "audio/mpeg");
   assert.deepEqual(speech.profile, getEnglishTtsProfile(SHORT), "cached as the clip it is");
+});
+
+// GOOGLE_TTS_CLIP_OVERFLOW_VOICE_EN: a second clip voice for when the first is overloaded.
+function setupOverflowVoice() {
+  process.env.AUDIO_ENGLISH_TTS_PROVIDER = "google";
+  process.env.GOOGLE_TTS_CLIP_VOICE_EN = "Neural2-F";
+  process.env.AUDIO_ENGLISH_CLOUDFLARE_FALLBACK = "false";
+  process.env.GOOGLE_TTS_CLIP_OVERFLOW_VOICE_EN = "Wavenet-A";
+}
+const wavenetProfile = { provider: "google", model: "google-cloud-tts", voice: "Wavenet-A-en", speed: 1, extension: "mp3" };
+
+test("an overloaded Neural2-F clip (429) is spoken by the overflow voice and cached as it", async () => {
+  setupOverflowVoice();
+  const calls = fakeGoogle({ clip: async request => {
+    if (request.voice.name === "en-US-Neural2-F") throw grpcError(8);
+    return new Uint8Array([4]);
+  } });
+  const speech = await requestEnglishSpeechAudio(SHORT);
+  assert.deepEqual(calls.clip, ["en-US-Neural2-F", "en-US-Wavenet-A"]);
+  assert.equal(speech.response.headers.get("content-type"), "audio/mpeg");
+  assert.deepEqual(speech.profile, wavenetProfile);
+  assert.deepEqual([...new Uint8Array(await speech.response.arrayBuffer())], [4]);
+});
+
+test("when the overflow voice is overloaded too, the sentence goes back to Neural2-F once", async () => {
+  setupOverflowVoice();
+  let neural2Calls = 0;
+  const calls = fakeGoogle({ clip: async request => {
+    if (request.voice.name === "en-US-Wavenet-A") throw grpcError(8);
+    if (++neural2Calls === 1) throw grpcError(8);
+    return new Uint8Array([5]);
+  } });
+  const speech = await requestEnglishSpeechAudio(SHORT);
+  assert.deepEqual(calls.clip, ["en-US-Neural2-F", "en-US-Wavenet-A", "en-US-Neural2-F"]);
+  assert.deepEqual(speech.profile, getEnglishTtsProfile(SHORT));
+});
+
+test("all three overloaded: the request fails as overloaded (429), no further attempts", async () => {
+  setupOverflowVoice();
+  const calls = fakeGoogle({ clip: async () => { throw grpcError(8); } });
+  await assert.rejects(requestEnglishSpeechAudio(SHORT), (error: unknown) =>
+    error instanceof AppError && error.status === 429);
+  assert.deepEqual(calls.clip, ["en-US-Neural2-F", "en-US-Wavenet-A", "en-US-Neural2-F"]);
+});
+
+test("only overload switches voices: another Google failure does not try the overflow voice", async () => {
+  setupOverflowVoice();
+  const calls = fakeGoogle({ clip: async () => { throw grpcError(13); } });
+  await assert.rejects(requestEnglishSpeechAudio(SHORT));
+  assert.deepEqual(calls.clip, ["en-US-Neural2-F"]);
+});
+
+test("without an overflow voice an overloaded clip fails as before", async () => {
+  useGoogle();
+  process.env.AUDIO_ENGLISH_CLOUDFLARE_FALLBACK = "false";
+  const calls = fakeGoogle({ clip: async () => { throw grpcError(8); } });
+  await assert.rejects(requestEnglishSpeechAudio(SHORT));
+  assert.deepEqual(calls.clip, ["en-US-Neural2-F"]);
+});
+
+test("a refused Chirp 3 HD stream whose Neural2 stand-in is overloaded is spoken by the overflow voice", async () => {
+  setupOverflowVoice();
+  const calls = fakeGoogle({
+    stream: duplex => { duplex.destroy(grpcError(8)); },
+    clip: async request => {
+      if (request.voice.name === "en-US-Neural2-F") throw grpcError(8);
+      return new Uint8Array([6]);
+    },
+  });
+  const speech = await requestEnglishSpeechAudio(LONG);
+  assert.equal(calls.stream.length, 1);
+  assert.deepEqual(calls.clip, ["en-US-Neural2-F", "en-US-Wavenet-A"]);
+  assert.equal(speech.profile.voice, "Wavenet-A-en");
+});
+
+test("fallback profiles include the overflow voice, so its cached clips are found again", () => {
+  setupOverflowVoice();
+  assert.ok(englishSpeechFallbackProfiles(SHORT).some(profile => profile.voice === "Wavenet-A-en" && profile.extension === "mp3"));
+  assert.ok(englishSpeechFallbackProfiles(LONG).some(profile => profile.voice === "Wavenet-A-en"));
 });
 
 test("AUDIO_ENGLISH_CLOUDFLARE_FALLBACK=false: a failed Google clip is an error, never Cloudflare", async () => {

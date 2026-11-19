@@ -10,6 +10,7 @@ import {
   GOOGLE_TTS_MODEL,
   googleTtsCanStream,
   googleTtsVoice,
+  isGoogleTtsRateLimited,
   streamSpeechWithGoogle,
   synthesizeWithGoogle,
   toGoogleTtsAppError,
@@ -60,15 +61,24 @@ export function englishSpeechMode(text: string): EnglishSpeechMode {
   return spokenLength(text) >= streamMinChars() ? "stream" : "clip";
 }
 
-function googleProfile(kind: GoogleVoiceKind): TtsProfile {
+function googleProfile(kind: GoogleVoiceKind, voice = googleTtsVoice(GOOGLE_LANGUAGE, kind)): TtsProfile {
   return {
     provider: "google",
     model: GOOGLE_TTS_MODEL,
     // The language stays in the voice, as for zh/ja/ko/fr, so caches never mix languages.
-    voice: `${googleTtsVoice(GOOGLE_LANGUAGE, kind)}-${GOOGLE_LANGUAGE}`,
+    voice: `${voice}-${GOOGLE_LANGUAGE}`,
     speed: 1,
     extension: kind === "stream" ? "wav" : "mp3",
   };
+}
+
+/**
+ * GOOGLE_TTS_CLIP_OVERFLOW_VOICE_EN (e.g. Wavenet-A): the clip voice used when the
+ * configured one (e.g. Neural2-F) is overloaded. Unset, or the same voice: none.
+ */
+function overflowVoice(): string | undefined {
+  const voice = process.env.GOOGLE_TTS_CLIP_OVERFLOW_VOICE_EN?.trim();
+  return voice && voice !== googleTtsVoice(GOOGLE_LANGUAGE, "clip") ? voice : undefined;
 }
 
 /** Cache identity of a sentence's speech. Without a sentence: the clip profile. */
@@ -83,7 +93,11 @@ export function getEnglishTtsProfile(text?: string): TtsProfile {
  */
 export function englishSpeechFallbackProfiles(text: string): TtsProfile[] {
   if (englishTtsProvider() === "cloudflare") return [];
-  const fallbacks = englishSpeechMode(text) === "stream" ? [googleProfile("clip")] : [];
+  const overflow = overflowVoice();
+  const fallbacks = [
+    ...(englishSpeechMode(text) === "stream" ? [googleProfile("clip")] : []),
+    ...(overflow ? [googleProfile("clip", overflow)] : []),
+  ];
   if (!cloudflareFallbackEnabled()) return fallbacks;
   try {
     return [...fallbacks, getConfiguredTtsProfile()];
@@ -107,9 +121,32 @@ async function googleStream(text: string): Promise<EnglishSpeechResult> {
   return speechResponse(pcmStreamToWav(speech.pcm, speech.sampleRate), "audio/wav", googleProfile("stream"));
 }
 
-async function googleClip(text: string): Promise<EnglishSpeechResult> {
-  const audio = await synthesizeWithGoogle(text, GOOGLE_LANGUAGE);
-  return speechResponse(audio, "audio/mpeg", googleProfile("clip"));
+async function googleClip(text: string, voice?: string): Promise<EnglishSpeechResult> {
+  const audio = await synthesizeWithGoogle(text, GOOGLE_LANGUAGE, voice ? { voice } : {});
+  // Cached under the voice that actually spoke, never under the configured one.
+  return speechResponse(audio, "audio/mpeg", googleProfile("clip", voice));
+}
+
+/**
+ * The clip voice, then (overloaded: Google 429 or our quota count) the overflow voice,
+ * then (overloaded too) the clip voice once more. A full local queue is not retried:
+ * every voice waits in the same queue.
+ */
+async function googleClipWithOverflow(text: string): Promise<EnglishSpeechResult> {
+  const overflow = overflowVoice();
+  try {
+    return await googleClip(text);
+  } catch (error) {
+    if (!overflow || !isGoogleTtsRateLimited(error)) throw error;
+    logFallback("google_clip", "google_overflow_clip", error);
+  }
+  try {
+    return await googleClip(text, overflow);
+  } catch (error) {
+    if (!isGoogleTtsRateLimited(error)) throw error;
+    logFallback("google_overflow_clip", "google_clip", error);
+  }
+  return googleClip(text);
 }
 
 /**
@@ -135,7 +172,7 @@ export async function requestEnglishSpeechAudio(text: string): Promise<EnglishSp
     }
   }
   try {
-    return await googleClip(text);
+    return await googleClipWithOverflow(text);
   } catch (error) {
     // No Cloudflare for English: the request fails and the app speaks with the device voice.
     if (!cloudflareFallbackEnabled()) throw toGoogleTtsAppError(error);
