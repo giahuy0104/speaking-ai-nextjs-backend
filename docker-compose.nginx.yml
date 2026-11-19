@@ -22,7 +22,9 @@ x-app: &app
       condition: service_healthy
   stop_grace_period: 75s
   mem_limit: 1g
-  cpus: 1.0
+  # One Node process runs JS on one core; the extra half core covers GC, TLS and
+  # libuv. Four backends x 1.5 = 6 CPU of the 8-core VPS (dev is pinned to cores 6,7).
+  cpus: 1.5
   logging:
     driver: json-file
     options: { max-size: "10m", max-file: "3" }
@@ -62,6 +64,26 @@ services:
     expose:
       - "3001"
 
+  backend-3002:
+    <<: *backend
+    pull_policy: never
+    environment:
+      <<: *app-environment
+      PORT: "3002"
+      AUDIO_STREAM_NODE: "3002"
+    expose:
+      - "3002"
+
+  backend-3003:
+    <<: *backend
+    pull_policy: never
+    environment:
+      <<: *app-environment
+      PORT: "3003"
+      AUDIO_STREAM_NODE: "3003"
+    expose:
+      - "3003"
+
   nginx:
     image: nginx:1.30-alpine
     restart: unless-stopped
@@ -74,6 +96,10 @@ services:
         condition: service_healthy
       backend-3001:
         condition: service_healthy
+      backend-3002:
+        condition: service_healthy
+      backend-3003:
+        condition: service_healthy
     healthcheck:
       test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1/healthz"]
       interval: 10s
@@ -81,8 +107,9 @@ services:
       retries: 3
     stop_signal: SIGQUIT
     stop_grace_period: 75s
-    mem_limit: 128m
-    cpus: 0.5
+    # Buffers every upload body for four backends; 0.5 CPU starved dev under a burst.
+    mem_limit: 256m
+    cpus: 1.0
     logging:
       driver: json-file
       options: { max-size: "10m", max-file: "3" }
