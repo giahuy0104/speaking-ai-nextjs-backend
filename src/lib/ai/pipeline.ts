@@ -16,12 +16,23 @@ import {
 import { PROMPT_VERSION } from "./prompts";
 import { translateTargetLanguage } from "./targetTranslation";
 import { getFailureDiagnostics } from "./cloudflare/providerError";
-import { getTargetTtsProfile, requestTargetSpeech } from "./aiProvider";
+import { requestTargetSpeech } from "./aiProvider";
+import { createTargetAudioUrl } from "./targetAudioUrl";
+import { bypassesAudioCache } from "./loadTestPersistence";
 import {
+  isTargetSpeechDeferred,
+  startUncachedTargetSpeech,
+  targetSpeech,
+  targetSpeechDescriptor,
+  targetSpeechMode,
+} from "./targetSpeech";
+import {
+  getUncachedEnglishAudioStreamUrl,
   prepareEnglishAudio,
   synthesizeEnglishAudio,
   type AudioSynthesisResult,
 } from "./tts";
+import { turnContent } from "@/lib/turnContentLog";
 
 export type ConversationPipelineOptions = {
   deferTextCacheWrite?: boolean;
@@ -76,32 +87,55 @@ export async function runTargetLanguageConversationPipeline(
   }));
   const translatedText = translation.value.translatedText;
 
-  const profile = getTargetTtsProfile(language);
-  const descriptor = {
-    text: translatedText.normalize("NFKC").replace(/\s+/g, " ").trim(),
-    model: profile.model,
-    voice: profile.voice,
-    speed: profile.speed,
-    extension: profile.extension,
-  };
+  const descriptor = targetSpeechDescriptor(language, translatedText);
+  const reportAudioUnavailable = (error: unknown, deferred: boolean) =>
+    logEvent("warn", "target_translation_audio_unavailable", {
+      requestId: input.requestId,
+      language,
+      stage: "tts",
+      model: descriptor.model,
+      ...turnContent({ translatedText }),
+      deferred,
+      reason: error instanceof AppError ? error.details?.reason ?? "audio_unavailable" : "audio_unavailable",
+      status: error instanceof AppError ? error.status : 500,
+      ...getFailureDiagnostics(error),
+      error,
+    });
+  let deferred = false;
+  // Load tests only: always synthesize, never read or write the shared audio cache.
+  const audioCacheBypassed = bypassesAudioCache(input.clientId);
   const tts = await measureStep(async () => {
     try {
+      if (audioCacheBypassed) {
+        // Like a real turn (translation first, then the signed URL), but this turn's
+        // own synthesis: no cache read or write, no sharing with other turns.
+        const jobId = `job_${crypto.randomUUID().replace(/-/g, "")}`;
+        const uncachedUrl = isTargetSpeechDeferred()
+          ? createTargetAudioUrl(language, translatedText, { jobId })
+          : undefined;
+        if (uncachedUrl) {
+          deferred = true;
+          startUncachedTargetSpeech(jobId, translatedText, language).catch(error => reportAudioUnavailable(error, true));
+          return { audioUrl: uncachedUrl, source: "cloudflare_tts" as const };
+        }
+        await requestTargetSpeech(translatedText, language, { parentRequestId: input.requestId });
+        return { audioUrl: null, source: "cloudflare_tts" as const };
+      }
       const cachedUrl = await getReusableAudioUrl(descriptor);
       if (cachedUrl) return { audioUrl: cachedUrl, source: "cache" as const };
+      const deferredUrl = isTargetSpeechDeferred() ? createTargetAudioUrl(language, translatedText) : undefined;
+      if (deferredUrl) {
+        // The app fetches this URL after showing the translation; synthesis is
+        // already running, so the audio request only waits for what is left.
+        deferred = true;
+        targetSpeech.start(translatedText, language).catch(error => reportAudioUnavailable(error, true));
+        return { audioUrl: deferredUrl, source: "cloudflare_tts" as const };
+      }
       const audio = await requestTargetSpeech(translatedText, language, { parentRequestId: input.requestId });
       const audioUrl = await saveReusableAudio(descriptor, audio);
       return { audioUrl, source: "cloudflare_tts" as const };
     } catch (error) {
-      logEvent("warn", "target_translation_audio_unavailable", {
-        requestId: input.requestId,
-        language,
-        stage: "tts",
-        model: profile.model,
-        reason: error instanceof AppError ? error.details?.reason ?? "audio_unavailable" : "audio_unavailable",
-        status: error instanceof AppError ? error.status : 500,
-        ...getFailureDiagnostics(error),
-        error,
-      });
+      reportAudioUnavailable(error, false);
       return { audioUrl: null, source: "device_tts" as const };
     }
   });
@@ -134,7 +168,12 @@ export async function runTargetLanguageConversationPipeline(
   };
   logEvent("info", "target_translation_pipeline_completed", {
     requestId: input.requestId, language, model: result.textModel,
-    audioSource: result.audioSource, audioReady: result.audioUrl !== null,
+    ...turnContent({
+      clientId: input.clientId, sourceText: result.vietnameseText,
+      translatedText: result.translatedText, audioUrl: result.audioUrl,
+    }),
+    audioSource: result.audioSource, audioReady: result.audioUrl !== null, audioDeferred: deferred,
+    audioMode: deferred ? targetSpeechMode(language, translatedText) : undefined, audioCacheBypassed,
     latency: result.latency,
   });
   return result;
@@ -160,6 +199,7 @@ export async function prepareConversationPipeline(
             transcriptLength:
               options.prefetchedTranscript?.sourceText.trim().length ?? 0,
             prefetchedTranscript: true,
+            ...turnContent({ sourceText: options.prefetchedTranscript?.sourceText }),
           });
         },
       })
@@ -213,7 +253,9 @@ export async function prepareConversationPipeline(
         latencyMs: resolvedPrefetchedTranscript.latencyMs,
       }
     : await measureStep(() => transcribeVietnamese(input));
-  const llm = prefetchedTranslation
+  // Load tests only: every turn pays a real translation and a real synthesis.
+  const cacheBypassed = bypassesAudioCache(input.clientId);
+  const llm = prefetchedTranslation && !cacheBypassed
     ? { value: prefetchedTranslation, latencyMs: 0 }
     : await measureStep(() =>
         generateEnglishSentence(
@@ -223,6 +265,8 @@ export async function prepareConversationPipeline(
           input.clientId,
           input.requestId,
           options.deferTextCacheWrite,
+          false,
+          cacheBypassed,
         ),
       );
   // A brand-new AI sentence cannot be a cache hit. Return its streaming URL
@@ -231,9 +275,11 @@ export async function prepareConversationPipeline(
   // known text-cache entries still resolve to durable audio before returning.
   const usesFastStreamingTts =
     !prefetchedAudio &&
-    (options.streamAudioOnCacheMiss || llm.value.source === "cloudflare" ||
+    (options.streamAudioOnCacheMiss || llm.value.source === "cloudflare" || llm.value.source === "deepinfra" ||
       getAudioStorageBackend() === "cloudinary");
-  const tts = prefetchedAudio
+  const tts = cacheBypassed
+    ? { value: getUncachedEnglishAudioStreamUrl(llm.value.englishText), latencyMs: 0 }
+    : prefetchedAudio
     ? { value: prefetchedAudio, latencyMs: 0 }
     : await measureStep<AudioSynthesisResult>(() =>
         usesFastStreamingTts
@@ -241,7 +287,7 @@ export async function prepareConversationPipeline(
               eagerStream: options.eagerAudioOnCacheMiss === true,
               knownCacheMiss:
                 options.eagerAudioOnCacheMiss === true &&
-                llm.value.source === "cloudflare",
+                (llm.value.source === "cloudflare" || llm.value.source === "deepinfra"),
             })
           : synthesizeEnglishAudio(llm.value.englishText),
       );
@@ -299,6 +345,10 @@ export function completePreparedConversationPipeline(
   logEvent("info", "conversation_pipeline_completed", {
     requestId: input.requestId,
     conversationId,
+    ...turnContent({
+      clientId: input.clientId, sourceText: result.vietnameseText,
+      englishText: result.englishText, audioUrl: result.audioUrl,
+    }),
     context: input.context,
     asrMode: result.asrMode,
     processingMode: result.processingMode,

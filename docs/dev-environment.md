@@ -9,7 +9,7 @@ Chạy trên **cùng VPS** với production nhưng tách hẳn:
 | GitHub environment | `production` | `development` |
 | Thư mục VPS | `/opt/homi/backend` | `/opt/homi/backend-dev` |
 | Compose project | `speaking-ai-cloudflare` | `speaking-ai-dev` |
-| Backend | `backend-3000`, `backend-3001` | `backend` (1 instance) |
+| Backend | `backend-3000`, `backend-3001` | `backend-3000`, `backend-3001` (giống prod) |
 | Nginx nội bộ | `127.0.0.1:8080` | `127.0.0.1:8081` |
 | Redis | 3 container, cổng 16379–16381 | 3 container riêng, không mở cổng ra host |
 | Image trên VPS | `speaking-ai-backend:<sha>` | `speaking-ai-backend-dev:<sha>` |
@@ -93,17 +93,65 @@ certbot --nginx -d api-dev.hoamytech.com
 ```bash
 git checkout -b dev origin/can-bang-tai && git push -u origin dev
 ```
-Workflow `Deploy dev` tự chạy. Lần đầu nó dựng `backend` rồi tự bật `nginx` dev.
+Workflow `Deploy dev` tự chạy. Lần đầu nó dựng `backend-3000`, `backend-3001` rồi tự bật `nginx` dev.
 Kiểm tra: `curl -fsS https://api-dev.hoamytech.com/api/ready`.
 
 ## Hằng ngày
 
 - Code mới → PR vào `dev` (chạy Verify) → merge → tự deploy lên `api-dev`.
 - Test xong → PR `dev` → `can-bang-tai` → production.
-- Log: `cd /opt/homi/backend-dev && docker compose --env-file .env.compose -f docker-compose.dev.yml logs --tail=100 backend nginx`
+- Log: `cd /opt/homi/backend-dev && docker compose --env-file .env.compose -f docker-compose.dev.yml logs --tail=100 backend-3000 backend-3001 nginx`
 - Tag đang chạy: `cat /opt/homi/backend-dev/.deploy/current_tag`
 - Rollback dev: `HOMI_DEPLOY_ENV=dev /opt/homi/backend-dev/deploy/rollback.sh [tag]`
 - Khởi động lại tay: luôn kèm tag đang chạy (`.env.compose` chỉ có `local`, image đó không tồn tại):
   `BACKEND_IMAGE_TAG=$(cat .deploy/current_tag) docker compose --env-file .env.compose -f docker-compose.dev.yml up -d`
 - Tắt dev để trả RAM: `docker compose --env-file .env.compose -f docker-compose.dev.yml stop`
   (không ảnh hưởng production).
+
+## Cache bản dịch dùng chung theo câu
+
+Từ 2026-11-14: `AUDIO_TRANSLATION_SHARED_TEXT_CACHE_ENABLED: "true"` (đặt trong compose cho hai backend và các worker).
+Khi bất kỳ người dùng nào đã nói một câu, lần sau câu đó không gọi model dịch nữa, kể cả với người dùng khác.
+Chỉ lưu câu tiếng Việt và bản dịch tiếng Anh trong Redis cache (`redis-cache`, tối đa 64 MB, tự loại khoá cũ);
+không lưu giọng nói hay mã người dùng. Hai câu được coi là một khi chỉ khác khoảng trắng, dấu ngoặc kép hoặc dấu chấm cuối;
+chữ hoa/thường và dấu `?`, `!` vẫn phân biệt ("Mai đi học" khác "mai đi học"). Thời gian lưu: `AUDIO_TRANSLATION_SHARED_TEXT_CACHE_TTL_SECONDS`
+(mặc định 1 ngày, vì một bản dịch sai sẽ được trả cho mọi người dùng tới khi hết hạn). Đổi model, prompt, số token tối đa
+hoặc `AUDIO_TRANSLATION_POLICY_VERSION` làm cache cũ tự hết hiệu lực.
+Cờ này độc lập với `AUDIO_TRANSLATION_CACHE_ENABLED`; cờ kia còn bật cache theo audio của từng client kèm giới hạn
+số request đồng thời, nên không bật nó trên dev. Xoá cache khi cần: `docker exec speaking-ai-dev-redis-cache-1 redis-cli FLUSHDB`.
+
+## Hàng đợi job BullMQ (worker)
+
+Bật trên dev từ 2026-11-12: `AUDIO_TRANSLATION_JOBS_ENABLED='true'` trong `.env.local` dev và
+bốn service `audio-worker-a` … `audio-worker-d` (profile `jobs`) trong `docker-compose.dev.yml`. Client dùng
+`POST /api/audio/jobs` hoặc header `Prefer: respond-async` trên `/api/audio/translate` → 202 + `jobId`,
+rồi poll `GET /api/audio/jobs/<jobId>`.
+
+`Deploy dev` build cả image worker (GHCR, tag `<sha>-worker`). `deploy.sh` pull về thành
+`speaking-ai-audio-worker-dev:<sha>`, và **chỉ những worker đang chạy** mới được recreate sau
+backend rồi kiểm tra: đúng image, vẫn chạy sau 15 giây, không restart. Lỗi → tự rollback cả backend
+lẫn worker. Worker đang tắt thì deploy không bật lên (image vẫn được pull sẵn). `rollback.sh` cũng
+chuyển worker nếu có image của tag đích; thiếu image thì giữ worker cũ và ghi NOTICE.
+
+Bật worker bằng tay (lần đầu, hoặc sau khi đã tắt):
+```bash
+cd /opt/homi/backend-dev
+BACKEND_IMAGE_TAG=$(cat .deploy/current_tag) docker compose --env-file .env.compose -f docker-compose.dev.yml --profile jobs up -d --no-deps audio-worker-a audio-worker-b audio-worker-c audio-worker-d
+```
+
+Từ 2026-11-13 mỗi worker gắn với một tài khoản Cloudflare qua `AUDIO_TRANSLATION_JOB_WORKER_ACCOUNT`
+(`audio-a` … `audio-d`, đặt trong compose). Cả bốn lấy job từ cùng một hàng đợi; mỗi worker chạy 8 job
+cùng lúc (bằng `limits.text.maxConcurrent` của một tài khoản) và chỉ gọi tài khoản của nó. Hệ quả:
+worker không tự gọi sang tài khoản khác. Thay vào đó job quay lại hàng đợi để worker bất kỳ (thường là
+tài khoản khác) làm tiếp, trong ba trường hợp: hết chỗ (`capacity`/`queue_timeout`), Cloudflare trả 429,
+hoặc lỗi tạm thời (5xx, lỗi mạng, quá thời gian của một lượt gọi — chỉ khi `CLOUDFLARE_POOL_RETRY_TRANSIENT`
+bật). Log ghi `audio_translation_job_requeued`. Giới hạn vẫn như cũ: tối đa 3 lần chạy job và
+`CLOUDFLARE_POOL_MAX_ATTEMPTS_PER_REQUEST` lượt gọi Cloudflare cho mỗi job; bước nhận diện đã xong thì
+không chạy lại. Worker không khởi động
+nếu tài khoản của nó không có hoặc đang `enabled: false` trong `CLOUDFLARE_ACCOUNTS_JSON` — tắt một tài
+khoản thì dừng luôn worker tương ứng. Thêm tài khoản mới: thêm một service `audio-worker-<x>` và tên đó
+vào `WORKER_SERVICES` trong `deploy/lib.sh`. Bỏ biến này thì worker dùng chung mọi tài khoản như trước.
+Tag trước khi có CI worker (`efade07…`) được build tay trên VPS.
+Worker không có cổng HTTP; kiểm tra bằng heartbeat:
+`docker exec speaking-ai-dev-redis-jobs-1 redis-cli --no-auth-warning keys 'speaking-ai-audio-jobs:worker:*'`.
+Tắt: đặt lại cờ `false`, `docker compose … stop audio-worker-a audio-worker-b audio-worker-c audio-worker-d` và recreate `backend-3000`, `backend-3001`.

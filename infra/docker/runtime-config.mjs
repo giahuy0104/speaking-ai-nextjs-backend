@@ -55,11 +55,14 @@ export function configureDeployment(env, role = "web") {
   if (audio === "vercel-blob" && !value(env, "GENERATED_AUDIO_BLOB_READ_WRITE_TOKEN") && !value(env, "BLOB_READ_WRITE_TOKEN")) fail("GENERATED_AUDIO_BLOB_READ_WRITE_TOKEN", "required");
   const pool = flag(env, "CLOUDFLARE_AUDIO_TRANSLATION_POOL_ENABLED");
   const cache = flag(env, "AUDIO_TRANSLATION_CACHE_ENABLED");
+  // Sentence-level cache shared by every client; it uses the cache Redis but not the pool.
+  const sharedTextCache = flag(env, "AUDIO_TRANSLATION_SHARED_TEXT_CACHE_ENABLED");
   const jobs = flag(env, "AUDIO_TRANSLATION_JOBS_ENABLED");
   const sharedLegacy = flag(env, "CLOUDFLARE_POOL_SHARE_LEGACY_ACCOUNT");
   const routeLegacy = flag(env, "CLOUDFLARE_POOL_ROUTE_LEGACY_ACCOUNT");
   if ((cache || jobs || sharedLegacy) && !pool) fail("CLOUDFLARE_AUDIO_TRANSLATION_POOL_ENABLED", "required_by_enabled_features");
   if (routeLegacy && !sharedLegacy) fail("CLOUDFLARE_POOL_ROUTE_LEGACY_ACCOUNT", "requires_shared_legacy_quota");
+  if (flag(env, "CLOUDFLARE_POOL_BALANCE_LEGACY_CALLS") && !routeLegacy) fail("CLOUDFLARE_POOL_BALANCE_LEGACY_CALLS", "requires_legacy_routing");
   if (role === "worker" && !jobs) fail("AUDIO_TRANSLATION_JOBS_ENABLED", "required_for_worker");
   // Preserve the explicit Compose load-test migration; never silently share legacy quota.
   if (flag(env, "CLOUDFLARE_POOL_ALLOW_LEGACY_ACCOUNT_LOCAL_TEST")) {
@@ -72,6 +75,32 @@ export function configureDeployment(env, role = "web") {
     env.CLOUDFLARE_ACCOUNTS_JSON = JSON.stringify(dedicated);
     env.CLOUDFLARE_POOL_ALLOW_LEGACY_ACCOUNT_LOCAL_TEST = "false";
   }
+  // Audio translate stages may run on DeepInfra; fail at startup, not on the first request.
+  // Each is a priority list, e.g. "deepinfra,cloudflare" (DeepInfra first, Cloudflare fallback).
+  // The _EN lists are optional overrides for English (unset: the shared list applies).
+  const optionalLists = ["AUDIO_ASR_PROVIDER_EN", "AUDIO_TEXT_PROVIDER_EN"].filter(key => value(env, key));
+  const audioProviders = ["AUDIO_ASR_PROVIDER", "AUDIO_TEXT_PROVIDER", ...optionalLists].flatMap(key => {
+    const providers = [...new Set(value(env, key).toLowerCase().split(",").map(entry => entry.trim()).filter(Boolean))];
+    if (!providers.length) providers.push("cloudflare");
+    if (providers.some(provider => provider !== "cloudflare" && provider !== "deepinfra")) fail(key, "cloudflare_or_deepinfra");
+    env[key] = providers.join(",");
+    return providers;
+  });
+  // zh/ja/ko/fr speech has a single provider (no fallback list).
+  const targetTts = value(env, "AUDIO_TARGET_TTS_PROVIDER").toLowerCase() || "cloudflare";
+  if (!["cloudflare", "deepinfra", "google"].includes(targetTts)) fail("AUDIO_TARGET_TTS_PROVIDER", "cloudflare_deepinfra_or_google");
+  env.AUDIO_TARGET_TTS_PROVIDER = targetTts;
+  if (audioProviders.includes("deepinfra") || targetTts === "deepinfra") required(env, "DEEPINFRA_API_KEY");
+  // English speech: Cloudflare aura-1 (default) or Google (Neural2 clips, Chirp 3 HD streams).
+  const englishTts = value(env, "AUDIO_ENGLISH_TTS_PROVIDER").toLowerCase() || "cloudflare";
+  if (!["cloudflare", "google"].includes(englishTts)) fail("AUDIO_ENGLISH_TTS_PROVIDER", "cloudflare_or_google");
+  env.AUDIO_ENGLISH_TTS_PROVIDER = englishTts;
+  // Google: a service-account key, or Application Default Credentials from a mounted file.
+  if ((targetTts === "google" || englishTts === "google") && !value(env, "GOOGLE_APPLICATION_CREDENTIALS")) {
+    required(env, "GOOGLE_TTS_CREDENTIALS_JSON");
+  }
+  // A share of Google's short clips may be spoken by DeepInfra (AUDIO_TARGET_CLIP_DEEPINFRA_SHARE).
+  if (targetTts === "google" && Number(value(env, "AUDIO_TARGET_CLIP_DEEPINFRA_SHARE")) > 0) required(env, "DEEPINFRA_API_KEY");
   if (role === "web") {
     if (!/^[a-f0-9]{32}$/i.test(required(env, "CLOUDFLARE_ACCOUNT_ID"))) fail("CLOUDFLARE_ACCOUNT_ID", "invalid_account_id");
     required(env, "CLOUDFLARE_WORKERS_AI_API_TOKEN");
@@ -85,7 +114,7 @@ export function configureDeployment(env, role = "web") {
   const endpoints = new Set();
   const redisSettings = [
     ...(pool ? [["CLOUDFLARE_POOL_REDIS_URL", "redis"]] : []),
-    ...(cache ? [["AUDIO_TRANSLATION_CACHE_REDIS_URL", "redis-cache"]] : []),
+    ...(cache || sharedTextCache ? [["AUDIO_TRANSLATION_CACHE_REDIS_URL", "redis-cache"]] : []),
     ...(jobs ? [["AUDIO_TRANSLATION_JOBS_REDIS_URL", "redis-jobs"]] : []),
   ];
   for (const [key, host] of redisSettings) {

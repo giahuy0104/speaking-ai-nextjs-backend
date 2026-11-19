@@ -84,6 +84,8 @@ export type CloudflareExecutionContext = Readonly<{
   attempts: AttemptBudget;
   /** Shared by request admission and both stages; waiting never resets the deadline. */
   admissionWait?: { usedMs: number };
+  /** Pins every stage of this execution to one account (a job worker dedicated to it). */
+  accountIdentity?: string;
   dispatcher: CloudflareDispatcher;
 }>;
 
@@ -108,6 +110,8 @@ export type PoolConfig = Readonly<{
   textBacklogThreshold?: number;
   legacyAccountIdentity?: string;
   routeLegacyAccount?: boolean;
+  /** Legacy ASR/text/TTS may run on any enabled account that declares the model. */
+  balanceLegacyCalls?: boolean;
   accounts: readonly CloudflareAccount[];
   store: "memory" | "redis";
   redisUrl?: string;
@@ -120,4 +124,6 @@ export type PoolConfig = Readonly<{
   maxQueued: number;
   maxBufferedBytes: number;
   minAttemptMs: number;
+  /** Retry attempt timeouts, network failures and HTTP 5xx once on another account. */
+  retryTransientFaults?: boolean;
 }>;

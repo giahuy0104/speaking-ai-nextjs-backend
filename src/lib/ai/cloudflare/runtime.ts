@@ -17,7 +17,9 @@ type RuntimeOptions = {
   clock?: () => number;
 };
 type ExecutionInput = { requestId: string; parentRequestId?: string; signal?: AbortSignal; telemetry?: TelemetrySink;
-  timing?: ReturnType<typeof createDeadline> };
+  timing?: ReturnType<typeof createDeadline>;
+  /** Run every stage on this enabled account only (a job worker dedicated to it). */
+  accountAlias?: string };
 
 async function defaultStore(config: PoolConfig): Promise<AdmissionStore> {
   if (config.store === "memory") return new MemoryAdmissionStore();
@@ -58,6 +60,9 @@ export function createPoolRuntime(options: RuntimeOptions = {}) {
     workload: CloudflareExecutionContext["workload"] = "audio-translate") => {
     try {
       assertExecutionActive(timing, clock());
+      const pinnedAccount = input.accountAlias === undefined ? undefined
+        : config!.accounts.find(account => account.alias === input.accountAlias && account.enabled);
+      if (input.accountAlias !== undefined && !pinnedAccount) throw new PoolError("configuration");
       dispatcher ??= new AccountDispatcher(config!, lazyStore, options.telemetry ?? input.telemetry, clock);
       const execution: CloudflareExecutionContext = Object.freeze({
         requestId: input.requestId, workload, ...timing,
@@ -65,6 +70,7 @@ export function createPoolRuntime(options: RuntimeOptions = {}) {
         // Legacy requests remain pinned and never gain automatic inference retry.
         attempts: { used: 0, max: workload === "audio-translate" ? config!.maxAttemptsPerRequest : 1 }, dispatcher,
         admissionWait: { usedMs: slot.waitedMs },
+        ...(pinnedAccount ? { accountIdentity: pinnedAccount.identity } : {}),
       });
       return { execution, release: slot.release };
     } catch (error) { slot.release(); throw error; }
@@ -112,7 +118,11 @@ export function createPoolRuntime(options: RuntimeOptions = {}) {
           emitTelemetry(sink, "cloudflare_pool_queued", { ...base, queueDepth }));
         const handle = session(input, timing, slot, workload);
         emitTelemetry(sink, "cloudflare_pool_request_admitted", { ...base, admissionWaitMs: slot.waitedMs });
-        return { ...handle, accountIdentity: current.legacyAccountIdentity };
+        // The caller built its URL for the legacy account; keep that ID so a
+        // balanced attempt can rewrite it to the account the dispatcher grants.
+        const legacyAccountId = current.accounts.find(account => account.identity === current.legacyAccountIdentity)!.accountId;
+        return { ...handle, legacyAccountId,
+          accountIdentity: current.balanceLegacyCalls ? undefined : current.legacyAccountIdentity };
       } catch (error) {
         emitTelemetry(sink, "cloudflare_pool_unavailable", { ...base, safeReason: error instanceof PoolError ? error.reason : "configuration" });
         throw error;

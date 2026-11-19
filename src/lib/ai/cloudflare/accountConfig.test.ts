@@ -133,6 +133,12 @@ test("production legacy sharing validates every legacy model and explicit TTS qu
   invalid({ ...shared, CLOUDFLARE_AUDIO_TRANSLATION_POOL_ENABLED: "false" }, "shared_account_requires_pool");
   invalid({ ...shared, CLOUDFLARE_POOL_SHARE_LEGACY_ACCOUNT: "yes" }, "invalid_shared_account_flag");
   invalid({ ...shared, CLOUDFLARE_POOL_SHARE_LEGACY_ACCOUNT: "false", CLOUDFLARE_POOL_ROUTE_LEGACY_ACCOUNT: "true" }, "legacy_routing_requires_shared_quota");
+  assert.equal(config.balanceLegacyCalls, false);
+  assert.equal(parsePoolConfig({ ...shared, CLOUDFLARE_POOL_ROUTE_LEGACY_ACCOUNT: "true",
+    CLOUDFLARE_POOL_BALANCE_LEGACY_CALLS: "true" }).balanceLegacyCalls, true);
+  invalid({ ...shared, CLOUDFLARE_POOL_BALANCE_LEGACY_CALLS: "true" }, "legacy_balancing_requires_routing");
+  invalid({ ...shared, CLOUDFLARE_POOL_ROUTE_LEGACY_ACCOUNT: "true", CLOUDFLARE_POOL_BALANCE_LEGACY_CALLS: "yes" },
+    "invalid_legacy_balancing_flag");
   invalid({ ...shared, CLOUDFLARE_POOL_ALLOW_LEGACY_ACCOUNT_LOCAL_TEST: "true" }, "conflicting_shared_account_flags");
   invalid({ ...shared, CLOUDFLARE_ACCOUNT_ID: "f".repeat(32) }, "missing_shared_legacy_account");
   invalid({ ...shared, CLOUDFLARE_ACCOUNTS_JSON: JSON.stringify([account()]) }, "missing_legacy_model_capability");

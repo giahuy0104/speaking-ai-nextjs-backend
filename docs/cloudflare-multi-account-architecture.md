@@ -290,6 +290,11 @@ Admission pool cần giới hạn tổng concurrency ở workload; việc Route 
 - Muốn chuyển tài khoản sớm hơn khi ASR chậm cần cấu hình attempt budget riêng sau khi đo; không mặc định hạ timeout ASR xuống vài giây rồi coi số 504 tăng là thành công.
 - `maxDuration = 35` trong source không chứng minh Railway sẽ thực thi đúng giới hạn đó. Kiểm tra timeout proxy/server/deployment, giữ đủ thời gian trả lỗi và cleanup.
 - Hủy fetch không chứng minh upstream đã ngừng tính toán; timeout retry có thể trùng xử lý và chi phí. V1 mặc định không retry timeout/mạng có trạng thái không chắc chắn.
+- **Cập nhật 11/11/2026 (sau test tải production 10/11):** một lần gọi text treo quá 6 giây làm ~200 request trả 504 (không retry + single-flight lan lỗi). Đã chấp nhận đánh đổi chi phí và bật `CLOUDFLARE_POOL_RETRY_TRANSIENT` (mặc định `true`, đặt `false` để quay về V1):
+  - Timeout của chính attempt (`abortCause=attempt_timeout`), lỗi mạng, HTTP 5xx được thử lại **một lần trên account chưa dùng**, trong cùng attempt budget (3/request) và deadline. Timeout do deadline tổng hoặc client ngắt không retry.
+  - Account vừa lỗi được cooldown 1 giây **chỉ cho rule task/model đó** (không khóa cả account); caller ghim một account (legacy admission) giữ hành vi V1.
+  - Timeout attempt đường pool: text giữ 6 giây (`CLOUDFLARE_TEXT_TIMEOUT_MS`; test tải có lần thành công ở 5,1–5,3 giây), ASR 8 giây (`CLOUDFLARE_ASR_ATTEMPT_TIMEOUT_MS`, ~2× p95 ASR khi tải).
+  - Single-flight: caller **đang chờ** (chưa tự gọi inference) được chạy lại một lần khi leader lỗi tạm thời và còn ≥ 6 giây; các caller chờ dùng chung một flight mới. Leader không chạy lại ở tầng này.
 
 ### 8.2. Chính sách lỗi đề xuất
 
@@ -298,8 +303,8 @@ Admission pool cần giới hạn tổng concurrency ở workload; việc Route 
 | 429 xác nhận rate limit | Cooldown theo đúng phạm vi quota, ưu tiên Retry-After | Có thể chọn account khác một lần nếu policy Cloudflare và budget cho phép |
 | 429/4006 chưa rõ nguyên nhân | Cooldown ngắn có giới hạn, log mã và safe reason | Không khẳng định hết tiền/quota, không xoay vô hạn qua toàn pool |
 | Lỗi quota/billing/credential đã xác nhận | Disable/cooldown dài đúng scope, cảnh báo vận hành | Không polling inference liên tục; sửa cấu hình hoặc điều kiện tài khoản |
-| Provider 5xx/capacity | Ghi outcome theo scope model/task phù hợp | Mặc định không retry tự động V1; chỉ bật thử tài khoản khác sau đánh giá tải/chi phí |
-| Timeout hoặc lỗi mạng | Ghi latency và trạng thái upstream không chắc chắn | Trả lỗi theo deadline; không mặc định phát thêm bản sao request |
+| Provider 5xx/capacity | Cooldown 1 giây cho rule task/model của account | Thử account chưa dùng một lần khi `CLOUDFLARE_POOL_RETRY_TRANSIENT=true` (mặc định từ 11/11/2026); `false` = V1 không retry |
+| Timeout hoặc lỗi mạng | Ghi latency; attempt timeout/mạng: cooldown 1 giây cho rule task/model | Attempt timeout và lỗi mạng: thử account khác một lần (cùng cờ trên). Timeout deadline tổng/client ngắt: không retry |
 | Input 4xx, transcript rỗng/422, sai ngôn ngữ | Không phạt sức khỏe account | Trả lỗi nghiệp vụ như trước, không chạy lại trên mọi tài khoản |
 | Client hủy request | Không coi là account hỏng | Hủy local, không gọi công đoạn tiếp hoặc retry |
 | Redis/config pool lỗi | Không fallback vào legacy | 503 có envelope tương thích, log nguyên nhân nội bộ |

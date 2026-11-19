@@ -179,7 +179,7 @@ export type ConversationLatency = {
 
 export type ProcessingMode = "rule" | "ai" | "fallback";
 
-export type TextProvider = "cloudflare" | "openai";
+export type TextProvider = "cloudflare" | "openai" | "deepinfra";
 
 export type TextSource =
   | "phrase_rule"
@@ -190,7 +190,7 @@ export type TextSource =
   | "text_cache"
   | "cloudflare"
   | "openai"
-  | "cloudflare"
+  | "deepinfra"
   | "fallback";
 
 export type AudioSource = "cache" | "openai_tts" | "cloudflare_tts" | "device_tts";

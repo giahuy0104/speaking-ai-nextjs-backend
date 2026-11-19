@@ -2,11 +2,12 @@ import type { ConversationRequest } from "@/types/conversation";
 import { AppError } from "@/lib/errors";
 import { delay } from "@/lib/latency";
 import { logEvent } from "@/lib/observability";
-import { transcribeAudioToVietnamese } from "./cloudflareWorkersAi";
+import { transcribeAudioToVietnameseWithProviders } from "./cloudflareWorkersAi";
 import { resolveCloudflareAsrVadPolicy } from "./cloudflareWorkersAiRequest";
 import { sampleVietnameseByContext } from "./prompts";
 import { repairVietnameseChildSpeechLayers } from "./childSpeechTranscriptRepair";
 import { assertVietnameseTranscriptIsUsable } from "./vietnameseTranscriptValidation";
+import { turnContent } from "@/lib/turnContentLog";
 
 function repairVietnameseTranscriptFromChildSpeech(
   text: string,
@@ -46,7 +47,7 @@ function assertVietnameseTranscript(
   segments: unknown[] = [],
   options: {
     requestId?: string;
-    provider?: "cloudflare" | "device";
+    provider?: "cloudflare" | "deepinfra" | "device";
     utteranceDurationMs?: number;
   } = {},
 ) {
@@ -59,6 +60,7 @@ function assertVietnameseTranscript(
         reason,
         utteranceDurationMs: options.utteranceDurationMs,
         transcriptLength: text.trim().length,
+        ...turnContent({ sourceText: text }),
       });
     },
   });
@@ -87,17 +89,18 @@ async function transcribeAudio(input: ConversationRequest) {
     bluetoothAudioInput: input.benchmark.bluetoothAudioInput,
   });
 
-  const result = await transcribeAudioToVietnamese(audioFile, {
-    vadFilter: vadPolicy.vadFilter,
-  });
+  // Every target language follows AUDIO_ASR_PROVIDER (DeepInfra first when configured,
+  // Cloudflare when unset), unless AUDIO_ASR_PROVIDER_<LANG> overrides it (e.g. _EN).
+  const asrOptions = { vadFilter: vadPolicy.vadFilter, targetLanguage: input.targetLanguage };
+  const result = await transcribeAudioToVietnameseWithProviders(audioFile, asrOptions);
   assertVietnameseTranscript(result.vietnameseText, result.segments, {
     requestId: input.requestId,
-    provider: "cloudflare",
+    provider: result.provider,
     utteranceDurationMs: input.benchmark?.utteranceDurationMs,
   });
   logEvent("info", "asr_provider_latency", {
     requestId: input.requestId,
-    provider: "cloudflare",
+    provider: result.provider,
     model: result.model,
     latencyMs: Math.round(performance.now() - startedAt),
     fallbackUsed: false,

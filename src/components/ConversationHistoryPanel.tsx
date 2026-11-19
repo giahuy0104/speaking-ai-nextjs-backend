@@ -143,7 +143,7 @@ export function ConversationHistoryPanel({
                         {pick("Sai ý", "意思错误")}
                       </button>
                       {(item.targetLanguage ?? "en") === "en" &&
-                      ["openai", "cloudflare", "text_cache"].includes(
+                      ["openai", "cloudflare", "deepinfra", "text_cache"].includes(
                         item.textSource,
                       ) ? (
                         <button

@@ -1,0 +1,168 @@
+{
+  "info": {
+    "name": "HoamyTech DEV - Public Audio API - Iteration data (api-dev)",
+    "description": "Môi trường DEV (https://api-dev.hoamytech.com, nhánh dev). Một request dịch audio, mỗi lượt lấy một dòng trong file Iteration data (audioName, sourceLanguage, audioBase64).\nChạy: Run → Performance, chọn Iteration data = file audio-iteration-data.json.\nMỗi virtual user tự đăng ký installation một lần rồi dùng lại token. API đăng ký giới hạn khoảng 12 lượt/phút;\nkhi chạy nhiều VU, dán sẵn accessToken (lấy từ collection functional, bước 03) vào biến accessToken để tất cả VU dùng chung.\nKhông lưu token admin, Cloudflare hoặc Redis trong collection này.\nLưu ý: DEV đang dùng chung DATABASE_URL với production, installation tạo ra ở đây là dữ liệu thật.\naccessToken phải lấy từ api-dev (token production không dùng được trên dev và ngược lại).",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "https://api-dev.hoamytech.com",
+      "type": "string"
+    },
+    {
+      "key": "clientId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "installationSecret",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "accessToken",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "accessTokenExpiresAt",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "(function () {",
+          "const baseUrl = pm.collectionVariables.get(\"baseUrl\") || \"\";",
+          "if (!/^https?:\\/\\//i.test(baseUrl)) throw new Error(\"baseUrl must start with http:// or https://\");",
+          "if (/^https?:\\/\\/api\\.hoamytech\\.com(\\/|:|$)/i.test(baseUrl)) throw new Error(\"This is the DEV collection; baseUrl points to production\");",
+          "const expiresAt = Date.parse(pm.collectionVariables.get(\"accessTokenExpiresAt\") || \"\");",
+          "const token = pm.collectionVariables.get(\"accessToken\");",
+          "if (token && (!Number.isFinite(expiresAt) || expiresAt - Date.now() > 60000)) return;",
+          "if (!pm.collectionVariables.get(\"clientId\") || !pm.collectionVariables.get(\"installationSecret\")) {",
+          " pm.collectionVariables.set(\"clientId\", \"web_postman_dev_\" + pm.variables.replaceIn(\"{{$guid}}\"));",
+          " pm.collectionVariables.set(\"installationSecret\", pm.variables.replaceIn(\"{{$guid}}{{$guid}}\").replace(/-/g, \"\"));",
+          "}",
+          "pm.sendRequest({",
+          " url: baseUrl + \"/api/installations/register\",",
+          " method: \"POST\",",
+          " header: { \"Content-Type\": \"application/json\", Accept: \"application/json\" },",
+          " body: { mode: \"raw\", raw: JSON.stringify({",
+          "  clientId: pm.collectionVariables.get(\"clientId\"), platform: \"web\",",
+          "  installationSecret: pm.collectionVariables.get(\"installationSecret\"), appVersion: \"postman-dev-iteration-data-1.0\" }) }",
+          "}, function (err, res) {",
+          " let data = null;",
+          " try { data = res && res.json(); } catch (_) {}",
+          " if (err || !res || res.code !== 201 || !data || !data.accessToken) {",
+          "  console.error(\"Register installation failed\", { status: res && res.code, error: data && data.error && data.error.code });",
+          "  return;",
+          " }",
+          " pm.collectionVariables.set(\"clientId\", data.clientId);",
+          " pm.collectionVariables.set(\"accessToken\", data.accessToken);",
+          " pm.collectionVariables.set(\"accessTokenExpiresAt\", data.accessTokenExpiresAt || \"\");",
+          "});",
+          "})();"
+        ]
+      }
+    }
+  ],
+  "item": [
+    {
+      "name": "[DEV] Translate {{audioName}} (Iteration data)",
+      "request": {
+        "method": "POST",
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{accessToken}}",
+              "type": "string"
+            }
+          ]
+        },
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "multipart/form-data; boundary=postman-audio-performance-20261027",
+            "type": "text"
+          },
+          {
+            "key": "Accept",
+            "value": "application/json",
+            "type": "text"
+          },
+          {
+            "key": "X-Request-Id",
+            "value": "postman-dev-{{$guid}}",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "--postman-audio-performance-20261027\r\nContent-Disposition: form-data; name=\"audio\"; filename=\"{{audioName}}\"\r\nContent-Type: audio/wav\r\nContent-Transfer-Encoding: base64\r\n\r\n{{audioBase64}}\r\n--postman-audio-performance-20261027\r\nContent-Disposition: form-data; name=\"sourceLanguage\"\r\n\r\n{{sourceLanguage}}\r\n--postman-audio-performance-20261027\r\nContent-Disposition: form-data; name=\"clientId\"\r\n\r\n{{clientId}}\r\n--postman-audio-performance-20261027--\r\n"
+        },
+        "url": "{{baseUrl}}/api/audio/translate",
+        "description": "Audio lấy từ Iteration data; mỗi dòng là một file WAV mã hóa base64."
+      },
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "(function () {",
+              "if (!pm.iterationData.has(\"audioBase64\") || !pm.iterationData.has(\"audioName\")) {",
+              " throw new Error(\"Select the audio Iteration data file (audioName, sourceLanguage, audioBase64).\");",
+              "}",
+              "if (!pm.iterationData.has(\"sourceLanguage\")) pm.variables.set(\"sourceLanguage\", \"vi\");",
+              "})();"
+            ]
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "(function () {",
+              "let data = null;",
+              "try { data = pm.response.json(); } catch (_) {}",
+              "const requestId = pm.response.headers.get(\"X-Request-Id\") || \"unknown\";",
+              "const audioName = pm.iterationData.get(\"audioName\");",
+              "const reason = data && data.error ? data.error.code + \": \" + data.error.message : \"No valid translation result\";",
+              "const detail = data && data.error && data.error.details ? \" | reason=\" + data.error.details.reason : \"\";",
+              "pm.test(\"Response is JSON\", function () { pm.response.to.be.json; });",
+              "pm.test(\"Request ID is returned\", function () { pm.expect(requestId).to.not.eql(\"unknown\"); });",
+              "pm.test(\"Audio translation HTTP 200\", function () {",
+              " pm.expect(pm.response.code, reason + detail + \" | audio=\" + audioName + \" | requestId=\" + requestId).to.eql(200);",
+              "});",
+              "pm.test(\"No server error (5xx)\", function () { pm.expect(pm.response.code).to.be.below(500); });",
+              "if (pm.response.code === 429) {",
+              " pm.test(\"429 includes Retry-After\", function () { pm.expect(pm.response.headers.get(\"Retry-After\")).to.be.a(\"string\").and.not.empty; });",
+              "}",
+              "if (pm.response.code === 200) {",
+              " pm.test(\"Nonempty English translation\", function () {",
+              "  pm.expect(data.targetLanguage).to.eql(\"en\");",
+              "  pm.expect(data.englishText).to.be.a(\"string\");",
+              "  pm.expect(data.englishText.trim().length).to.be.above(0);",
+              " });",
+              " console.info(\"Audio result\", { audio: audioName, requestId: requestId, englishText: data.englishText });",
+              "} else {",
+              " console.error(\"Audio failed\", { audio: audioName, status: pm.response.code, requestId: requestId, reason: reason + detail });",
+              "}",
+              "// An expired or revoked token forces this virtual user to register again next iteration.",
+              "if (pm.response.code === 401) { pm.collectionVariables.unset(\"accessToken\"); pm.collectionVariables.unset(\"accessTokenExpiresAt\"); }",
+              "})();"
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

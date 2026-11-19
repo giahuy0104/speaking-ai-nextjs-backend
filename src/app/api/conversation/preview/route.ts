@@ -1,4 +1,5 @@
 import { resolveFastEnglishSentence } from "@/lib/ai/llm";
+import { bypassesAudioCache } from "@/lib/ai/loadTestPersistence";
 import { getEnglishAudioCacheUrl } from "@/lib/ai/tts";
 import type { PracticeContext } from "@/types/conversation";
 import { toErrorResponse } from "@/lib/errors";
@@ -36,6 +37,10 @@ export async function POST(request: Request) {
       );
     }
     const access = await requireInstallationAccess(request, body?.clientId);
+    // Load tests never read the rule and text caches (see loadTestPersistence.ts).
+    if (bypassesAudioCache(access.clientId)) {
+      return Response.json({ matched: false });
+    }
 
     const match = await resolveFastEnglishSentence(
       sourceText,

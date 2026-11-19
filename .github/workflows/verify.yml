@@ -5,6 +5,7 @@ name: Verify deployment
 on:
   pull_request:
     branches: [can-bang-tai, dev]
+  workflow_dispatch:
   workflow_call:
     inputs:
       ref:

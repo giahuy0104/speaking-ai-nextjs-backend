@@ -1,0 +1,324 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<title>Sơ đồ luồng xử lý chi tiết — Nginx, Redis, 2 tài khoản Cloudflare</title>
+<style>
+  @page { size: A4; margin: 12mm 11mm; }
+  * { box-sizing: border-box; }
+  body { font-family: "Segoe UI", Arial, sans-serif; color: #1f2733; font-size: 10.5px; line-height: 1.38; margin: 0; }
+  h1 { font-size: 19px; margin: 0 0 2px; }
+  h2 { font-size: 14px; margin: 0 0 8px; padding-bottom: 4px; border-bottom: 2px solid #2b6cb0; color: #1a3d6b; }
+  h3 { font-size: 11.5px; margin: 0 0 4px; }
+  .sub { color: #5a6573; margin-bottom: 10px; }
+  .page { page-break-after: always; }
+  .page:last-child { page-break-after: auto; }
+  .row { display: flex; gap: 8px; align-items: stretch; }
+  .col { display: flex; flex-direction: column; gap: 6px; }
+  .box { border: 1.5px solid #8a96a8; border-radius: 6px; padding: 6px 8px; background: #fff; }
+  .box b { display: block; font-size: 11px; }
+  .muted { color: #5a6573; }
+  .client { background: #eef4ff; border-color: #4a78c2; }
+  .nginx { background: #eaf7ee; border-color: #3b8f57; }
+  .be { background: #fff7e6; border-color: #c98a1b; }
+  .redis { background: #fdecec; border-color: #c24a4a; }
+  .cf { background: #fff1e0; border-color: #e0761b; }
+  .cfa { background: #ffe3c4; border-color: #d4650f; }
+  .cfb { background: #fff4e5; border-color: #e8a15a; }
+  .ext { background: #f1f0fb; border-color: #6b5fc2; }
+  .off { border-style: dashed; opacity: .75; }
+  .group { border: 1.5px dashed #9aa6b6; border-radius: 8px; padding: 8px; position: relative; margin-top: 6px; }
+  .group > .label { position: absolute; top: -8px; left: 10px; background: #fff; padding: 0 5px; font-weight: 700; font-size: 9.5px; color: #4a5566; letter-spacing: .3px; }
+  .arrow { text-align: center; color: #4a5566; font-size: 10px; margin: 2px 0; }
+  .arrow .a { font-size: 15px; line-height: 1; display: block; }
+  .tag { display: inline-block; font-size: 8.5px; font-weight: 700; padding: 1px 5px; border-radius: 8px; background: #2b6cb0; color: #fff; margin-left: 3px; vertical-align: 1px; }
+  .tag.orange { background: #d4650f; } .tag.gray { background: #7b8594; } .tag.red { background: #c24a4a; } .tag.green { background: #3b8f57; }
+  table { border-collapse: collapse; width: 100%; font-size: 9.8px; }
+  th, td { border: 1px solid #c3cad4; padding: 4px 5px; text-align: left; vertical-align: top; }
+  th { background: #eef1f5; }
+  .steps { counter-reset: s; margin: 0; padding: 0; list-style: none; }
+  .steps li { position: relative; padding: 4px 6px 4px 28px; margin-bottom: 4px; border-radius: 5px; background: #f6f8fb; border: 1px solid #dfe4ea; }
+  .steps li::before { counter-increment: s; content: counter(s); position: absolute; left: 6px; top: 4px; width: 16px; height: 16px; border-radius: 50%; background: #2b6cb0; color: #fff; font-weight: 700; text-align: center; line-height: 16px; font-size: 9.5px; }
+  .steps li.cf::before { background: #d4650f; }
+  .steps li.rd::before { background: #c24a4a; }
+  .note { background: #fffbea; border: 1px solid #e6cf6b; border-radius: 6px; padding: 6px 8px; margin-top: 8px; }
+  .warn { background: #fdecec; border: 1px solid #e3a1a1; border-radius: 6px; padding: 6px 8px; margin-top: 8px; }
+  code { font-family: Consolas, monospace; font-size: 9.5px; background: #eef1f5; padding: 0 3px; border-radius: 3px; }
+  svg text { font-family: "Segoe UI", Arial, sans-serif; }
+</style>
+</head>
+<body>
+
+<!-- ============ TRANG 1: TỔNG QUAN ============ -->
+<section class="page">
+  <h1>Sơ đồ luồng xử lý chi tiết — Nginx, Redis &amp; chia tải 2 tài khoản Cloudflare</h1>
+  <div class="sub">Backend HoamyTech · production <code>api.hoamytech.com</code> · dev <code>api-dev.hoamytech.com</code> · cập nhật 11/11/2026 · trạng thái pool theo <code>.env.local</code> (chưa đối chiếu cấu hình thật trên VPS)</div>
+
+  <h2>1. Kiến trúc tổng thể (production)</h2>
+
+  <div class="box client" style="text-align:center"><b>App Flutter / Web client</b>
+    Thu âm, gửi audio · nhận bản dịch + <code>audioUrl</code> · hội thoại, luyện nghe, dịch text, TTS</div>
+  <div class="arrow"><span class="a">↓</span>HTTPS 443</div>
+
+  <div class="box nginx"><b>① Nginx host (trên VPS, ngoài Docker)</b>
+    Giữ chứng chỉ HTTPS · <code>api.hoamytech.com</code> → Docker prod · <code>api-dev.hoamytech.com</code> → Docker dev (cổng riêng)</div>
+  <div class="arrow"><span class="a">↓</span>HTTP nội bộ</div>
+
+  <div class="box nginx"><b>② Nginx Docker — Load balancer <span class="tag green">MỌI API</span></b>
+    <div class="row" style="margin-top:3px">
+      <div style="flex:1">• <b style="display:inline">least_conn</b>: backend nào đang ít kết nối hơn thì nhận request.<br>
+        • Backend lỗi 2 lần trong 10 giây → tạm bỏ qua 10 giây (<code>max_fails=2 fail_timeout=10s</code>).<br>
+        • Lỗi kết nối / timeout → tự thử backend còn lại (<code>proxy_next_upstream_tries 2</code>).</div>
+      <div style="flex:1">• Ngoại lệ: <code>/api/audio/stream?node=3000|3001</code> → ghim về đúng backend đã tạo TTS (backend kia làm dự phòng).<br>
+        • Giới hạn body 32 MB · chờ phản hồi tối đa 60 giây.</div>
+    </div>
+  </div>
+  <div class="arrow"><span class="a">↙ &nbsp; ↘</span></div>
+
+  <div class="row">
+    <div class="box be" style="flex:1"><b>backend-3000</b>Next.js · 1 GB RAM · 1 CPU<br><span class="muted">Dispatcher Cloudflare riêng trong tiến trình (tối đa 20 request audio đang xử lý, 40 chờ)</span></div>
+    <div class="box be" style="flex:1"><b>backend-3001</b>Next.js · 1 GB RAM · 1 CPU<br><span class="muted">Giống hệt backend-3000; 2 bên phối hợp hạn mức qua Redis</span></div>
+    <div class="box be off" style="flex:1"><b>audio-worker</b>Xử lý job dịch bất đồng bộ<br><span class="tag gray">JOBS ĐANG TẮT</span></div>
+  </div>
+  <div class="arrow"><span class="a">↓</span>Cả 2 backend dùng chung</div>
+
+  <div class="group">
+    <div class="label">REDIS PRODUCTION — trạng thái tạm dùng chung (dev có bộ Redis riêng)</div>
+    <div class="row">
+      <div class="box redis" style="flex:1.3"><b>redis — Quota pool Cloudflare</b>
+        • Đếm lượt/phút (RPM), burst, số request đồng thời cho từng tài khoản và từng model<br>
+        • Cấp "permit" nguyên tử: 2 backend không thể cùng vượt hạn mức<br>
+        • Cooldown khi Cloudflare trả 429 / lỗi tạm thời<br>
+        <span class="muted">Namespace <code>speaking-ai-cf-quota-v1</code> · 256 MB</span></div>
+      <div class="box redis" style="flex:1"><b>redis-cache — Cache kết quả</b>
+        Kết quả dịch audio (khoảng 5 phút)<br>Lặp lại: <b style="display:inline">0,29 giây</b> thay vì 7,2 giây<br><span class="muted">128 MB · mất cũng không sao</span></div>
+      <div class="box redis off" style="flex:1"><b>redis-jobs — Hàng đợi job</b>
+        Dịch bất đồng bộ (có volume lưu bền)<br><span class="tag gray">ĐANG TẮT</span><br><span class="muted">256 MB</span></div>
+    </div>
+  </div>
+  <div class="arrow"><span class="a">↓</span>Gọi ra ngoài</div>
+
+  <div class="group">
+    <div class="label">DỊCH VỤ BÊN NGOÀI</div>
+    <div class="row">
+      <div class="col" style="flex:2.2">
+        <div class="box cf"><b>Cloudflare Workers AI — 2 tài khoản</b>
+          <div class="row" style="margin-top:4px">
+            <div class="box cfa" style="flex:1"><b>audio-a <span class="tag orange">TÀI KHOẢN CŨ</span></b>
+              = <code>CLOUDFLARE_ACCOUNT_ID</code><br>ASR (Whisper) · Dịch (Llama, Qwen) · <b style="display:inline">TTS</b> (Aura, Grok)<br><span class="muted">Phục vụ MỌI tính năng</span></div>
+            <div class="box cfb" style="flex:1"><b>audio-b <span class="tag orange">PHỤ</span></b>
+              Chỉ ASR (Whisper) · Dịch (Llama)<br><span class="muted">Không có TTS · chỉ nhận <code>/api/audio/translate</code></span></div>
+          </div>
+        </div>
+      </div>
+      <div class="box ext" style="flex:1"><b>Neon PostgreSQL</b>Dữ liệu chính: thiết bị, lịch sử, phiên audio<br><span class="tag red">DEV DÙNG CHUNG</span></div>
+      <div class="box ext" style="flex:1"><b>Cloudinary</b>Lưu file audio TTS để dùng lại</div>
+    </div>
+  </div>
+
+  <div class="note"><b>Hai loại "cân bằng tải" khác nhau:</b> (1) <b>Nginx</b> chia request giữa <code>backend-3000</code> và <code>backend-3001</code> cho <b>mọi API</b>. (2) <b>Pool Cloudflare</b> chia lượt gọi AI giữa <b>audio-a</b> và <b>audio-b</b>, nhưng <b>chỉ cho ASR và bước dịch của <code>/api/audio/translate</code></b>. Mọi API khác và mọi TTS chỉ chạy trên audio-a. Nét đứt = thành phần đang tắt.</div>
+</section>
+
+<!-- ============ TRANG 2: /api/audio/translate ============ -->
+<section class="page">
+  <h2>2. Luồng chi tiết <code>POST /api/audio/translate</code> — có chia tải 2 tài khoản</h2>
+
+  <svg viewBox="0 0 760 520" width="100%" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#4a5566"/></marker>
+      <marker id="arO" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#d4650f"/></marker>
+    </defs>
+    <style>
+      .bx{stroke-width:1.5}
+      .t{font-size:11px;fill:#1f2733}
+      .tb{font-size:11.5px;font-weight:700;fill:#1f2733}
+      .ts{font-size:9.5px;fill:#5a6573}
+      .ln{stroke:#4a5566;stroke-width:1.4;fill:none;marker-end:url(#ar)}
+      .lo{stroke:#d4650f;stroke-width:1.6;fill:none;marker-end:url(#arO)}
+      .ld{stroke:#d4650f;stroke-width:1.4;fill:none;stroke-dasharray:5 3;marker-end:url(#arO)}
+    </style>
+
+    <rect x="10" y="8" width="170" height="44" rx="6" class="bx" fill="#eef4ff" stroke="#4a78c2"/>
+    <text x="95" y="26" text-anchor="middle" class="tb">Client gửi audio</text>
+    <text x="95" y="42" text-anchor="middle" class="ts">multipart · ngôn ngữ nguồn</text>
+    <path d="M180,30 L222,30" class="ln"/>
+    <rect x="224" y="8" width="170" height="44" rx="6" class="bx" fill="#eaf7ee" stroke="#3b8f57"/>
+    <text x="309" y="26" text-anchor="middle" class="tb">Nginx host → LB</text>
+    <text x="309" y="42" text-anchor="middle" class="ts">least_conn chọn backend rảnh</text>
+    <path d="M394,30 L436,30" class="ln"/>
+    <rect x="438" y="8" width="310" height="44" rx="6" class="bx" fill="#fff7e6" stroke="#c98a1b"/>
+    <text x="593" y="26" text-anchor="middle" class="tb">backend-3000 hoặc backend-3001</text>
+    <text x="593" y="42" text-anchor="middle" class="ts">kiểm tra quyền · giới hạn hàng chờ / bộ nhớ upload trong tiến trình</text>
+
+    <path d="M593,52 L593,72" class="ln"/>
+    <rect x="438" y="74" width="310" height="40" rx="6" class="bx" fill="#fdecec" stroke="#c24a4a"/>
+    <text x="593" y="91" text-anchor="middle" class="tb">redis-cache: đã dịch audio này chưa?</text>
+    <text x="593" y="106" text-anchor="middle" class="ts">Có → trả kết quả ngay (~0,29 s), bỏ qua Cloudflare</text>
+    <path d="M438,94 L190,94" class="ln"/>
+    <text x="300" y="88" text-anchor="middle" class="ts">HIT</text>
+    <rect x="10" y="74" width="178" height="40" rx="6" class="bx" fill="#eaf7ee" stroke="#3b8f57"/>
+    <text x="99" y="91" text-anchor="middle" class="tb">Trả bản dịch ngay</text>
+    <text x="99" y="106" text-anchor="middle" class="ts">header X-Audio-Cache: HIT</text>
+    <path d="M593,114 L593,134" class="ln"/>
+    <text x="608" y="128" class="ts">MISS</text>
+
+    <rect x="200" y="136" width="548" height="112" rx="6" class="bx" fill="#fff" stroke="#d4650f"/>
+    <text x="474" y="153" text-anchor="middle" class="tb">Dispatcher pool Cloudflare — chọn tài khoản cho TỪNG BƯỚC</text>
+    <text x="214" y="171" class="t">1. Lọc tài khoản: đang bật, có model cần dùng, không bị cooldown</text>
+    <text x="214" y="186" class="t">2. Xoay vòng điểm bắt đầu (lần này A trước, lần sau B trước)</text>
+    <text x="214" y="201" class="t">3. Đọc tải hiện tại từ Redis → xếp tài khoản ít tải (tương đối) lên trước</text>
+    <text x="214" y="216" class="t">4. Xin permit nguyên tử ở Redis: còn RPM + burst + slot đồng thời? → cấp</text>
+    <text x="214" y="231" class="t">5. Cả hai đều hết suất → chờ tối đa 5 s (MAX_WAIT_MS) → vẫn hết → 429 + Retry-After</text>
+    <rect x="10" y="150" width="178" height="80" rx="6" class="bx" fill="#fdecec" stroke="#c24a4a"/>
+    <text x="99" y="168" text-anchor="middle" class="tb">redis (quota)</text>
+    <text x="99" y="184" text-anchor="middle" class="ts">bộ đếm chung của</text>
+    <text x="99" y="197" text-anchor="middle" class="ts">backend-3000 + 3001</text>
+    <text x="99" y="212" text-anchor="middle" class="ts">permit có hạn (lease TTL)</text>
+    <path d="M200,184 L190,184" class="ln"/>
+    <path d="M188,204 L198,204" class="ln"/>
+
+    <path d="M474,248 L474,268" class="lo"/>
+    <rect x="200" y="270" width="548" height="30" rx="6" class="bx" fill="#fff1e0" stroke="#d4650f"/>
+    <text x="474" y="289" text-anchor="middle" class="tb">BƯỚC 1 — ASR nhận dạng giọng nói (Whisper large-v3-turbo) · timeout mỗi lần thử 8 s</text>
+    <path d="M330,300 L280,330" class="lo"/>
+    <path d="M618,300 L654,330" class="lo"/>
+    <rect x="160" y="332" width="200" height="40" rx="6" class="bx" fill="#ffe3c4" stroke="#d4650f"/>
+    <text x="260" y="349" text-anchor="middle" class="tb">audio-a (tài khoản cũ)</text>
+    <text x="260" y="364" text-anchor="middle" class="ts">nếu được chọn</text>
+    <rect x="560" y="332" width="188" height="40" rx="6" class="bx" fill="#fff4e5" stroke="#e8a15a"/>
+    <text x="654" y="349" text-anchor="middle" class="tb">audio-b</text>
+    <text x="654" y="364" text-anchor="middle" class="ts">nếu được chọn</text>
+    <path d="M360,346 L558,346" class="ld"/>
+    <path d="M558,358 L362,358" class="ld"/>
+    <text x="459" y="340" text-anchor="middle" class="ts">lỗi tạm thời → thử 1 lần</text>
+    <text x="459" y="371" text-anchor="middle" class="ts">trên tài khoản còn lại</text>
+
+    <path d="M474,376 L474,392" class="ln"/>
+    <rect x="200" y="394" width="548" height="24" rx="6" class="bx" fill="#f6f8fb" stroke="#8a96a8"/>
+    <text x="474" y="410" text-anchor="middle" class="t">Kiểm tra transcript (rỗng / độ tin cậy thấp → báo lỗi cho người dùng, không phạt tài khoản)</text>
+
+    <path d="M474,418 L474,432" class="lo"/>
+    <rect x="200" y="434" width="548" height="30" rx="6" class="bx" fill="#fff1e0" stroke="#d4650f"/>
+    <text x="474" y="453" text-anchor="middle" class="tb">BƯỚC 2 — Dịch sang tiếng Anh (Llama 4 Scout) · CHỌN TÀI KHOẢN LẠI TỪ ĐẦU</text>
+    <text x="474" y="478" text-anchor="middle" class="ts">Không giữ slot ASR trong lúc dịch · ASR có thể ở A còn dịch ở B · cùng hạn chót tổng ~20 s, tối đa 3 lần gọi / request</text>
+
+    <path d="M200,449 L99,449 L99,470" class="ln"/>
+    <rect x="10" y="472" width="178" height="44" rx="6" class="bx" fill="#eaf7ee" stroke="#3b8f57"/>
+    <text x="99" y="489" text-anchor="middle" class="tb">Lưu cache + trả kết quả</text>
+    <text x="99" y="505" text-anchor="middle" class="ts">bản dịch + audioUrl (?node=…)</text>
+    <path d="M188,500 L300,500" class="ln"/>
+    <rect x="302" y="486" width="446" height="30" rx="6" class="bx" fill="#ffe3c4" stroke="#d4650f"/>
+    <text x="525" y="505" text-anchor="middle" class="tb">BƯỚC 3 (chạy nền) — TTS tiếng Anh: CHỈ audio-a → lưu Cloudinary</text>
+  </svg>
+
+  <div class="row" style="margin-top:6px">
+    <div style="flex:1">
+      <h3>Diễn giải từng bước</h3>
+      <ol class="steps">
+        <li>Client gửi audio qua HTTPS → Nginx host → load balancer chọn backend đang ít kết nối hơn.</li>
+        <li>Backend kiểm tra quyền, giới hạn hàng chờ và tổng dung lượng upload đang giữ (32 MB) để không bị tràn RAM khi đông người.</li>
+        <li class="rd">Xem <b>redis-cache</b>: audio đã dịch gần đây thì trả ngay, không tốn lượt Cloudflare.</li>
+        <li class="cf">Chưa có: dispatcher <b>chọn tài khoản cho bước ASR</b> (xoay vòng, ưu tiên tài khoản ít tải), xin permit ở <b>redis</b> rồi gọi Whisper.</li>
+        <li class="cf">Kiểm tra transcript, rồi <b>chọn tài khoản lại cho bước dịch</b>, độc lập với bước ASR.</li>
+        <li>Lưu kết quả vào cache, trả bản dịch kèm <code>audioUrl</code> có <code>?node=3000|3001</code>.</li>
+        <li class="cf">Song song: tạo giọng đọc tiếng Anh <b>chỉ trên audio-a</b>; client mở <code>audioUrl</code> → nginx đưa về đúng backend đang tạo → nghe ngay; file được lưu lên Cloudinary.</li>
+      </ol>
+    </div>
+    <div style="flex:1">
+      <h3>Khi một tài khoản gặp sự cố</h3>
+      <table>
+        <tr><th>Tình huống</th><th>Dispatcher xử lý</th></tr>
+        <tr><td>Timeout, lỗi mạng, HTTP 5xx</td><td>Thử lại <b>1 lần trên tài khoản chưa dùng</b>; tạm tránh model đó trên tài khoản lỗi khoảng 1 giây</td></tr>
+        <tr><td>429 (Cloudflare báo vượt hạn mức)</td><td>Cooldown tài khoản theo <code>Retry-After</code>, chuyển sang tài khoản kia nếu còn lượt</td></tr>
+        <tr><td>Token sai / hết quyền</td><td>Tắt tài khoản đó khỏi pool, dùng tài khoản còn lại</td></tr>
+        <tr><td>Cả 2 hết suất</td><td>Chờ tối đa 5 s; vẫn hết → trả <b>429</b> kèm <code>Retry-After</code></td></tr>
+        <tr><td>Hết hạn chót tổng (~20 s)</td><td>Trả <b>504</b>; không thử thêm</td></tr>
+        <tr><td>Redis quota lỗi</td><td>Trả lỗi có kiểm soát; <b>không</b> gọi thẳng Cloudflare bỏ qua hạn mức</td></tr>
+        <tr><td>Client ngắt kết nối</td><td>Huỷ lượt gọi đang chạy, trả permit</td></tr>
+      </table>
+    </div>
+  </div>
+</section>
+
+<!-- ============ TRANG 3: API KHÁC + HẠN MỨC ============ -->
+<section class="page">
+  <h2>3. Các API còn lại — chỉ dùng tài khoản cũ (audio-a), nhưng chung bộ đếm hạn mức</h2>
+
+  <svg viewBox="0 0 760 250" width="100%" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <marker id="ar2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#4a5566"/></marker>
+      <marker id="ar2o" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#d4650f"/></marker>
+    </defs>
+    <style>
+      .t{font-size:11px;fill:#1f2733}.tb{font-size:11.5px;font-weight:700;fill:#1f2733}.ts{font-size:9.5px;fill:#5a6573}
+      .ln2{stroke:#4a5566;stroke-width:1.4;fill:none;marker-end:url(#ar2)}
+      .lo2{stroke:#d4650f;stroke-width:1.6;fill:none;marker-end:url(#ar2o)}
+    </style>
+    <rect x="10" y="10" width="220" height="96" rx="6" fill="#fff7e6" stroke="#c98a1b" stroke-width="1.5"/>
+    <text x="120" y="28" text-anchor="middle" class="tb">/api/audio/translate</text>
+    <text x="20" y="46" class="t">• ASR + dịch: pool (A hoặc B)</text>
+    <text x="20" y="62" class="t">• TTS chạy nền: chỉ A</text>
+    <text x="20" y="84" class="ts">workload: audio-translation</text>
+
+    <rect x="10" y="126" width="220" height="114" rx="6" fill="#fff7e6" stroke="#c98a1b" stroke-width="1.5"/>
+    <text x="120" y="144" text-anchor="middle" class="tb">Mọi API khác (đường "legacy")</text>
+    <text x="20" y="162" class="t">• Hội thoại, luyện nghe</text>
+    <text x="20" y="178" class="t">• Nhận dạng giọng nói (ASR)</text>
+    <text x="20" y="194" class="t">• Dịch text V1</text>
+    <text x="20" y="210" class="t">• TTS (Aura / Grok)</text>
+    <text x="20" y="230" class="ts">fetchLegacyCloudflare · ghim cứng audio-a</text>
+
+    <rect x="290" y="60" width="180" height="130" rx="6" fill="#fdecec" stroke="#c24a4a" stroke-width="1.5"/>
+    <text x="380" y="80" text-anchor="middle" class="tb">redis (quota) — CHUNG</text>
+    <text x="300" y="100" class="t">Bộ đếm của audio-a:</text>
+    <text x="300" y="116" class="t">lượt pool + lượt legacy</text>
+    <text x="300" y="132" class="t">cộng chung một chỗ</text>
+    <text x="300" y="152" class="ts">→ tổng không vượt hạn mức A</text>
+    <text x="300" y="168" class="ts">SHARE_LEGACY_ACCOUNT=true</text>
+    <text x="300" y="182" class="ts">ROUTE_LEGACY_ACCOUNT=true</text>
+    <path d="M230,58 L288,100" class="ln2"/>
+    <path d="M230,183 L288,150" class="ln2"/>
+
+    <rect x="540" y="30" width="210" height="76" rx="6" fill="#ffe3c4" stroke="#d4650f" stroke-width="1.5"/>
+    <text x="645" y="50" text-anchor="middle" class="tb">audio-a (tài khoản cũ)</text>
+    <text x="550" y="68" class="t">Nhận: pool + toàn bộ legacy</text>
+    <text x="550" y="84" class="t">+ toàn bộ TTS</text>
+    <text x="550" y="99" class="ts">→ bận trước khi tải cao</text>
+    <rect x="540" y="150" width="210" height="64" rx="6" fill="#fff4e5" stroke="#e8a15a" stroke-width="1.5"/>
+    <text x="645" y="170" text-anchor="middle" class="tb">audio-b</text>
+    <text x="550" y="188" class="t">Chỉ nhận ASR + dịch của</text>
+    <text x="550" y="204" class="t">/api/audio/translate</text>
+    <path d="M470,100 L538,72" class="lo2"/>
+    <path d="M470,150 L538,180" class="lo2"/>
+    <text x="505" y="128" text-anchor="middle" class="ts">pool chọn</text>
+    <text x="505" y="140" text-anchor="middle" class="ts">A hoặc B</text>
+  </svg>
+
+  <table style="margin-top:6px">
+    <tr><th style="width:30%">API / tính năng</th><th>Nginx chia giữa 2 backend</th><th>Chia giữa audio-a / audio-b</th><th>Tính chung hạn mức qua Redis</th></tr>
+    <tr><td><code>/api/audio/translate</code> — ASR, dịch</td><td>Có</td><td><b>Có</b></td><td>Có</td></tr>
+    <tr><td><code>/api/audio/translate</code> — TTS chạy nền</td><td>Có (stream ghim theo <code>?node=</code>)</td><td>Không — chỉ audio-a</td><td>Có</td></tr>
+    <tr><td>Hội thoại, luyện nghe, ASR, dịch text, TTS</td><td>Có</td><td>Không — chỉ audio-a</td><td>Có</td></tr>
+  </table>
+
+  <h2 style="margin-top:14px">4. Production và dev trên cùng VPS</h2>
+  <div class="row">
+    <div class="box" style="flex:1"><b>Production</b>
+      Nginx Docker + <code>backend-3000</code>, <code>backend-3001</code>, <code>audio-worker</code> · 3 Redis riêng · deploy từ nhánh <code>can-bang-tai</code></div>
+    <div class="box" style="flex:1"><b>Dev</b>
+      Nginx Docker + 1 <code>backend</code> (1 GB, 0,75 CPU) · 3 Redis riêng · deploy từ nhánh <code>dev</code></div>
+    <div class="box" style="flex:1"><b>Dùng chung</b>
+      CPU / RAM / ổ đĩa VPS · phần mềm Docker · Nginx host · <b style="display:inline">Neon PostgreSQL</b></div>
+  </div>
+
+  <div class="warn"><b>Rủi ro cần nhớ:</b>
+    <br>• <b>Hạn mức Cloudflare:</b> Redis dev và prod tách riêng nên bộ đếm cũng tách. Nếu dev bật pool với cùng 2 tài khoản, mỗi bên tưởng mình có toàn bộ hạn mức → tổng có thể vượt hạn mức thật. Cho dev dùng tài khoản/token khác hoặc đặt <code>limits</code> thấp hơn.
+    <br>• <b>audio-a là điểm nghẽn:</b> mọi tính năng cũ và mọi TTS đều dồn vào A. Muốn các API khác cũng được chia tải phải đưa chúng qua dispatcher pool và khai báo TTS cho audio-b.
+    <br>• <b>Database dùng chung:</b> dev ghi/xoá hoặc chạy migration sẽ tác động thẳng vào dữ liệu thật của prod.</div>
+
+  <div class="note"><b>Thông số đang dùng (theo <code>.env.example</code> / <code>.env.local</code>):</b>
+    tối đa 2 lần thử mỗi bước, 3 lần mỗi request · chờ suất tối đa 5 s · 20 request audio đang xử lý và 40 request chờ mỗi backend · bộ nhớ upload 32 MB mỗi backend · timeout ASR mỗi lần thử 8 s, dịch 6 s, hạn chót tổng ~20 s · thử lại lỗi tạm thời bật (<code>CLOUDFLARE_POOL_RETRY_TRANSIENT=true</code>, có thể bị tính tiền 2 lần ở Cloudflare).</div>
+</section>
+
+</body>
+</html>

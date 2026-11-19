@@ -5,7 +5,8 @@ import {
   type AudioTranslationCheckpoint,
 } from "@/lib/ai/cloudflareWorkersAi";
 import { getRequestId, logEvent, withRequestId } from "@/lib/observability";
-import { requireInstallationAccess } from "@/lib/installationAuth";
+import { requireInstallationAccess, type InstallationAccess } from "@/lib/installationAuth";
+import { createStageTimer } from "@/lib/stageTimer";
 import { readBoundedAudioFormData } from "@/lib/ai/cloudflare/upload";
 import { audioTranslationService } from "@/lib/ai/audioTranslationService";
 import { isEagerTranslateTtsEnabled, startEagerEnglishAudio } from "@/lib/ai/tts";
@@ -88,7 +89,8 @@ export async function handleAudioTranslation(request: Request, options: { forceA
   const requestId = getRequestId(request);
   const startedAt = performance.now();
   const clientSignal = clientAbortSignal(request.signal);
-  let requestStage = "validation";
+  const stages = createStageTimer("validation");
+  let authLookup: InstallationAccess["lookup"] | "legacy" | undefined;
   let providerAttempts = 0;
   let sharedWorkRequestId: string | undefined;
   let upload: ReturnType<typeof reserveAudioTranslationUpload>;
@@ -115,7 +117,7 @@ export async function handleAudioTranslation(request: Request, options: { forceA
       );
     }
 
-    requestStage = "upload";
+    stages.enter("upload");
     upload = reserveAudioTranslationUpload({
       requestId,
       signal: clientSignal,
@@ -126,12 +128,13 @@ export async function handleAudioTranslation(request: Request, options: { forceA
       ? await readBoundedAudioFormData(request,
         Number.isSafeInteger(contentLength) && contentLength > 0 ? contentLength : maxRequestBytes, upload.timing.signal)
       : await request.formData();
-    requestStage = "authentication";
+    stages.enter("authentication");
     const access = await requireInstallationAccess(
       request,
       getFormString(formData, "clientId"),
     );
-    requestStage = "validation";
+    authLookup = access.legacy ? "legacy" : access.lookup;
+    stages.enter("validation");
     const audio = validateAudio(formData.get("audio"));
     const sourceLanguage = validateSourceLanguage(
       getFormString(formData, "sourceLanguage"),
@@ -144,20 +147,23 @@ export async function handleAudioTranslation(request: Request, options: { forceA
     const accepted = (job: { jobId: string; statusUrl: string; nextPollMs: number }) => withRequestId(Response.json(
       { requestId, ...job, status: "queued" }, { status: 202, headers: { Location: job.statusUrl, "Retry-After": "2", "Cache-Control": "private, no-store", "Preference-Applied": "respond-async" } }), requestId);
     if (wantsJobs) {
-      requestStage = "job_lookup";
+      stages.enter("job_lookup");
       const existing = await findExistingTranslationJob(jobInput);
       if (existing) return accepted(existing);
-      if (options.forceAsync) { requestStage = "job_enqueue"; return accepted(await enqueueTranslationJob(jobInput)); }
+      if (options.forceAsync) { stages.enter("job_enqueue"); return accepted(await enqueueTranslationJob(jobInput)); }
     }
     const cacheScope = !access.legacy || process.env.NODE_ENV !== "production" ? access.clientId : undefined;
     const timeoutMs = Math.min(30_000, Math.max(1, Number(process.env.CLOUDFLARE_AUDIO_TRANSLATION_TIMEOUT_MS) || 20_000));
     const { result, cacheStatus } = await audioTranslationService.run({
       audio, sourceLanguage, owner: access.clientId, cacheAllowed: !!cacheScope, flightScope: wantsJobs ? `jobs:${idempotencyKey}` : "sync",
       requestId,
-      onState: state => { requestStage = state; },
+      onState: state => { stages.enter(state); },
       onSharedWork: leaderId => { sharedWorkRequestId = leaderId; },
+      onSharedWorkRetry: error => logEvent("info", "audio_translation_shared_work_retry", {
+        requestId, ...(sharedWorkRequestId ? { sharedWorkRequestId } : {}), ...getFailureDiagnostics(error),
+      }),
       onWorkCancelled: () => logEvent("info", "audio_translation_work_cancelled", {
-        requestId, requestStage, failureSource: "backend", abortCause: "no_subscribers",
+        requestId, requestStage: stages.current(), failureSource: "backend", abortCause: "no_subscribers",
         providerCallStarted: providerAttempts > 0,
         ...(sharedWorkRequestId ? { sharedWorkRequestId } : {}),
       }),
@@ -166,20 +172,21 @@ export async function handleAudioTranslation(request: Request, options: { forceA
         let checkpoint: AudioTranslationCheckpoint | undefined;
         let session: Awaited<ReturnType<typeof acquireAudioTranslationExecution>>;
         try {
-          requestStage = "request_admission";
+          stages.enter("request_admission");
           session = await acquireAudioTranslationExecution({ requestId, timing, signal: timing.signal,
             telemetry: (event, fields) => logEvent("info", event, fields) });
-          requestStage = "asr_admission";
+          stages.enter("asr_admission");
           return await translateAudioToEnglish(audio, sourceLanguage, { execution: session?.execution, preparedAudio: bytes, cacheScope,
-            beforeProviderCall: async stage => { requestStage = stage === "asr" ? "asr" : "text_translation"; providerAttempts++; },
-            onCheckpoint: value => { checkpoint = value; requestStage = sourceLanguage === "en" ? "validation" : "text_admission"; } });
+            beforeProviderCall: async stage => { stages.enter(stage === "asr" ? "asr" : "text_translation"); providerAttempts++; },
+            onProviderFallback: event => logEvent("warn", "audio_translation_provider_fallback", { requestId, ...event }),
+            onCheckpoint: value => { checkpoint = value; stages.enter(sourceLanguage === "en" ? "validation" : "text_admission"); } });
         } catch (error) {
           const safe = isPoolFailure(error) ? publicPoolError(error) : error;
           const reason = safe instanceof AppError ? safe.details?.reason : undefined;
           if (wantsJobs && ["capacity", "queue_full", "queue_timeout"].includes(String(reason)) && !timing.signal.aborted) {
             // Release the HTTP process slot before durable handoff. ASR is not repeated.
             session?.release(); session = undefined;
-            requestStage = "job_enqueue";
+            stages.enter("job_enqueue");
             const job = await enqueueTranslationJob({ ...jobInput, checkpoint });
             throw new AudioTranslationAccepted(job);
           }
@@ -197,6 +204,9 @@ export async function handleAudioTranslation(request: Request, options: { forceA
       timings: result.timings,
       cacheStatus,
       elapsedMs: Math.round(performance.now() - startedAt),
+      // Wall time per request stage (upload, authentication, request_admission, asr, ...).
+      stageMs: stages.snapshot(),
+      ...(authLookup ? { authLookup } : {}),
     });
 
     const englishAudio = startEagerTranslationAudio(result.englishText, requestId);
@@ -221,7 +231,9 @@ export async function handleAudioTranslation(request: Request, options: { forceA
       error: responseError,
       ...(responseError instanceof AppError ? { details: responseError.details } : {}),
       ...getFailureDiagnostics(responseError),
-      requestStage,
+      requestStage: stages.current(),
+      stageMs: stages.snapshot(),
+      ...(authLookup ? { authLookup } : {}),
       clientAborted: clientSignal.aborted,
       providerCallStarted: providerAttempts > 0,
       providerAttempts,

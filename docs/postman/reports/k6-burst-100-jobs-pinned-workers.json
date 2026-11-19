@@ -1,0 +1,193 @@
+{
+    "metrics": {
+        "http_req_duration": {
+            "p(90)": 1509.77932,
+            "p(95)": 1613.93372,
+            "p(99)": 1722.79681,
+            "max": 1766.3037,
+            "avg": 453.1197826552458,
+            "med": 193.7394
+        },
+        "checks": {
+            "passes": 200,
+            "fails": 0,
+            "value": 1
+        },
+        "http_req_tls_handshaking": {
+            "max": 68.8313,
+            "avg": 9.095071092077088,
+            "med": 0,
+            "p(90)": 41.82684,
+            "p(95)": 47.358489999999996,
+            "p(99)": 54.67926999999999
+        },
+        "data_sent": {
+            "count": 8776616,
+            "rate": 500829.2061905791
+        },
+        "http_req_connecting": {
+            "p(90)": 34.768980000000006,
+            "p(95)": 38.96686999999999,
+            "p(99)": 51.8183999999999,
+            "max": 74.7317,
+            "avg": 7.736061884368309,
+            "med": 0
+        },
+        "audio_flow_success": {
+            "passes": 100,
+            "fails": 0,
+            "thresholds": {
+                "rate>0.95": false
+            },
+            "value": 1
+        },
+        "iterations": {
+            "count": 100,
+            "rate": 5.706404452360444
+        },
+        "http_req_duration{expected_response:true}": {
+            "avg": 453.1197826552458,
+            "med": 193.7394,
+            "p(90)": 1509.77932,
+            "p(95)": 1613.93372,
+            "p(99)": 1722.79681,
+            "max": 1766.3037
+        },
+        "http_req_sending": {
+            "p(99)": 52.61873799999999,
+            "max": 71.1705,
+            "avg": 8.042529336188437,
+            "med": 0,
+            "p(90)": 36.24844,
+            "p(95)": 42.16329999999999
+        },
+        "vus": {
+            "value": 2,
+            "min": 0,
+            "max": 100
+        },
+        "data_received": {
+            "count": 1016843,
+            "rate": 58025.17422551551
+        },
+        "http_req_receiving": {
+            "p(99)": 12.33589599999997,
+            "max": 26.139,
+            "avg": 1.9986029978586712,
+            "med": 1.2135,
+            "p(90)": 4.6916,
+            "p(95)": 6.540129999999999
+        },
+        "dropped_iterations": {
+            "count": 1,
+            "rate": 0.057064044523604446
+        },
+        "iteration_duration": {
+            "avg": 9425.289541000002,
+            "med": 10043.328300000001,
+            "p(90)": 12748.744830000001,
+            "p(95)": 12981.757629999995,
+            "p(99)": 14850.928660000007,
+            "max": 16155.5962
+        },
+        "audio_flow_duration": {
+            "avg": 9424.62,
+            "med": 10043,
+            "p(90)": 12748.300000000001,
+            "p(95)": 12981.699999999995,
+            "p(99)": 14850.180000000008,
+            "max": 16155,
+            "thresholds": {
+                "p(95)<300000": false
+            }
+        },
+        "http_req_blocked": {
+            "avg": 16.9412460385439,
+            "med": 0,
+            "p(90)": 76.72904000000001,
+            "p(95)": 86.3015,
+            "p(99)": 107.01246999999991,
+            "max": 119.1259
+        },
+        "http_req_waiting": {
+            "avg": 443.07865032119895,
+            "med": 191.9752,
+            "p(90)": 1468.0789800000005,
+            "p(95)": 1567.8915499999998,
+            "p(99)": 1683.2450059999999,
+            "max": 1723.0577
+        },
+        "audio_job_queue_wait": {
+            "p(90)": 10512.1,
+            "p(95)": 10602.35,
+            "p(99)": 10673.67,
+            "max": 10740,
+            "avg": 6543.37,
+            "med": 5862.5
+        },
+        "http_reqs": {
+            "rate": 26.648908792523276,
+            "count": 467
+        },
+        "http_req_failed": {
+            "passes": 0,
+            "fails": 467,
+            "value": 0
+        },
+        "vus_max": {
+            "value": 100,
+            "min": 100,
+            "max": 100
+        },
+        "audio_rate_limited": {
+            "passes": 0,
+            "fails": 100,
+            "thresholds": {
+                "rate<0.05": false
+            },
+            "value": 0
+        }
+    },
+    "setup_data": {
+        "tokens": [
+            {
+                "accessToken": "homi_install_v1.eyJ2ZXJzaW9uIjoxLCJraW5kIjoiYWNjZXNzIiwiY2xpZW50SWQiOiJ3ZWJfazZfZjQ4NDJkNTZiNmE1MjA5ZjhhMDEyMTBmIiwicGxhdGZvcm0iOiJ3ZWIiLCJ0b2tlblZlcnNpb24iOjEsInNlc3Npb25JZCI6ImFhNzM5ZWQyLWVhYTEtNGE3Zi05MmFjLWU5NjJlNGM2ZWQ3YSIsImlzc3VlZEF0IjoxNzk0NjIyMzczLCJleHBpcmVzQXQiOjE3OTQ2MjU5NzN9.pEaZUF5DujXb_BIVyggj0oQZLOSI1LtjwuO_1l03QOA",
+                "clientId": "web_k6_f4842d56b6a5209f8a01210f"
+            },
+            {
+                "accessToken": "homi_install_v1.eyJ2ZXJzaW9uIjoxLCJraW5kIjoiYWNjZXNzIiwiY2xpZW50SWQiOiJ3ZWJfazZfNTlhNmE2NjA5ZDBiOWJmMjRiYmY3MmYyIiwicGxhdGZvcm0iOiJ3ZWIiLCJ0b2tlblZlcnNpb24iOjEsInNlc3Npb25JZCI6ImVkYjVhMWUxLWI0ZmMtNDY4Mi1iZTQzLTc0YjFhNzZjY2MzYSIsImlzc3VlZEF0IjoxNzk0NjIyMzc0LCJleHBpcmVzQXQiOjE3OTQ2MjU5NzR9.jFqcOI3v7FPNdHNUNIi7_PebWdZm959oHexnIiIuhFc",
+                "clientId": "web_k6_59a6a6609d0b9bf24bbf72f2"
+            },
+            {
+                "accessToken": "homi_install_v1.eyJ2ZXJzaW9uIjoxLCJraW5kIjoiYWNjZXNzIiwiY2xpZW50SWQiOiJ3ZWJfazZfYWIzMjVkNTQwYzk2NjBiNGZjNGFiMTc5IiwicGxhdGZvcm0iOiJ3ZWIiLCJ0b2tlblZlcnNpb24iOjEsInNlc3Npb25JZCI6IjZkM2ZkYjNmLTBlZWMtNDlhNy1iZmQzLTY0ZmU4MzMwZGI5NyIsImlzc3VlZEF0IjoxNzk0NjIyMzc0LCJleHBpcmVzQXQiOjE3OTQ2MjU5NzR9.1WEPD9UBZes3el5lDqwnNiNPRUb44hAskdAmw-GpnjE",
+                "clientId": "web_k6_ab325d540c9660b4fc4ab179"
+            },
+            {
+                "accessToken": "homi_install_v1.eyJ2ZXJzaW9uIjoxLCJraW5kIjoiYWNjZXNzIiwiY2xpZW50SWQiOiJ3ZWJfazZfYzJkZDAxZWQ3MTE3OTZmYjM2ZjkwNDBmIiwicGxhdGZvcm0iOiJ3ZWIiLCJ0b2tlblZlcnNpb24iOjEsInNlc3Npb25JZCI6IjEyNjUyZmIyLTM0N2UtNDZjNC04NDYyLWMzYmI5MWZiM2JiNCIsImlzc3VlZEF0IjoxNzk0NjIyMzc0LCJleHBpcmVzQXQiOjE3OTQ2MjU5NzR9.Jb0eWZRYHk8WEPQvj0uuKfsRdmIkKxqVXqabi6RGd1s",
+                "clientId": "web_k6_c2dd01ed711796fb36f9040f"
+            }
+        ]
+    },
+    "root_group": {
+        "groups": {},
+        "checks": {
+                "job accepted 202": {
+                    "id": "1478211b83d2cc0bd760ed06457db888",
+                    "passes": 100,
+                    "fails": 0,
+                    "name": "job accepted 202",
+                    "path": "::job accepted 202"
+                },
+                "job englishText not empty": {
+                    "name": "job englishText not empty",
+                    "path": "::job englishText not empty",
+                    "id": "fa8b17b099322e7e28fd3c629cf50c45",
+                    "passes": 100,
+                    "fails": 0
+                }
+            },
+        "name": "",
+        "path": "",
+        "id": "d41d8cd98f00b204e9800998ecf8427e"
+    }
+}

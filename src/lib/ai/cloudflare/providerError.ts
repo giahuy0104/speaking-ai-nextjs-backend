@@ -106,6 +106,27 @@ export function isPoolFailure(error: unknown): error is PoolError | ProviderFaul
   return error instanceof PoolError || error instanceof ProviderFault;
 }
 
+/**
+ * A provider failure another account or attempt may not share: an attempt's
+ * own timeout (not the request deadline or a client disconnect), a network
+ * failure, or upstream HTTP 5xx. Accepts raw pool failures and their public
+ * AppError projection. Input, credential, rate-limit and content errors never
+ * qualify.
+ */
+export function isTransientPoolFailure(error: unknown): boolean {
+  let reason: unknown;
+  if (isPoolFailure(error)) reason = error.reason;
+  else if (error instanceof AppError) reason = (error.details as { reason?: unknown } | undefined)?.reason;
+  const diagnostics = getFailureDiagnostics(error);
+  if (reason === "network_error") return true;
+  if (reason === "provider_error") {
+    const status = diagnostics.upstreamStatus ?? (error instanceof ProviderFault ? error.status : undefined);
+    return (status ?? 0) >= 500;
+  }
+  if (reason === "timeout") return diagnostics.abortCause === "attempt_timeout";
+  return false;
+}
+
 function publicPoolMessage(fault: PoolError | ProviderFault, stage: "asr" | "text_translation" | "tts") {
   const { failureSource, abortCause, upstreamStatus } = getFailureDiagnostics(fault);
   const operation = stage === "text_translation" ? "dịch văn bản" : stage === "tts" ? "tạo giọng nói" : "nhận diện giọng nói";

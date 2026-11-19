@@ -1,0 +1,235 @@
+# DEV stack for api-dev.hoamytech.com. Fully separate from production:
+# own Compose project, network, Redis containers/volumes, image repo and port.
+# Lives in /opt/homi/backend-dev on the VPS (root-owned, copied by hand like prod).
+#   docker compose --env-file .env.compose -f docker-compose.dev.yml up -d
+name: speaking-ai-dev
+
+x-redis: &redis
+  image: redis:7.4-alpine
+  restart: unless-stopped
+  environment:
+    REDISCLI_AUTH: "${CLOUDFLARE_POOL_REDIS_PASSWORD:?Set CLOUDFLARE_POOL_REDIS_PASSWORD in .env.compose}"
+  command: ["sh", "-c", 'exec redis-server /usr/local/etc/redis/redis.conf --requirepass "$$REDISCLI_AUTH"']
+  healthcheck:
+    test: ["CMD", "redis-cli", "ping"]
+    interval: 5s
+    timeout: 3s
+    retries: 10
+    start_period: 5s
+  # The pool store client destroys itself when a command takes over 1s.
+  cpus: 0.5
+  logging:
+    driver: json-file
+    options: { max-size: "5m", max-file: "2" }
+
+services:
+  # Service names must stay redis / redis-cache / redis-jobs: runtime-config.mjs
+  # builds the Redis URLs from these hostnames when APP_RUNTIME=compose.
+  # No host ports are published (prod uses 16379-16381 on loopback).
+  redis:
+    <<: *redis
+    volumes:
+      - ./infra/redis/redis.conf:/usr/local/etc/redis/redis.conf:ro
+      - redis-data:/data
+    mem_limit: 192m
+
+  redis-cache:
+    <<: *redis
+    volumes:
+      - ./infra/redis/cache.conf:/usr/local/etc/redis/redis.conf:ro
+    mem_limit: 96m
+
+  redis-jobs:
+    <<: *redis
+    volumes:
+      - ./infra/redis/jobs.conf:/usr/local/etc/redis/redis.conf:ro
+      - audio-jobs-data:/data
+    mem_limit: 192m
+
+  # Two backends like production. Names/ports must match infra/nginx/nginx.dev.conf
+  # (upstreams + "/api/audio/stream:<node>" keys) and SERVICES in deploy/lib.sh.
+  backend-3000: &backend
+    image: speaking-ai-backend-dev:${BACKEND_IMAGE_TAG:-local}
+    pull_policy: never
+    restart: unless-stopped
+    init: true
+    secrets:
+      - app_env
+    environment: &backend-environment
+      APP_RUNTIME: compose
+      APP_ENV_FILE: /run/secrets/app_env
+      PERSISTENCE_BACKEND: postgres
+      CLOUDFLARE_POOL_STORE: redis
+      AUDIO_TRANSLATION_JOB_SHARED_DIRECTORY: /app/data/audio-translation-jobs
+      AUDIO_TRANSLATION_JOB_STORAGE: local
+      # One translation per sentence for every client (skips the text model on repeats).
+      AUDIO_TRANSLATION_SHARED_TEXT_CACHE_ENABLED: "true"
+      # Burst intake for the jobs path (accept 1000 submissions in ~1s, process
+      # from the queue). These override .env.local: start.mjs never overwrites
+      # variables that are already set.
+      # Uploads buffered per instance = MAX_IN_FLIGHT + MAX_QUEUED.
+      CLOUDFLARE_POOL_MAX_IN_FLIGHT: "100"
+      CLOUDFLARE_POOL_MAX_QUEUED: "500"
+      CLOUDFLARE_POOL_MAX_BUFFERED_BYTES: "134217728"
+      # 1000 is the ceiling enforced in audioTranslationJobs.ts.
+      AUDIO_TRANSLATION_JOB_MAX_PENDING: "1000"
+      # Raised from 10 so a small token pool can drive a load test.
+      AUDIO_TRANSLATION_JOB_MAX_PER_CLIENT: "100"
+      PORT: "3000"
+      AUDIO_STREAM_NODE: "3000"
+    expose:
+      - "3000"
+    volumes:
+      - audio-job-files:/app/data/audio-translation-jobs
+    depends_on:
+      redis:
+        condition: service_healthy
+      redis-cache:
+        condition: service_healthy
+      redis-jobs:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:' + process.env.PORT + '/api/health', { signal: AbortSignal.timeout(3000) }).then(r => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))"]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+      start_period: 20s
+    stop_grace_period: 75s
+    mem_limit: 1g
+    # One Node process runs JS on a single core, so throughput scales with the number
+    # of backends, not with a bigger limit. The 8-core VPS is shared with production:
+    # four dev backends x 1.5 = 6 CPU at most, only while a load test runs.
+    cpus: 1.5
+    logging:
+      driver: json-file
+      options: { max-size: "10m", max-file: "3" }
+
+  backend-3001:
+    <<: *backend
+    environment:
+      <<: *backend-environment
+      PORT: "3001"
+      AUDIO_STREAM_NODE: "3001"
+    expose:
+      - "3001"
+
+  # Names must match SERVICES in deploy/lib.sh and the upstreams in nginx.dev.conf.
+  backend-3002:
+    <<: *backend
+    environment:
+      <<: *backend-environment
+      PORT: "3002"
+      AUDIO_STREAM_NODE: "3002"
+    expose:
+      - "3002"
+
+  backend-3003:
+    <<: *backend
+    environment:
+      <<: *backend-environment
+      PORT: "3003"
+      AUDIO_STREAM_NODE: "3003"
+    expose:
+      - "3003"
+
+  # Durable BullMQ workers; need AUDIO_TRANSLATION_JOBS_ENABLED=true in .env.local.
+  # One worker per Cloudflare account: all four pull from the same queue, but each
+  # sends every call to the account named in AUDIO_TRANSLATION_JOB_WORKER_ACCOUNT.
+  # A worker refuses to start if its account is missing or disabled in
+  # CLOUDFLARE_ACCOUNTS_JSON. Names must match WORKER_SERVICES in deploy/lib.sh.
+  #   docker compose --env-file .env.compose -f docker-compose.dev.yml --profile jobs up -d audio-worker-a audio-worker-b audio-worker-c audio-worker-d
+  audio-worker-a: &audio-worker
+    image: speaking-ai-audio-worker-dev:${BACKEND_IMAGE_TAG:-local}
+    pull_policy: never
+    profiles: [jobs]
+    restart: unless-stopped
+    init: true
+    secrets:
+      - app_env
+    environment: &audio-worker-environment
+      APP_RUNTIME: compose
+      APP_ENV_FILE: /run/secrets/app_env
+      PERSISTENCE_BACKEND: postgres
+      CLOUDFLARE_POOL_STORE: redis
+      AUDIO_TRANSLATION_JOB_SHARED_DIRECTORY: /app/data/audio-translation-jobs
+      AUDIO_TRANSLATION_JOB_STORAGE: local
+      # One translation per sentence for every client (skips the text model on repeats).
+      AUDIO_TRANSLATION_SHARED_TEXT_CACHE_ENABLED: "true"
+      # Match one account's text concurrency (limits.text.maxConcurrent = 8).
+      # Higher only makes jobs wait for a permit inside the worker.
+      AUDIO_TRANSLATION_JOB_WORKER_CONCURRENCY: "8"
+      AUDIO_TRANSLATION_JOB_WORKER_ACCOUNT: audio-a
+    volumes:
+      - audio-job-files:/app/data/audio-translation-jobs
+    depends_on:
+      redis:
+        condition: service_healthy
+      redis-cache:
+        condition: service_healthy
+      redis-jobs:
+        condition: service_healthy
+    stop_grace_period: 75s
+    # Four workers share the 4-core VPS with production; each is I/O bound.
+    mem_limit: 256m
+    cpus: 0.5
+    logging:
+      driver: json-file
+      options: { max-size: "10m", max-file: "3" }
+
+  audio-worker-b:
+    <<: *audio-worker
+    environment:
+      <<: *audio-worker-environment
+      AUDIO_TRANSLATION_JOB_WORKER_ACCOUNT: audio-b
+
+  audio-worker-c:
+    <<: *audio-worker
+    environment:
+      <<: *audio-worker-environment
+      AUDIO_TRANSLATION_JOB_WORKER_ACCOUNT: audio-c
+
+  audio-worker-d:
+    <<: *audio-worker
+    environment:
+      <<: *audio-worker-environment
+      AUDIO_TRANSLATION_JOB_WORKER_ACCOUNT: audio-d
+
+  nginx:
+    image: nginx:1.30-alpine
+    restart: unless-stopped
+    ports:
+      # Host Nginx (TLS for api-dev.hoamytech.com) proxies to this port. Prod uses 8080.
+      - "127.0.0.1:${DEV_NGINX_HTTP_PORT:-8081}:80"
+    volumes:
+      - ./infra/nginx/nginx.dev.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      backend-3000:
+        condition: service_healthy
+      backend-3001:
+        condition: service_healthy
+      backend-3002:
+        condition: service_healthy
+      backend-3003:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1/healthz"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+    stop_signal: SIGQUIT
+    stop_grace_period: 75s
+    # Buffers every upload body before proxying; 64m / 0.25 CPU starved under a burst.
+    mem_limit: 256m
+    cpus: 1
+    logging:
+      driver: json-file
+      options: { max-size: "10m", max-file: "3" }
+
+secrets:
+  app_env:
+    file: ./.env.local
+
+volumes:
+  redis-data:
+  audio-jobs-data:
+  audio-job-files:

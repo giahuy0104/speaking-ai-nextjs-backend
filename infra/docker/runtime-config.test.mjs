@@ -39,6 +39,14 @@ test("enabled Redis stores cannot share a host even with explicit default port o
   const env = pooled({ AUDIO_TRANSLATION_CACHE_ENABLED: "true", CLOUDFLARE_POOL_REDIS_URL: "redis://same/0", AUDIO_TRANSLATION_CACHE_REDIS_URL: "redis://same:6379/1" });
   assert.throws(() => configureDeployment(env), /requires_separate_redis_instance/);
 });
+test("the shared sentence cache alone gets the Compose cache Redis and must not share the quota Redis", () => {
+  const env = pooled({ APP_RUNTIME: "compose", AUDIO_TRANSLATION_SHARED_TEXT_CACHE_ENABLED: "true", CLOUDFLARE_POOL_REDIS_PASSWORD: "audit-only-password" });
+  configureDeployment(env);
+  assert.equal(new URL(env.AUDIO_TRANSLATION_CACHE_REDIS_URL).hostname, "redis-cache");
+  assert.equal(env.AUDIO_TRANSLATION_CACHE_ENABLED, "false");
+  const shared = pooled({ AUDIO_TRANSLATION_SHARED_TEXT_CACHE_ENABLED: "true", CLOUDFLARE_POOL_REDIS_URL: "redis://same/0", AUDIO_TRANSLATION_CACHE_REDIS_URL: "redis://same:6379/1" });
+  assert.throws(() => configureDeployment(shared), /requires_separate_redis_instance/);
+});
 test("Railway jobs require R2 while explicit Compose shared-volume jobs remain supported", () => {
   const env = pooled({ AUDIO_TRANSLATION_JOBS_ENABLED: "true", AUDIO_TRANSLATION_JOBS_REDIS_URL: "redis://jobs:6379", AUDIO_TRANSLATION_JOB_STORAGE: "local", AUDIO_TRANSLATION_JOB_SHARED_DIRECTORY: "/app/shared" });
   assert.throws(() => configureDeployment(env), /railway_requires_r2/);
@@ -79,4 +87,79 @@ test("actual startup loads an optional env file and preserves service variable p
     const missing = spawnSync(process.execPath, [path.join(dir, "start.mjs"), "check"], { env: fixture(), encoding: "utf8" });
     assert.equal(missing.status, 0, missing.stderr); assert.match(missing.stdout, /deployment_configuration_valid/);
   } finally { rmSync(root, { recursive: true, force: true }); }
+});
+test("legacy account balancing requires legacy routing and a true/false value", () => {
+  const shared = { CLOUDFLARE_POOL_SHARE_LEGACY_ACCOUNT: "true", CLOUDFLARE_POOL_ROUTE_LEGACY_ACCOUNT: "true" };
+  const env = pooled({ ...shared, CLOUDFLARE_POOL_BALANCE_LEGACY_CALLS: "TRUE" });
+  configureDeployment(env); assert.equal(env.CLOUDFLARE_POOL_BALANCE_LEGACY_CALLS, "true");
+  assert.throws(() => configureDeployment(pooled({ ...shared, CLOUDFLARE_POOL_ROUTE_LEGACY_ACCOUNT: "false",
+    CLOUDFLARE_POOL_BALANCE_LEGACY_CALLS: "true" })), /CLOUDFLARE_POOL_BALANCE_LEGACY_CALLS.*requires_legacy_routing/);
+  assert.throws(() => configureDeployment(pooled({ ...shared, CLOUDFLARE_POOL_BALANCE_LEGACY_CALLS: "yes" })),
+    /CLOUDFLARE_POOL_BALANCE_LEGACY_CALLS.*use_true_or_false/);
+});
+test("DeepInfra audio providers require their API key and reject unknown provider names", () => {
+  assert.equal(configureDeployment(fixture()).role, "web");
+  assert.throws(() => configureDeployment(fixture({ AUDIO_ASR_PROVIDER: "deepinfra" })), /DEEPINFRA_API_KEY \(required\)/);
+  assert.throws(() => configureDeployment(fixture({ AUDIO_TEXT_PROVIDER: "DeepInfra" })), /DEEPINFRA_API_KEY \(required\)/);
+  assert.throws(() => configureDeployment(fixture({ AUDIO_ASR_PROVIDER: "deepseek" })), /AUDIO_ASR_PROVIDER \(cloudflare_or_deepinfra\)/);
+  const env = fixture({ AUDIO_ASR_PROVIDER: " DeepInfra ", AUDIO_TEXT_PROVIDER: "deepinfra", DEEPINFRA_API_KEY: "audit-deepinfra-key" });
+  configureDeployment(env);
+  assert.equal(env.AUDIO_ASR_PROVIDER, "deepinfra");
+  assert.throws(() => configureDeployment(fixture({ AUDIO_TEXT_PROVIDER: "deepinfra,cloudflare" })), /DEEPINFRA_API_KEY \(required\)/);
+  assert.throws(() => configureDeployment(fixture({ AUDIO_ASR_PROVIDER: "deepinfra,openai", DEEPINFRA_API_KEY: "k" })),
+    /AUDIO_ASR_PROVIDER \(cloudflare_or_deepinfra\)/);
+  const ordered = fixture({ AUDIO_ASR_PROVIDER: " DeepInfra , cloudflare,deepinfra", DEEPINFRA_API_KEY: "audit-deepinfra-key" });
+  configureDeployment(ordered);
+  assert.equal(ordered.AUDIO_ASR_PROVIDER, "deepinfra,cloudflare");
+});
+test("target-language speech provider defaults to Cloudflare and DeepInfra needs its key", () => {
+  const defaults = fixture();
+  configureDeployment(defaults);
+  assert.equal(defaults.AUDIO_TARGET_TTS_PROVIDER, "cloudflare");
+  assert.throws(() => configureDeployment(fixture({ AUDIO_TARGET_TTS_PROVIDER: "deepinfra" })), /DEEPINFRA_API_KEY \(required\)/);
+  assert.throws(() => configureDeployment(fixture({ AUDIO_TARGET_TTS_PROVIDER: "deepinfra,cloudflare", DEEPINFRA_API_KEY: "k" })),
+    /AUDIO_TARGET_TTS_PROVIDER \(cloudflare_deepinfra_or_google\)/);
+  const env = fixture({ AUDIO_TARGET_TTS_PROVIDER: " DeepInfra ", DEEPINFRA_API_KEY: "audit-deepinfra-key" });
+  configureDeployment(env);
+  assert.equal(env.AUDIO_TARGET_TTS_PROVIDER, "deepinfra");
+});
+test("Google speech needs a service-account key or Application Default Credentials", () => {
+  assert.throws(() => configureDeployment(fixture({ AUDIO_TARGET_TTS_PROVIDER: "google" })),
+    /GOOGLE_TTS_CREDENTIALS_JSON \(required\)/);
+  const withKey = fixture({ AUDIO_TARGET_TTS_PROVIDER: " Google ", GOOGLE_TTS_CREDENTIALS_JSON: "e30=" });
+  configureDeployment(withKey);
+  assert.equal(withKey.AUDIO_TARGET_TTS_PROVIDER, "google");
+  const withAdc = fixture({ AUDIO_TARGET_TTS_PROVIDER: "google", GOOGLE_APPLICATION_CREDENTIALS: "/run/secrets/google.json" });
+  configureDeployment(withAdc);
+  assert.equal(withAdc.AUDIO_TARGET_TTS_PROVIDER, "google");
+});
+test("English speech defaults to Cloudflare; Google English needs Google credentials", () => {
+  const defaults = fixture();
+  configureDeployment(defaults);
+  assert.equal(defaults.AUDIO_ENGLISH_TTS_PROVIDER, "cloudflare");
+  assert.throws(() => configureDeployment(fixture({ AUDIO_ENGLISH_TTS_PROVIDER: "deepinfra" })),
+    /AUDIO_ENGLISH_TTS_PROVIDER \(cloudflare_or_google\)/);
+  assert.throws(() => configureDeployment(fixture({ AUDIO_ENGLISH_TTS_PROVIDER: "google" })),
+    /GOOGLE_TTS_CREDENTIALS_JSON \(required\)/);
+  const env = fixture({ AUDIO_ENGLISH_TTS_PROVIDER: " Google ", GOOGLE_TTS_CREDENTIALS_JSON: "e30=" });
+  configureDeployment(env);
+  assert.equal(env.AUDIO_ENGLISH_TTS_PROVIDER, "google");
+});
+test("English-only provider lists are checked like the shared ones", () => {
+  assert.throws(() => configureDeployment(fixture({ AUDIO_ASR_PROVIDER_EN: "deepseek" })), /AUDIO_ASR_PROVIDER_EN \(cloudflare_or_deepinfra\)/);
+  assert.throws(() => configureDeployment(fixture({ AUDIO_TEXT_PROVIDER_EN: "deepinfra" })), /DEEPINFRA_API_KEY \(required\)/);
+  const env = fixture({ AUDIO_ASR_PROVIDER_EN: " DeepInfra ", AUDIO_TEXT_PROVIDER_EN: "deepinfra", DEEPINFRA_API_KEY: "k" });
+  configureDeployment(env);
+  assert.equal(env.AUDIO_ASR_PROVIDER_EN, "deepinfra");
+  // Unset stays unset: the shared list applies.
+  const plain = fixture();
+  configureDeployment(plain);
+  assert.equal(plain.AUDIO_ASR_PROVIDER_EN, undefined);
+});
+test("sending a share of Google clips to DeepInfra needs the DeepInfra key", () => {
+  const google = { AUDIO_TARGET_TTS_PROVIDER: "google", GOOGLE_TTS_CREDENTIALS_JSON: "e30=" };
+  assert.throws(() => configureDeployment(fixture({ ...google, AUDIO_TARGET_CLIP_DEEPINFRA_SHARE: "0.33" })),
+    /DEEPINFRA_API_KEY \(required\)/);
+  configureDeployment(fixture({ ...google, AUDIO_TARGET_CLIP_DEEPINFRA_SHARE: "0.33", DEEPINFRA_API_KEY: "k" }));
+  configureDeployment(fixture({ ...google, AUDIO_TARGET_CLIP_DEEPINFRA_SHARE: "0" }));
 });

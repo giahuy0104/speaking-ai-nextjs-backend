@@ -5,6 +5,7 @@ import { createTranslationCache, translationCacheKey } from "./audioTranslationC
 import { createAudioTranslationService } from "./audioTranslationService";
 import { createDeadline } from "./cloudflare/deadline";
 import { getAbortDiagnostics } from "./cloudflare/abortDiagnostics";
+import { isTransientPoolFailure, PoolError, ProviderFault, publicPoolError } from "./cloudflare/providerError";
 
 const translated = { sourceText: "I feel better.", englishText: "I feel better.", model: "asr", textModel: "text" };
 function setup() {
@@ -97,6 +98,50 @@ test("corrupt cache and cache outages fail open; failures never become cached su
     operation: async () => { calls++; throw new Error("provider failed"); } });
   await assert.rejects(run(), /provider failed/); await assert.rejects(run(), /provider failed/);
   assert.equal(calls, 2);
+});
+
+const transient = () => new PoolError("timeout", 504, undefined, { failureSource: "backend", abortCause: "attempt_timeout" });
+
+test("joined callers re-run once together when the shared leader fails transiently", async () => {
+  const { service } = setup(); let calls = 0; let retries = 0;
+  const run = () => service.run({ audio: audio(), owner: "retry", sourceLanguage: "vi", timing: createDeadline(10_000),
+    onSharedWorkRetry: () => { retries++; },
+    operation: async () => { calls++; await delay(20); if (calls === 1) throw transient(); return translated; } });
+  const results = await Promise.allSettled(Array.from({ length: 20 }, run));
+  // The leader already had its provider retry inside the dispatcher; it reports its own failure.
+  assert.equal(results.filter(r => r.status === "rejected").length, 1);
+  assert.equal(results.filter(r => r.status === "fulfilled").length, 19);
+  // The 19 joined callers share one fresh flight rather than calling the provider 19 times.
+  assert.equal(calls, 2);
+  assert.equal(retries, 19);
+});
+
+test("joined callers do not re-run after non-transient failures or with too little time left", async () => {
+  for (const failure of [new ProviderFault("provider_error", 400), new ProviderFault("credentials", 401), new Error("bad audio")]) {
+    const { service } = setup(); let calls = 0;
+    const run = () => service.run({ audio: audio(), owner: "no-retry", sourceLanguage: "vi", timing: createDeadline(10_000),
+      operation: async () => { calls++; await delay(20); throw failure; } });
+    const results = await Promise.allSettled([run(), run(), run()]);
+    assert.equal(results.every(r => r.status === "rejected"), true);
+    assert.equal(calls, 1);
+  }
+  const { service } = setup(); let calls = 0;
+  const run = () => service.run({ audio: audio(), owner: "late", sourceLanguage: "vi", timing: createDeadline(3_000),
+    operation: async () => { calls++; await delay(20); throw transient(); } });
+  const results = await Promise.allSettled([run(), run()]);
+  assert.equal(results.every(r => r.status === "rejected"), true);
+  assert.equal(calls, 1);
+});
+
+test("public AppError projections keep the transient classification", () => {
+  assert.equal(isTransientPoolFailure(publicPoolError(new ProviderFault("provider_error", 503), "text_translation")), true);
+  assert.equal(isTransientPoolFailure(publicPoolError(new ProviderFault("network_error"), "asr")), true);
+  assert.equal(isTransientPoolFailure(publicPoolError(transient(), "text_translation")), true);
+  assert.equal(isTransientPoolFailure(publicPoolError(new ProviderFault("provider_error", 400), "text_translation")), false);
+  assert.equal(isTransientPoolFailure(publicPoolError(new ProviderFault("rate_limited", 429), "asr")), false);
+  assert.equal(isTransientPoolFailure(new PoolError("timeout", 504, undefined, { failureSource: "client", abortCause: "client_disconnect" })), false);
+  assert.equal(isTransientPoolFailure(new PoolError("timeout", 504, undefined, { failureSource: "backend", abortCause: "request_deadline" })), false);
+  assert.equal(isTransientPoolFailure(new PoolError("queue_full", 429)), false);
 });
 
 test("per-client distinct cold work is bounded while duplicate subscribers still join", async () => {

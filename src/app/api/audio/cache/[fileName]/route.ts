@@ -1,5 +1,4 @@
-import path from "node:path";
-import { getGeneratedAudioRedirect, readGeneratedAudioFile } from "@/lib/storage/audio";
+import { audioContentType, getGeneratedAudioRedirect, readGeneratedAudioFile } from "@/lib/storage/audio";
 
 export const runtime = "nodejs";
 
@@ -11,12 +10,6 @@ type AudioByteRange = {
   start: number;
   end: number;
 };
-
-function audioContentType(fileName: string) {
-  return path.extname(fileName).toLowerCase() === ".mp3"
-    ? "audio/mpeg"
-    : "application/octet-stream";
-}
 
 function parseByteRange(
   rangeHeader: string | null,

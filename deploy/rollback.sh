@@ -19,6 +19,7 @@ docker image inspect "$LOCAL_IMAGE_REPO:$target" >/dev/null 2>&1 \
   || die "image $LOCAL_IMAGE_REPO:$target not found locally (run a deploy for that SHA instead)"
 
 log "manual rollback: ${current:-unknown} -> $target"
+detect_active_workers
 if switch_to "$target" && verify_stack "$target"; then
   [[ -n "$current" && "$current" != "$target" ]] && write_state previous_tag "$current"
   write_state current_tag "$target"

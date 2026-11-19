@@ -38,6 +38,25 @@ key task riêng. FIFO theo task/model trong từng process, không phải FIFO t
 5. Đo 20 user/60 giây với cache miss. Tách admission 429, upstream HTTP lỗi,
    deadline và client cancellation; ghi nhận P95 cùng phân bố theo account.
 
+## Giai đoạn 3: chia cả lời gọi legacy cho mọi account
+
+`CLOUDFLARE_POOL_BALANCE_LEGACY_CALLS=true` (cần ROUTE=true) bỏ ghim account
+legacy: mỗi lần gọi ASR, text hoặc TTS của API cũ được dispatcher chọn account
+đang bật, có model đó trong `capabilities`, ít tải hơn, rồi đổi URL sang Account
+ID và token của account được chọn. Account không khai báo model sẽ không nhận
+lời gọi model đó, nên muốn `audio-b` làm giống `audio-a` thì khai báo cho nó
+cùng danh sách model:
+
+- `asr`: model ASR đang dùng (và `CLOUDFLARE_ASR_MODEL` nếu khác).
+- `text`: Llama Scout và Qwen3 nếu không đặt `CLOUDFLARE_TEXT_MODEL`.
+- `tts`: `@cf/deepgram/aura-1` (hoặc model TTS đang cấu hình) và `xai/grok-tts`,
+  kèm `limits.tts`. Xác nhận account đó có quyền dùng `xai/grok-tts` trước khi bật.
+
+Triển khai: bật ở dev trước, khởi động lại lần lượt mọi backend và worker, kiểm
+tra log `cloudflare_pool_attempt_completed` có cả hai `accountAlias` cho workload
+`legacy-asr`, `legacy-text`, `legacy-tts`. Rollback: đặt lại `false` rồi khởi
+động lại lần lượt; không cần xóa Redis quota.
+
 Legacy không tự retry hoặc chuyển account. Lỗi text không chạy lại ASR. TTS
 streaming trả header sớm, giữ permit tới EOF/lỗi/hủy/deadline và giữ giới hạn
 thời gian cũ. Download MP3 từ storage không tiêu thụ permit inference.
