@@ -8,15 +8,19 @@ import {
   googleTtsVoice,
   googleTtsVoiceName,
   isGoogleTtsBusy,
+  isGoogleTtsRateLimited,
   resetGoogleTtsForTests,
   setGoogleTtsClientForTests,
+  setGoogleTtsQuotaStoreForTests,
   streamSpeechWithGoogle,
   synthesizeWithGoogle,
   toGoogleTtsAppError,
   type GoogleTtsClient,
 } from "./googleTts";
+import { createMemoryGoogleQuotaStore } from "./googleTtsQuota";
 
-const KEYS = ["GOOGLE_TTS_VOICE", "GOOGLE_TTS_CLIP_VOICE_ZH", "GOOGLE_TTS_CLIP_VOICE_JA", "GOOGLE_TTS_CLIP_VOICE_KO", "GOOGLE_TTS_CLIP_VOICE_FR", "GOOGLE_TTS_TIMEOUT_MS", "GOOGLE_TTS_STREAM_TIMEOUT_MS", "GOOGLE_TTS_MAX_CONCURRENCY", "GOOGLE_TTS_QUEUE_WAIT_MS"] as const;
+const KEYS = ["GOOGLE_TTS_VOICE", "GOOGLE_TTS_CLIP_VOICE_ZH", "GOOGLE_TTS_CLIP_VOICE_JA", "GOOGLE_TTS_CLIP_VOICE_KO", "GOOGLE_TTS_CLIP_VOICE_FR", "GOOGLE_TTS_TIMEOUT_MS", "GOOGLE_TTS_STREAM_TIMEOUT_MS", "GOOGLE_TTS_MAX_CONCURRENCY", "GOOGLE_TTS_QUEUE_WAIT_MS",
+  "GOOGLE_TTS_QUOTA_ENABLED", "GOOGLE_TTS_QUOTA_REDIS_URL", "GOOGLE_TTS_QUOTA_CHIRP3_RPM", "GOOGLE_TTS_QUOTA_CHIRP3_STREAMS", "GOOGLE_TTS_QUOTA_NEURAL2_RPM", "GOOGLE_TTS_QUOTA_ALL_RPM"] as const;
 const saved = Object.fromEntries(KEYS.map(key => [key, process.env[key]]));
 
 beforeEach(() => {
@@ -26,6 +30,7 @@ beforeEach(() => {
 
 afterEach(() => {
   setGoogleTtsClientForTests(undefined);
+  setGoogleTtsQuotaStoreForTests(undefined);
   resetGoogleTtsForTests();
   for (const key of KEYS) {
     if (saved[key] === undefined) delete process.env[key]; else process.env[key] = saved[key];
@@ -267,4 +272,58 @@ test("unary failures and empty audio become provider errors; bad voices are refu
   await assert.rejects(synthesizeWithGoogle("Bonjour.", "fr"), isReason("invalid_voice"));
   const publicError = toGoogleTtsAppError(new GoogleTtsProviderError("invalid_voice"));
   assert.ok(publicError instanceof AppError && publicError.status === 500);
+});
+
+test("a full project quota refuses at once with quota_exceeded (429) and never calls Google", async () => {
+  process.env.GOOGLE_TTS_QUOTA_CHIRP3_STREAMS = "1";
+  setGoogleTtsQuotaStoreForTests(createMemoryGoogleQuotaStore());
+  let release!: () => void;
+  const { client, calls } = fakeStreamingClient(async call => {
+    await call.ended;
+    call.duplex.push({ audioContent: new Uint8Array([1, 2]) });
+    await new Promise<void>(resolve => { release = resolve; });
+    call.duplex.push(null);
+  });
+  setGoogleTtsClientForTests(client);
+  const first = await streamSpeechWithGoogle("今天我很开心。", "zh");
+  const refused = await streamSpeechWithGoogle("今天我很开心。", "zh").then(() => assert.fail("must reject"), (error: unknown) => error);
+  assert.ok(isReason("quota_exceeded")(refused));
+  assert.equal(isGoogleTtsBusy(refused), true);
+  assert.equal(isGoogleTtsRateLimited(refused), true, "another voice's quota may still allow a stand-in");
+  const publicError = toGoogleTtsAppError(refused);
+  assert.ok(publicError instanceof AppError && publicError.status === 429 && publicError.details?.quota === "chirp3_streams");
+  assert.equal(calls.length, 1, "the refused stream never reached Google");
+  // The finished stream gives its lease back.
+  release();
+  await readAll(first.pcm);
+  await streamSpeechWithGoogle("今天我很开心。", "zh");
+  assert.equal(calls.length, 2);
+});
+
+test("clips count against the per-minute quota of their own voice", async () => {
+  process.env.GOOGLE_TTS_CLIP_VOICE_JA = "Neural2-B";
+  process.env.GOOGLE_TTS_QUOTA_NEURAL2_RPM = "1";
+  setGoogleTtsQuotaStoreForTests(createMemoryGoogleQuotaStore());
+  let unary = 0;
+  setGoogleTtsClientForTests({
+    streamingSynthesize() { return assert.fail("stream not expected"); },
+    async synthesizeSpeech() { unary++; return [{ audioContent: new Uint8Array([7]) }]; },
+  });
+  await synthesizeWithGoogle("こんにちは。", "ja");
+  await assert.rejects(synthesizeWithGoogle("こんにちは。", "ja"), isReason("quota_exceeded"));
+  // The WAV stand-in speaks Chirp 3 HD, whose quota still has room.
+  await synthesizeWithGoogle("こんにちは。", "ja", { format: "wav" });
+  assert.equal(unary, 2);
+});
+
+test("GOOGLE_TTS_QUOTA_ENABLED=false skips the quota entirely", async () => {
+  process.env.GOOGLE_TTS_QUOTA_ENABLED = "false";
+  process.env.GOOGLE_TTS_QUOTA_ALL_RPM = "1";
+  setGoogleTtsQuotaStoreForTests(createMemoryGoogleQuotaStore());
+  setGoogleTtsClientForTests({
+    streamingSynthesize() { return assert.fail("stream not expected"); },
+    async synthesizeSpeech() { return [{ audioContent: new Uint8Array([7]) }]; },
+  });
+  await synthesizeWithGoogle("Bonjour.", "fr");
+  await synthesizeWithGoogle("Bonjour.", "fr");
 });

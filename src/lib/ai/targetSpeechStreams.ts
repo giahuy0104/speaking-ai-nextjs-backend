@@ -17,8 +17,12 @@ export type TargetSpeechStreamsOptions = {
   fallback: (text: string, language: string) => Promise<ArrayBuffer>;
   /** False when the finished-clip path would fail the same way (provider busy); default true. */
   shouldFallback?: (error: unknown, language: string) => boolean;
-  /** Called before the fallback clip is requested for this sentence. */
-  onFallback?: (text: string, language: string) => void;
+  /**
+   * Called before the fallback clip is requested for this sentence. `shared`: the stream
+   * runs under the sentence's own key (the coordinator's job), not a key given to `start`
+   * (a load-test turn, which is never cached).
+   */
+  onFallback?: (text: string, language: string, stream: Readonly<{ shared: boolean }>) => void;
   /** Maps a provider error to the one listeners and logs see. */
   toPublicError?: (error: unknown) => unknown;
   log?: (level: "info" | "warn", event: string, fields: Record<string, unknown>) => void;
@@ -34,7 +38,7 @@ export function createTargetSpeechStreams(options: TargetSpeechStreamsOptions) {
   const toPublicError = options.toPublicError ?? (error => error);
   const log = options.log ?? (() => undefined);
 
-  async function produce(text: string, language: string, broadcast: SpeechBroadcast) {
+  async function produce(text: string, language: string, broadcast: SpeechBroadcast, shared: boolean) {
     const startedAt = performance.now();
     try {
       const speech = await options.openPcm(text, language);
@@ -66,7 +70,7 @@ export function createTargetSpeechStreams(options: TargetSpeechStreamsOptions) {
         return;
       }
       log("warn", "target_speech_stream_fallback", { language, ...turnContent({ translatedText: text }), error: reported });
-      options.onFallback?.(text, language);
+      options.onFallback?.(text, language, { shared });
       try {
         broadcast.push(new Uint8Array(await options.fallback(text, language)));
         broadcast.finish();
@@ -107,7 +111,7 @@ export function createTargetSpeechStreams(options: TargetSpeechStreamsOptions) {
         if (live.get(key) === broadcast) live.delete(key);
       };
       broadcast.completed.then(forget, forget);
-      void produce(text, language, broadcast);
+      void produce(text, language, broadcast, key === keyFor(text, language));
       return broadcast.completed.then(withWavSizes);
     },
 
