@@ -427,10 +427,13 @@ export type GoogleSpeechFormat = "mp3" | "wav";
 export async function synthesizeWithGoogle(
   text: string,
   language: string,
-  options: { format?: GoogleSpeechFormat; signal?: AbortSignal } = {},
+  /** `voice` (without its locale, e.g. "Wavenet-A") overrides the configured clip voice. */
+  options: { format?: GoogleSpeechFormat; signal?: AbortSignal; voice?: string } = {},
 ): Promise<ArrayBuffer> {
   // A WAV clip stands in for a stream: the stream's voice unless a fallback voice is set.
-  const voice = voiceFor(language, options.format === "wav" ? "fallback" : "clip");
+  const voice = options.voice
+    ? { languageCode: LOCALES[language], name: localizedVoiceName(language, options.voice) }
+    : voiceFor(language, options.format === "wav" ? "fallback" : "clip");
   // A clip holds no lease: its requests-per-minute count is all there is to release.
   await acquireQuota(voice.name, false);
   const release = await acquireSlot(options.signal);
