@@ -63,6 +63,11 @@ export function configureDeployment(env, role = "web") {
   if (routeLegacy && !sharedLegacy) fail("CLOUDFLARE_POOL_ROUTE_LEGACY_ACCOUNT", "requires_shared_legacy_quota");
   if (flag(env, "CLOUDFLARE_POOL_BALANCE_LEGACY_CALLS") && !routeLegacy) fail("CLOUDFLARE_POOL_BALANCE_LEGACY_CALLS", "requires_legacy_routing");
   if (role === "worker" && !jobs) fail("AUDIO_TRANSLATION_JOBS_ENABLED", "required_for_worker");
+  // Dev only: no audio cache for anyone. An uncached zh/ja/ko/fr turn returns its audio
+  // URL only when target speech is deferred; otherwise the app would get no audio at all.
+  if (flag(env, "AUDIO_CACHE_DISABLED") && value(env, "AUDIO_TARGET_TTS_DEFERRED").toLowerCase() !== "true") {
+    fail("AUDIO_CACHE_DISABLED", "requires_deferred_target_speech");
+  }
   // Preserve the explicit Compose load-test migration; never silently share legacy quota.
   if (flag(env, "CLOUDFLARE_POOL_ALLOW_LEGACY_ACCOUNT_LOCAL_TEST")) {
     if (runtime !== "compose" || sharedLegacy || !pool) fail("CLOUDFLARE_POOL_ALLOW_LEGACY_ACCOUNT_LOCAL_TEST", "development_only");

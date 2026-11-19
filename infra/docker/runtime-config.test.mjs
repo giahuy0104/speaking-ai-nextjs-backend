@@ -103,6 +103,15 @@ test("actual startup loads an optional env file and preserves service variable p
     assert.equal(missing.status, 0, missing.stderr); assert.match(missing.stdout, /deployment_configuration_valid/);
   } finally { rmSync(root, { recursive: true, force: true }); }
 });
+test("disabling the audio cache for everyone requires deferred target speech and a true/false value", () => {
+  // Without deferred speech an uncached zh/ja/ko/fr turn would return no audio URL at all.
+  assert.throws(() => configureDeployment(fixture({ AUDIO_CACHE_DISABLED: "true" })),
+    /AUDIO_CACHE_DISABLED.*requires_deferred_target_speech/);
+  const env = fixture({ AUDIO_CACHE_DISABLED: "TRUE", AUDIO_TARGET_TTS_DEFERRED: "true" });
+  configureDeployment(env); assert.equal(env.AUDIO_CACHE_DISABLED, "true");
+  assert.throws(() => configureDeployment(fixture({ AUDIO_CACHE_DISABLED: "yes" })), /AUDIO_CACHE_DISABLED.*use_true_or_false/);
+  configureDeployment(fixture());
+});
 test("legacy account balancing requires legacy routing and a true/false value", () => {
   const shared = { CLOUDFLARE_POOL_SHARE_LEGACY_ACCOUNT: "true", CLOUDFLARE_POOL_ROUTE_LEGACY_ACCOUNT: "true" };
   const env = pooled({ ...shared, CLOUDFLARE_POOL_BALANCE_LEGACY_CALLS: "TRUE" });

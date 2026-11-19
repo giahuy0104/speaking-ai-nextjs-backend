@@ -1,6 +1,11 @@
 import assert from "node:assert/strict";
 import { afterEach, test } from "node:test";
-import { bypassesAudioCache, loadTestPersistencePrefix, skipsPostResponsePersistence } from "./loadTestPersistence";
+import {
+  audioCacheDisabled,
+  bypassesAudioCache,
+  loadTestPersistencePrefix,
+  skipsPostResponsePersistence,
+} from "./loadTestPersistence";
 
 const ENV = "LOAD_TEST_SKIP_PERSISTENCE_CLIENT_PREFIX";
 
@@ -44,4 +49,22 @@ test("the audio cache is bypassed only for load-test installations with the flag
   process.env[ENV] = "web_";
   assert.equal(bypassesAudioCache("web_k6_abc123"), false);
   delete process.env.LOAD_TEST_BYPASS_AUDIO_CACHE;
+});
+
+test("AUDIO_CACHE_DISABLED bypasses the audio cache for every installation, but keeps their history", () => {
+  for (const value of [undefined, "", "false", "1"]) {
+    if (value === undefined) delete process.env.AUDIO_CACHE_DISABLED;
+    else process.env.AUDIO_CACHE_DISABLED = value;
+    assert.equal(audioCacheDisabled(), false);
+    assert.equal(bypassesAudioCache("ios_real-device-1"), false);
+  }
+  process.env.AUDIO_CACHE_DISABLED = " TRUE ";
+  assert.equal(audioCacheDisabled(), true);
+  assert.equal(bypassesAudioCache("ios_real-device-1"), true);
+  assert.equal(bypassesAudioCache("android_real-device-1"), true);
+  assert.equal(bypassesAudioCache(undefined), true);
+  // Only the cache is skipped: real installations still save their history.
+  process.env[ENV] = "web_k6_";
+  assert.equal(skipsPostResponsePersistence("ios_real-device-1"), false);
+  delete process.env.AUDIO_CACHE_DISABLED;
 });

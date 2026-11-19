@@ -78,3 +78,11 @@ test("the English no-cache signature survives retries and other backends, and on
   assert.equal(verifyUncachedEnglishAudio("123.forged", "Today the weather is sunny.", { env: on, now }), false);
   assert.equal(signUncachedEnglishAudio("x", { env: { INSTALLATION_AUTH_SECRET: "s".repeat(40) }, now }), undefined);
 });
+
+test("with the audio cache disabled for everyone, the English no-cache signature works without the load-test flag", () => {
+  const disabled = { INSTALLATION_AUTH_SECRET: "s".repeat(40), AUDIO_CACHE_DISABLED: "true" };
+  const signed = signUncachedEnglishAudio("Today the weather is sunny.", { env: disabled, now })!;
+  assert.ok(signed);
+  assert.equal(verifyUncachedEnglishAudio(signed, "Today the weather is sunny.", { env: disabled, now }), true);
+  assert.equal(verifyUncachedEnglishAudio(signed, "Today the weather is sunny.", { env: { ...disabled, AUDIO_CACHE_DISABLED: "" }, now }), false);
+});
