@@ -242,13 +242,16 @@ function failedTextProvider(error: unknown) {
   return provider === "deepinfra" ? "deepinfra" : "cloudflare";
 }
 
-/** Translates on the providers of AUDIO_TEXT_PROVIDER in priority order (Cloudflare when unset). */
+/**
+ * Translates into English on the providers of AUDIO_TEXT_PROVIDER_EN, else AUDIO_TEXT_PROVIDER,
+ * in priority order (Cloudflare when unset).
+ */
 async function generateWithProviders(
   vietnameseText: string,
   instructions: string,
   requestId?: string,
 ) {
-  const providers = resolveAudioProviders("text");
+  const providers = resolveAudioProviders("text", "en");
   let firstFailure: unknown;
   const translation = await runProviders("text", providers, new AbortController().signal, {
     onProviderFallback: (event) => logEvent("warn", "english_translation_provider_fallback", { requestId, ...event }),

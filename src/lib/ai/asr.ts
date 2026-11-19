@@ -90,8 +90,8 @@ async function transcribeAudio(input: ConversationRequest) {
   });
 
   // Every target language follows AUDIO_ASR_PROVIDER (DeepInfra first when configured,
-  // Cloudflare when unset), English included.
-  const asrOptions = { vadFilter: vadPolicy.vadFilter };
+  // Cloudflare when unset), unless AUDIO_ASR_PROVIDER_<LANG> overrides it (e.g. _EN).
+  const asrOptions = { vadFilter: vadPolicy.vadFilter, targetLanguage: input.targetLanguage };
   const result = await transcribeAudioToVietnameseWithProviders(audioFile, asrOptions);
   assertVietnameseTranscript(result.vietnameseText, result.segments, {
     requestId: input.requestId,

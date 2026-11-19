@@ -1,0 +1,7 @@
+time="2026-11-18T21:22:20+07:00" level=info msg="audio waves -> https://api-dev.hoamytech.com | waves=500 gap=120s | langs=en:1 | clips=10 | tokens=50 | unique=true" source=console
+
+per wave (ms: med/p95/max)
+wave 500: post ok 100.0% of 500 | audioUrl 100.0% of 500 | audio ok 93.0% of 500 | turn ok 93.0% of 500 | rendezvous late 19/45/51
+  upload 13/463/585 | asr 2030/4314/7051 | llm 988/2448/3819 | text 4798/6954/10420
+  ttfb 4720/11312/18050 | playable 9272/16561/24713 | audio end 13587/26203/31334
+  HTTP step:audio,status:429=35 step:audio,status:200=465 step:conversation,status:200=500

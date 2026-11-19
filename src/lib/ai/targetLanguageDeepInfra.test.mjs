@@ -59,6 +59,8 @@ test("zh/ja/ko/fr pipeline uses DeepInfra when configured", async (t) => {
     delete process.env.DEEPINFRA_BASE_URL;
     delete process.env.AUDIO_ASR_HEDGE_MS;
     delete process.env.AUDIO_TEXT_HEDGE_MS;
+    delete process.env.AUDIO_ASR_PROVIDER_EN;
+    delete process.env.AUDIO_TEXT_PROVIDER_EN;
     calls = [];
     console.info = console.warn = () => {};
   });
@@ -221,6 +223,42 @@ test("zh/ja/ko/fr pipeline uses DeepInfra when configured", async (t) => {
       assert.equal(error.details.provider, "deepinfra");
       return true;
     });
+  });
+
+  await t.test("AUDIO_TEXT_PROVIDER_EN=deepinfra keeps English translation off Cloudflare, even when DeepInfra fails", async () => {
+    process.env.AUDIO_TEXT_PROVIDER_EN = "deepinfra";
+    globalThis.fetch = async (url) => {
+      calls.push(String(url));
+      return new Response("busy", { status: 503 });
+    };
+    await assert.rejects(translateEnglish(), (error) => error.code === "LLM_FAILED" && error.details.provider === "deepinfra");
+    assert.deepEqual(calls, [DEEPINFRA_CHAT_URL]);
+
+    // zh/ja/ko/fr keep the shared list and still fall back to Cloudflare.
+    calls = [];
+    globalThis.fetch = async (url) => {
+      calls.push(String(url));
+      return String(url) === DEEPINFRA_CHAT_URL ? new Response("busy", { status: 503 }) : cloudflareChat("我想喝水。");
+    };
+    const result = await translateTargetLanguage(translationInput);
+    assert.equal(result.translatedText, "我想喝水。");
+    assert.equal(calls.length, 2);
+  });
+
+  await t.test("AUDIO_ASR_PROVIDER_EN=deepinfra keeps English speech recognition off Cloudflare", async () => {
+    process.env.AUDIO_ASR_PROVIDER_EN = "deepinfra";
+    globalThis.fetch = async (url) => {
+      calls.push(String(url));
+      return String(url) === DEEPINFRA_ASR_URL ? new Response("down", { status: 500 }) : cloudflareAsr("Con khát nước.");
+    };
+    await assert.rejects(transcribeVietnamese({ context: "home", targetLanguage: "en", audioFile: audio }));
+    assert.deepEqual(calls, [DEEPINFRA_ASR_URL]);
+
+    // Another target language keeps the Cloudflare fallback.
+    calls = [];
+    const text = await transcribeVietnamese({ context: "home", targetLanguage: "zh", audioFile: audio });
+    assert.equal(text, "Con khát nước.");
+    assert.equal(calls.length, 2);
   });
 
   await t.test("English stays on Cloudflare when AUDIO_TEXT_PROVIDER is unset", async () => {

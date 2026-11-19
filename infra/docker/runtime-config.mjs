@@ -77,7 +77,9 @@ export function configureDeployment(env, role = "web") {
   }
   // Audio translate stages may run on DeepInfra; fail at startup, not on the first request.
   // Each is a priority list, e.g. "deepinfra,cloudflare" (DeepInfra first, Cloudflare fallback).
-  const audioProviders = ["AUDIO_ASR_PROVIDER", "AUDIO_TEXT_PROVIDER"].flatMap(key => {
+  // The _EN lists are optional overrides for English (unset: the shared list applies).
+  const optionalLists = ["AUDIO_ASR_PROVIDER_EN", "AUDIO_TEXT_PROVIDER_EN"].filter(key => value(env, key));
+  const audioProviders = ["AUDIO_ASR_PROVIDER", "AUDIO_TEXT_PROVIDER", ...optionalLists].flatMap(key => {
     const providers = [...new Set(value(env, key).toLowerCase().split(",").map(entry => entry.trim()).filter(Boolean))];
     if (!providers.length) providers.push("cloudflare");
     if (providers.some(provider => provider !== "cloudflare" && provider !== "deepinfra")) fail(key, "cloudflare_or_deepinfra");
