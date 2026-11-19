@@ -1,6 +1,6 @@
 import type { EnglishGenerationResult } from "./llm";
 import { normalizeVietnameseForExactMatch } from "./exactRules";
-import type { PracticeContext } from "@/types/conversation";
+import type { PracticeContext, ProviderTtsSource } from "@/types/conversation";
 
 export type BatchPrefetchPcmSnapshot = {
   sampleRate: number;
@@ -18,7 +18,7 @@ export type BatchPrefetchCandidate = {
   sourceText: string;
   translation: EnglishGenerationResult;
   audioUrl: string;
-  audioSource: "cache" | "cloudflare_tts";
+  audioSource: "cache" | ProviderTtsSource;
   snapshot: BatchPrefetchPcmSnapshot;
   terminalSnapshot: boolean;
   stabilityCount: number;

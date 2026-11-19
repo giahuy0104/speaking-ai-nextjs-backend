@@ -1,4 +1,4 @@
-import type { ApiErrorCode, AudioSource, TextSource } from "@/types/conversation";
+import type { ApiErrorCode, ProviderTtsSource, TextSource } from "@/types/conversation";
 import { AppError } from "@/lib/appError";
 import { fetchLegacyCloudflare } from "./cloudflare/legacyAdmission";
 import { clientAbortSignal, combineAbortSignals, timeoutSignal } from "./cloudflare/abortDiagnostics";
@@ -45,7 +45,7 @@ export type TtsProfile = {
 
 export type EnglishSpeechResult = {
   response: Response;
-  source: Extract<AudioSource, "cloudflare_tts">;
+  source: ProviderTtsSource;
   profile: TtsProfile;
 };
 

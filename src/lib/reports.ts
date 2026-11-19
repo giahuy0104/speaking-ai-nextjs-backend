@@ -28,6 +28,8 @@ const audioSources: Array<AudioSource | "old"> = [
   "cache",
   "openai_tts",
   "cloudflare_tts",
+  "deepinfra_tts",
+  "google_tts",
   "old",
 ];
 const asrModes: Array<AsrMode | "old"> = [

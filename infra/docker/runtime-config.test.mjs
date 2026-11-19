@@ -70,8 +70,8 @@ test("Railway jobs require R2 while explicit Compose shared-volume jobs remain s
   assert.equal(configureDeployment(env, "worker").jobs, true);
   assert.equal(env.AUDIO_TRANSLATION_JOB_NAMESPACE, "jobs");
 });
-test("rejects raw Railway Postgres, local persistence and partial storage credentials", () => {
-  for (const overrides of [{ DATABASE_URL: "postgresql://user:secret@postgres.railway.internal/db" }, { PERSISTENCE_BACKEND: "local" }, { AUDIO_STORAGE_BACKEND: "local" }, { AUDIO_SESSION_CHUNK_STORAGE_BACKEND: "r2" }]) {
+test("rejects local persistence and partial storage credentials", () => {
+  for (const overrides of [{ PERSISTENCE_BACKEND: "local" }, { AUDIO_STORAGE_BACKEND: "local" }, { AUDIO_SESSION_CHUNK_STORAGE_BACKEND: "r2" }]) {
     assert.throws(() => configureDeployment(fixture(overrides)), /Invalid deployment setting/);
   }
 });
@@ -160,6 +160,13 @@ test("English speech defaults to Cloudflare; Google English needs Google credent
   configureDeployment(env);
   assert.equal(env.AUDIO_ENGLISH_TTS_PROVIDER, "google");
 });
+test("any PostgreSQL server is accepted now that the app uses the pg driver", () => {
+  const vps = fixture({ DATABASE_URL: "postgres://homi:secret@homi-dev-postgres:5432/homi" });
+  configureDeployment(vps);
+  assert.equal(vps.PERSISTENCE_BACKEND, "postgres");
+  assert.throws(() => configureDeployment(fixture({ DATABASE_URL: "mysql://homi:secret@db:3306/homi" })), /DATABASE_URL \(invalid_url\)/);
+  assert.throws(() => configureDeployment(fixture({ DATABASE_URL: "not a url" })), /DATABASE_URL \(invalid_url\)/);
+});
 test("English-only provider lists are checked like the shared ones", () => {
   assert.throws(() => configureDeployment(fixture({ AUDIO_ASR_PROVIDER_EN: "deepseek" })), /AUDIO_ASR_PROVIDER_EN \(cloudflare_or_deepinfra\)/);
   assert.throws(() => configureDeployment(fixture({ AUDIO_TEXT_PROVIDER_EN: "deepinfra" })), /DEEPINFRA_API_KEY \(required\)/);
@@ -177,4 +184,14 @@ test("sending a share of Google clips to DeepInfra needs the DeepInfra key", () 
     /DEEPINFRA_API_KEY \(required\)/);
   configureDeployment(fixture({ ...google, AUDIO_TARGET_CLIP_DEEPINFRA_SHARE: "0.33", DEEPINFRA_API_KEY: "k" }));
   configureDeployment(fixture({ ...google, AUDIO_TARGET_CLIP_DEEPINFRA_SHARE: "0" }));
+});
+
+test("Cloud Translation (google) is a translation fallback only and needs a Google service account", () => {
+  assert.throws(() => configureDeployment(fixture({ AUDIO_TEXT_PROVIDER: "cloudflare,google" })), /GOOGLE_TTS_CREDENTIALS_JSON \(required\)/);
+  const env = fixture({ AUDIO_TEXT_PROVIDER: " Cloudflare , google ", GOOGLE_TTS_CREDENTIALS_JSON: "{}" });
+  configureDeployment(env);
+  assert.equal(env.AUDIO_TEXT_PROVIDER, "cloudflare,google");
+  configureDeployment(fixture({ AUDIO_TEXT_PROVIDER_EN: "google", GOOGLE_TRANSLATE_CREDENTIALS_JSON: "{}" }));
+  assert.throws(() => configureDeployment(fixture({ AUDIO_ASR_PROVIDER: "google", GOOGLE_TTS_CREDENTIALS_JSON: "{}" })),
+    /AUDIO_ASR_PROVIDER \(cloudflare_or_deepinfra\)/);
 });

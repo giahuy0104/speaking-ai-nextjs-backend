@@ -268,7 +268,7 @@ export const adminPaths: OpenApiObject = {
                   promoted: bool("Có khi verdict là approved."),
                   scopedToClientId: nullable(str()),
                   audio: nullable(
-                    object({ audioUrl: str(), source: enumOf(["cache", "openai_tts", "cloudflare_tts"]) }),
+                    object({ audioUrl: str(), source: enumOf(["cache", "openai_tts", "cloudflare_tts", "deepinfra_tts", "google_tts"]) }),
                   ),
                   warning: nullable(str()),
                 },

@@ -34,9 +34,8 @@ export function configureDeployment(env, role = "web") {
   if (!/^\d+$/.test(env.PORT) || Number(env.PORT) < 1 || Number(env.PORT) > 65535) fail("PORT", "invalid_port");
   const runtime = value(env, "APP_RUNTIME") || "railway";
   if (!["railway", "compose"].includes(runtime)) fail("APP_RUNTIME", "railway_or_compose");
-  const database = address(env, "DATABASE_URL", ["postgres:", "postgresql:"]);
-  // neon() uses HTTP. A raw Railway PostgreSQL TCP URL is not interchangeable.
-  if (!database.hostname.toLowerCase().endsWith(".neon.tech")) fail("DATABASE_URL", "requires_neon_http_driver");
+  // The app connects with node-postgres (pg): Neon or any PostgreSQL server (e.g. on the VPS).
+  address(env, "DATABASE_URL", ["postgres:", "postgresql:"]);
   if (value(env, "PERSISTENCE_BACKEND") && value(env, "PERSISTENCE_BACKEND") !== "postgres") fail("PERSISTENCE_BACKEND", "must_be_postgres");
   env.PERSISTENCE_BACKEND = "postgres";
   required(env, "ADMIN_USERNAME");
@@ -82,7 +81,11 @@ export function configureDeployment(env, role = "web") {
   const audioProviders = ["AUDIO_ASR_PROVIDER", "AUDIO_TEXT_PROVIDER", ...optionalLists].flatMap(key => {
     const providers = [...new Set(value(env, key).toLowerCase().split(",").map(entry => entry.trim()).filter(Boolean))];
     if (!providers.length) providers.push("cloudflare");
-    if (providers.some(provider => provider !== "cloudflare" && provider !== "deepinfra")) fail(key, "cloudflare_or_deepinfra");
+    // Cloud Translation (google) translates text; it cannot transcribe speech.
+    const allowed = key.startsWith("AUDIO_TEXT_PROVIDER") ? ["cloudflare", "deepinfra", "google"] : ["cloudflare", "deepinfra"];
+    if (providers.some(provider => !allowed.includes(provider))) {
+      fail(key, key.startsWith("AUDIO_TEXT_PROVIDER") ? "cloudflare_deepinfra_or_google" : "cloudflare_or_deepinfra");
+    }
     env[key] = providers.join(",");
     return providers;
   });
@@ -97,6 +100,11 @@ export function configureDeployment(env, role = "web") {
   env.AUDIO_ENGLISH_TTS_PROVIDER = englishTts;
   // Google: a service-account key, or Application Default Credentials from a mounted file.
   if ((targetTts === "google" || englishTts === "google") && !value(env, "GOOGLE_APPLICATION_CREDENTIALS")) {
+    required(env, "GOOGLE_TTS_CREDENTIALS_JSON");
+  }
+  // Cloud Translation reuses the TTS service account unless it has its own key.
+  if (audioProviders.includes("google") && !value(env, "GOOGLE_APPLICATION_CREDENTIALS") &&
+      !value(env, "GOOGLE_TRANSLATE_CREDENTIALS_JSON")) {
     required(env, "GOOGLE_TTS_CREDENTIALS_JSON");
   }
   // A share of Google's short clips may be spoken by DeepInfra (AUDIO_TARGET_CLIP_DEEPINFRA_SHARE).

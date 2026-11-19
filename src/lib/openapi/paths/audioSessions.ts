@@ -243,7 +243,7 @@ export const audioSessionPaths: OpenApiObject = {
                 englishText: str(),
                 textSource: enumOf(TEXT_SOURCES),
                 audioUrl: str(),
-                audioSource: enumOf(["cache", "cloudflare_tts"]),
+                audioSource: enumOf(["cache", "cloudflare_tts", "deepinfra_tts", "google_tts"]),
                 snapshotChunkCount: int(),
                 terminalSnapshot: bool(),
                 asrLatencyMs: num(),

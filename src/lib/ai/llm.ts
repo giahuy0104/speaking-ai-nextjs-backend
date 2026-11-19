@@ -25,6 +25,7 @@ import {
 import { claimSingleFlight } from "./singleFlight";
 import { runProviders } from "./cloudflareWorkersAi";
 import { resolveAudioProviders, toDeepInfraAppError, translateWithDeepInfra } from "./deepInfra";
+import { toGoogleTranslateAppError, translateWithGoogle } from "./googleTranslate";
 import { turnContent } from "@/lib/turnContentLog";
 
 export type EnglishGenerationResult = {
@@ -222,6 +223,37 @@ async function translateWithDeepInfraProvider(
   }
 }
 
+/** Cloud Translation NMT (no instruction): the fallback when the model providers fail. */
+async function translateWithGoogleProvider(
+  vietnameseText: string,
+  signal: AbortSignal,
+  requestId?: string,
+): Promise<ProviderTranslation> {
+  const startedAt = performance.now();
+  try {
+    let result;
+    try {
+      result = await translateWithGoogle(vietnameseText, "en", { signal });
+    } catch (error) {
+      throw toGoogleTranslateAppError(error);
+    }
+    const englishText = normalizeTranslationOutput(result.translatedText);
+    if (!englishText || containsUnexpectedEastAsianScript(englishText)) {
+      throw new AppError("LLM_FAILED", "Dịch vụ dịch tạm thời gặp lỗi. Vui lòng thử lại.", 502, {
+        provider: "google",
+        reason: "invalid_translation",
+      });
+    }
+    return { englishText, provider: "google", model: result.model };
+  } finally {
+    logEvent("info", "text_provider_latency", {
+      requestId,
+      provider: "google",
+      latencyMs: Math.round(performance.now() - startedAt),
+    });
+  }
+}
+
 /**
  * A Cloudflare failure as the AppError runProviders falls back on (429 or 5xx), so
  * "cloudflare,deepinfra" still reaches DeepInfra. Keeps the original reason.
@@ -239,7 +271,7 @@ function toCloudflareFallbackError(error: unknown) {
 /** The provider an English translation failure came from (Cloudflare unless it says otherwise). */
 function failedTextProvider(error: unknown) {
   const provider = error instanceof AppError ? error.details?.provider : undefined;
-  return provider === "deepinfra" ? "deepinfra" : "cloudflare";
+  return provider === "deepinfra" || provider === "google" ? provider : "cloudflare";
 }
 
 /**
@@ -258,6 +290,8 @@ async function generateWithProviders(
   }, (provider, cancel) => {
     const attempt = provider === "deepinfra"
       ? translateWithDeepInfraProvider(vietnameseText, instructions, cancel, requestId)
+      : provider === "google"
+      ? translateWithGoogleProvider(vietnameseText, cancel, requestId)
       : translateWithCloudflare(vietnameseText, instructions, requestId).catch((error: unknown) => {
           throw toCloudflareFallbackError(error);
         });

@@ -14,7 +14,8 @@ case "$DEPLOY_ENV" in
     BASE="${HOMI_BACKEND_DIR:-/opt/homi/backend}"
     LOCAL_IMAGE_REPO="speaking-ai-backend"
     PUBLIC_URL="${PUBLIC_URL:-https://api.hoamytech.com}"
-    SERVICES=(backend-3000 backend-3001)
+    # Must match the backends in docker-compose.nginx.yml and the upstreams in nginx.conf.
+    SERVICES=(backend-3000 backend-3001 backend-3002 backend-3003)
     COMPOSE_FILES=(docker-compose.redis.yml docker-compose.nginx.yml)
     DRIFT_PATHS=(docker-compose.redis.yml docker-compose.nginx.yml infra/nginx/nginx.conf infra/redis)
     ENSURE_UP=()

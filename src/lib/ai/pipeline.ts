@@ -16,7 +16,8 @@ import {
 import { PROMPT_VERSION } from "./prompts";
 import { translateTargetLanguage } from "./targetTranslation";
 import { getFailureDiagnostics } from "./cloudflare/providerError";
-import { requestTargetSpeech } from "./aiProvider";
+import { requestTargetSpeech, targetTtsProvider } from "./aiProvider";
+import { ttsSourceFor } from "./ttsSource";
 import { createTargetAudioUrl } from "./targetAudioUrl";
 import { bypassesAudioCache } from "./loadTestPersistence";
 import {
@@ -107,6 +108,8 @@ export async function runTargetLanguageConversationPipeline(
   const audioCacheBypassed = bypassesAudioCache(input.clientId);
   const tts = await measureStep(async () => {
     try {
+      // Named after the provider that speaks this sentence (AUDIO_TARGET_TTS_PROVIDER).
+      const speechSource = ttsSourceFor(targetTtsProvider());
       if (audioCacheBypassed) {
         // Like a real turn (translation first, then the signed URL), but this turn's
         // own synthesis: no cache read or write, no sharing with other turns.
@@ -117,10 +120,10 @@ export async function runTargetLanguageConversationPipeline(
         if (uncachedUrl) {
           deferred = true;
           startUncachedTargetSpeech(jobId, translatedText, language).catch(error => reportAudioUnavailable(error, true));
-          return { audioUrl: uncachedUrl, source: "cloudflare_tts" as const };
+          return { audioUrl: uncachedUrl, source: speechSource };
         }
         await requestTargetSpeech(translatedText, language, { parentRequestId: input.requestId });
-        return { audioUrl: null, source: "cloudflare_tts" as const };
+        return { audioUrl: null, source: speechSource };
       }
       const cachedUrl = await getReusableAudioUrl(descriptor);
       if (cachedUrl) return { audioUrl: cachedUrl, source: "cache" as const };
@@ -130,7 +133,7 @@ export async function runTargetLanguageConversationPipeline(
         // already running, so the audio request only waits for what is left.
         deferred = true;
         targetSpeech.start(translatedText, language).catch(error => reportAudioUnavailable(error, true));
-        return { audioUrl: deferredUrl, source: "cloudflare_tts" as const };
+        return { audioUrl: deferredUrl, source: speechSource };
       }
       // A DeepInfra clip that Google spoke instead is saved under Google's voice, not
       // under the DeepInfra key that later lookups would trust.
@@ -141,7 +144,7 @@ export async function runTargetLanguageConversationPipeline(
       });
       const audioUrl = await saveReusableAudio(
         spokenByGoogle ? googleClipDescriptor(language, translatedText) : descriptor, audio);
-      return { audioUrl, source: "cloudflare_tts" as const };
+      return { audioUrl, source: spokenByGoogle ? ttsSourceFor("google") : speechSource };
     } catch (error) {
       reportAudioUnavailable(error, false);
       return { audioUrl: null, source: "device_tts" as const };

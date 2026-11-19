@@ -1,0 +1,38 @@
+2026-11-19T10:02:32.295029922Z audio_cache_warmup_completed {
+2026-11-19T10:02:32.295122161Z   context: 'all',
+2026-11-19T10:02:32.295131297Z   clientId: 'ios_eced8ab3-2f68-4158-83ec-fbfc0a097e17',
+2026-11-19T10:02:32.295138213Z   total: 1500,
+2026-11-19T10:02:32.295144746Z   cached: 1500,
+2026-11-19T10:02:32.295150750Z   generated: 0,
+2026-11-19T10:02:32.295156902Z   failed: 0,
+2026-11-19T10:02:32.295162894Z   reused: false,
+2026-11-19T10:02:32.295168884Z   cacheHitRate: 1,
+2026-11-19T10:02:32.295175196Z   cacheHitTarget: 0.85,
+2026-11-19T10:02:32.295181141Z   fingerprint: '8d1242010ab24be0',
+2026-11-19T10:02:32.295187150Z   latencyMs: 3159
+2026-11-19T10:02:32.295193104Z }
+2026-11-19T10:04:00.728055303Z {"timestamp":"2026-11-19T10:04:00.727Z","level":"info","event":"conversation_pipeline_completed","requestId":"9392536a1eb6c013b5e9d1d16e8b7740","conversationId":"conv_6f0bcade","context":"home","asrMode":"android_streaming","processingMode":"ai","textSource":"text_cache","textProvider":"deepinfra","textModel":"deepseek-ai/DeepSeek-V4-Flash-0731","textFallbackUsed":false,"matchedRule":"text_cache:bạn cứ nói từng câu muốn dừng thì nói dừng lại","audioSource":"cache","audioCacheHit":true,"audioCacheReady":true,"eagerAudioStreamStarted":false,"audioCacheLookupSkipped":false,"audioDeliveryMode":"cache","audioCacheHitTarget":0.85,"latency":{"asrMs":22,"llmMs":4,"ttsMs":11,"timeToFirstAudioMs":37}}
+2026-11-19T10:04:00.767626285Z {"timestamp":"2026-11-19T10:04:00.766Z","level":"info","event":"conversation_post_response_completed","requestId":"9392536a1eb6c013b5e9d1d16e8b7740","conversationId":"conv_6f0bcade","latencyMs":35}
+2026-11-19T10:11:28.089911442Z {"timestamp":"2026-11-19T10:11:28.089Z","level":"info","event":"asr_transcript_repaired","requestId":"44d57c7776154601de72075c1fa1d5e2","provider":"device","subjectRepairApplied":false,"corpusRepairApplied":false,"transcriptRepairMs":14.551,"regionalVocabularyApplied":true,"regionalVocabularyReplacementCount":1,"regionalVocabularySourceRows":[329],"unresolvedRegionalVariantCount":0}
+2026-11-19T10:11:30.102762913Z {"timestamp":"2026-11-19T10:11:30.101Z","level":"info","event":"text_provider_latency","requestId":"44d57c7776154601de72075c1fa1d5e2","provider":"deepinfra","latencyMs":1969}
+2026-11-19T10:11:30.108991031Z {"timestamp":"2026-11-19T10:11:30.108Z","level":"info","event":"conversation_pipeline_completed","requestId":"44d57c7776154601de72075c1fa1d5e2","conversationId":"conv_a0b5da73","context":"home","asrMode":"android_streaming","processingMode":"ai","textSource":"deepinfra","textProvider":"deepinfra","textModel":"deepseek-ai/DeepSeek-V4-Flash-0731","textFallbackUsed":false,"audioSource":"cloudflare_tts","audioCacheHit":false,"audioCacheReady":false,"eagerAudioStreamStarted":false,"audioCacheLookupSkipped":false,"audioDeliveryMode":"stream_and_cache","audioCacheHitTarget":0.85,"latency":{"asrMs":18,"llmMs":2014,"ttsMs":4,"timeToFirstAudioMs":2036}}
+2026-11-19T10:11:30.144950665Z {"timestamp":"2026-11-19T10:11:30.144Z","level":"info","event":"conversation_post_response_completed","requestId":"44d57c7776154601de72075c1fa1d5e2","conversationId":"conv_a0b5da73","latencyMs":33}
+2026-11-19T10:11:30.825795803Z {"timestamp":"2026-11-19T10:11:30.825Z","level":"info","event":"tts_cache_fill_started","requestId":"e1bdbb85799a0397540d89102e0e6574","provider":"google","model":"google-cloud-tts","voice":"Neural2-F-en","independentFromClient":true}
+2026-11-19T10:11:30.827121519Z {"timestamp":"2026-11-19T10:11:30.826Z","level":"info","event":"audio_response_sent","requestId":"e1bdbb85799a0397540d89102e0e6574","route":"stream","status":200,"contentType":"audio/mpeg","audioSource":"cloudflare_tts","requestedFormat":"caf","platform":"ios","userAgent":"AppleCoreMedia/1.0.0.23G71 (iPhone; U; CPU OS 26_6 like Mac OS X; vi_vn)","headersMs":466}
+2026-11-19T10:11:30.827555622Z {"timestamp":"2026-11-19T10:11:30.827Z","level":"info","event":"tts_stream_first_chunk","requestId":"e1bdbb85799a0397540d89102e0e6574","provider":"google","model":"google-cloud-tts","voice":"Neural2-F-en","cacheLookupMs":0,"upstreamHeadersMs":465,"firstChunkMs":467}
+2026-11-19T10:11:30.838190979Z {"timestamp":"2026-11-19T10:11:30.837Z","level":"info","event":"tts_cache_fill_completed","requestId":"e1bdbb85799a0397540d89102e0e6574","provider":"google","model":"google-cloud-tts","voice":"Neural2-F-en","audioUrl":"/api/audio/cache/today-we-spent-way-too-much-time-d0dad74e2a5d8bd5c584aff9.mp3","byteLength":19209,"independentFromClient":true,"latencyMs":13}
+2026-11-19T10:11:31.023517058Z {"timestamp":"2026-11-19T10:11:31.022Z","level":"info","event":"audio_response_sent","requestId":"85434da8810653c8807438e74c0c4b78","route":"stream","status":307,"contentType":null,"audioSource":"cache","requestedFormat":"caf","platform":"ios","userAgent":"AppleCoreMedia/1.0.0.23G71 (iPhone; U; CPU OS 26_6 like Mac OS X; vi_vn)","headersMs":1,"redirectTo":"/api/audio/cache/today-we-spent-way-too-much-time-d0dad74e2a5d8bd5c584aff9.mp3"}
+2026-11-19T10:11:31.221206368Z {"timestamp":"2026-11-19T10:11:31.220Z","level":"info","event":"audio_response_sent","requestId":"de1ccafbf50f137f5d35d32f9a6ab584","route":"stream","status":307,"contentType":null,"audioSource":"cache","requestedFormat":null,"platform":"unknown","userAgent":"Dart/3.12 (dart:io)","headersMs":1,"redirectTo":"/api/audio/cache/today-we-spent-way-too-much-time-d0dad74e2a5d8bd5c584aff9.mp3"}
+2026-11-19T10:11:35.927557649Z audio_cache_warmup_completed {
+2026-11-19T10:11:35.927670923Z   context: 'all',
+2026-11-19T10:11:35.927692014Z   clientId: 'ios_eced8ab3-2f68-4158-83ec-fbfc0a097e17',
+2026-11-19T10:11:35.927700701Z   total: 1500,
+2026-11-19T10:11:35.927708500Z   cached: 1500,
+2026-11-19T10:11:35.927716179Z   generated: 0,
+2026-11-19T10:11:35.927723534Z   failed: 0,
+2026-11-19T10:11:35.927731053Z   reused: true,
+2026-11-19T10:11:35.927760891Z   cacheHitRate: 1,
+2026-11-19T10:11:35.927770502Z   cacheHitTarget: 0.85,
+2026-11-19T10:11:35.927778094Z   fingerprint: '8d1242010ab24be0',
+2026-11-19T10:11:35.927785813Z   latencyMs: 0
+2026-11-19T10:11:35.927793101Z }

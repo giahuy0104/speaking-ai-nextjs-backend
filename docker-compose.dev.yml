@@ -1,6 +1,9 @@
 # DEV stack for api-dev.hoamytech.com. Fully separate from production:
 # own Compose project, network, Redis containers/volumes, image repo and port.
 # Lives in /opt/homi/backend-dev on the VPS (root-owned, copied by hand like prod).
+# CPU budget (2026-11-19): production backends/nginx are stopped and dev gets the
+# whole 8-core VPS: 4 backends x 2 CPU, no cpuset pinning. The limits are caps, not
+# reservations; worker, nginx, Redis and Postgres share the same cores.
 #   docker compose --env-file .env.compose -f docker-compose.dev.yml up -d
 name: speaking-ai-dev
 
@@ -46,7 +49,7 @@ services:
       - audio-jobs-data:/data
     mem_limit: 192m
 
-  # Two backends like production. Names/ports must match infra/nginx/nginx.dev.conf
+  # Four backends. Names/ports must match infra/nginx/nginx.dev.conf
   # (upstreams + "/api/audio/stream:<node>" keys) and SERVICES in deploy/lib.sh.
   backend-3000: &backend
     image: speaking-ai-backend-dev:${BACKEND_IMAGE_TAG:-local}
@@ -96,10 +99,8 @@ services:
       start_period: 20s
     stop_grace_period: 75s
     mem_limit: 1g
-    # One Node process runs JS on a single core, so throughput scales with the number
-    # of backends, not with a bigger limit. The 8-core VPS is shared with production:
-    # four dev backends x 1.5 = 6 CPU at most, only while a load test runs.
-    cpus: 1.5
+    # Four backends x 2 CPU on the 8-core VPS while production is stopped.
+    cpus: 2
     logging:
       driver: json-file
       options: { max-size: "10m", max-file: "3" }
@@ -113,7 +114,6 @@ services:
     expose:
       - "3001"
 
-  # Names must match SERVICES in deploy/lib.sh and the upstreams in nginx.dev.conf.
   backend-3002:
     <<: *backend
     environment:
@@ -169,7 +169,7 @@ services:
       redis-jobs:
         condition: service_healthy
     stop_grace_period: 75s
-    # Four workers share the 4-core VPS with production; each is I/O bound.
+    # I/O bound.
     mem_limit: 256m
     cpus: 0.5
     logging:
@@ -220,6 +220,7 @@ services:
     stop_grace_period: 75s
     # Buffers every upload body before proxying; 64m / 0.25 CPU starved under a burst.
     mem_limit: 256m
+    # 1 CPU like production nginx: it fronts four backends now.
     cpus: 1
     logging:
       driver: json-file

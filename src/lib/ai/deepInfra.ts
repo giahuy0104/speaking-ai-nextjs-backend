@@ -11,7 +11,8 @@ import { ConcurrencyLimitTimeoutError, createConcurrencyLimiter, type Concurrenc
  * with AUDIO_ASR_PROVIDER / AUDIO_TEXT_PROVIDER; Cloudflare stays the default.
  */
 
-export type AudioProvider = "cloudflare" | "deepinfra";
+// "google" (Cloud Translation, NMT) serves the text stage only.
+export type AudioProvider = "cloudflare" | "deepinfra" | "google";
 export type AudioProviderStage = "asr" | "text";
 
 const DEFAULT_BASE_URL = "https://api.deepinfra.com/v1/openai";
@@ -70,7 +71,7 @@ export function resolveAudioProviders(stage: AudioProviderStage, language?: stri
   const entries = (process.env[name] ?? "").split(",").map(entry => entry.trim().toLowerCase()).filter(Boolean);
   const providers: AudioProvider[] = [];
   for (const entry of entries.length ? entries : ["cloudflare"]) {
-    if (entry !== "cloudflare" && entry !== "deepinfra") {
+    if (entry !== "cloudflare" && entry !== "deepinfra" && !(entry === "google" && stage === "text")) {
       throw new AppError(stage === "asr" ? "ASR_FAILED" : "LLM_FAILED",
         "Cấu hình nhà cung cấp AI không hợp lệ.", 500, { reason: "invalid_provider", setting: name });
     }
@@ -90,6 +91,7 @@ export function deepInfraTextModel() {
 /** Cache identity for a stage's provider order: Cloudflare-only stays unchanged so existing entries stay valid. */
 export function audioModelCacheIdentity(stage: AudioProviderStage, cloudflareModel: string, language?: string) {
   return resolveAudioProviders(stage, language).map(provider => provider === "cloudflare" ? cloudflareModel
+    : provider === "google" ? "google:nmt"
     : `deepinfra:${stage === "asr" ? deepInfraAsrModel() : deepInfraTextModel()}`).join(">");
 }
 
@@ -203,6 +205,91 @@ async function postDeepInfra(
   }
 }
 
+// DeepInfra allows 200 concurrent requests per model per account and answers 429
+// beyond that. Each backend keeps its Whisper and chat calls under its own cap
+// (N backends x cap should stay under 200: e.g. 4 backends x 45, 2 backends x 90)
+// and lets a burst wait briefly for a slot instead of being refused.
+const DEFAULT_STAGE_MAX_CONCURRENCY = 50;
+const DEFAULT_STAGE_QUEUE_WAIT_MS = 2_000;
+// One retry after a 429: DeepInfra frees slots within moments, and a second refusal
+// goes to the next provider (or fails the turn) as before.
+const DEFAULT_RATE_LIMIT_RETRIES = 1;
+const DEFAULT_RATE_LIMIT_RETRY_DELAY_MS = 300;
+const STAGE_LIMITER_KEY = Symbol.for("homi.deepinfra.stageLimiters");
+const stageLimiterHolder = globalThis as typeof globalThis & {
+  [STAGE_LIMITER_KEY]?: Partial<Record<AudioProviderStage, ConcurrencyLimiter>>;
+};
+
+function stageLimiter(stage: AudioProviderStage) {
+  const limiters = (stageLimiterHolder[STAGE_LIMITER_KEY] ??= {});
+  const prefix = stage === "asr" ? "DEEPINFRA_ASR" : "DEEPINFRA_TEXT";
+  limiters[stage] ??= createConcurrencyLimiter({
+    maxConcurrent: positiveInteger(`${prefix}_MAX_CONCURRENCY`, DEFAULT_STAGE_MAX_CONCURRENCY),
+    maxWaitMs: positiveInteger(`${prefix}_QUEUE_WAIT_MS`, DEFAULT_STAGE_QUEUE_WAIT_MS),
+  });
+  return limiters[stage];
+}
+
+/** Tests change the limits through the environment; this rebuilds the ASR and text limiters. */
+export function resetDeepInfraStageLimitersForTests() {
+  delete stageLimiterHolder[STAGE_LIMITER_KEY];
+}
+
+/** DEEPINFRA_429_RETRIES may be 0 (no retry); invalid values keep the default. */
+function rateLimitRetries() {
+  const value = Number(process.env.DEEPINFRA_429_RETRIES);
+  return Number.isInteger(value) && value >= 0 && value <= 3 ? value : DEFAULT_RATE_LIMIT_RETRIES;
+}
+
+function waitBeforeRetry(signal?: AbortSignal) {
+  const base = positiveInteger("DEEPINFRA_429_RETRY_DELAY_MS", DEFAULT_RATE_LIMIT_RETRY_DELAY_MS);
+  // 50-150% of the base, so backends that were refused together do not retry together.
+  const delayMs = Math.round(base * (0.5 + Math.random()));
+  return new Promise<void>((resolve, reject) => {
+    if (signal?.aborted) return reject(new DeepInfraProviderError("timeout"));
+    const timer = setTimeout(() => { signal?.removeEventListener("abort", onAbort); resolve(); }, delayMs);
+    const onAbort = () => { clearTimeout(timer); reject(new DeepInfraProviderError("timeout")); };
+    signal?.addEventListener("abort", onAbort, { once: true });
+  });
+}
+
+/** Loaded only when it happens: observability is server-only and this module also runs in plain Node tests. */
+function logStageEvent(event: string, fields: Record<string, unknown>) {
+  void import("@/lib/observability")
+    .then(({ logEvent }) => logEvent("warn", event, fields))
+    .catch(() => undefined);
+}
+
+/**
+ * Runs one Whisper or chat call within the stage's slot cap (queue_timeout, HTTP 429,
+ * when no slot frees in time) and retries a DeepInfra 429 after a short jittered wait.
+ * Each attempt gets the full provider timeout; the caller's signal bounds the whole.
+ */
+async function runStageCall<T>(stage: AudioProviderStage, signal: AbortSignal | undefined, call: () => Promise<T>): Promise<T> {
+  let release: ReleaseSlot;
+  try {
+    release = await stageLimiter(stage).acquire(signal);
+  } catch (error) {
+    const reason = error instanceof ConcurrencyLimitTimeoutError ? "queue_timeout" : "network_error";
+    if (reason === "queue_timeout") logStageEvent("deepinfra_stage_queue_timeout", { stage });
+    throw new DeepInfraProviderError(reason);
+  }
+  try {
+    for (let retry = 0; ; retry++) {
+      try {
+        return await call();
+      } catch (error) {
+        const rateLimited = error instanceof DeepInfraProviderError && error.reason === "rate_limited";
+        if (!rateLimited || retry >= rateLimitRetries() || signal?.aborted) throw error;
+        logStageEvent("deepinfra_rate_limited_retry", { stage, retry: retry + 1 });
+        await waitBeforeRetry(signal);
+      }
+    }
+  } finally {
+    release();
+  }
+}
+
 function asRecord(value: unknown): Record<string, unknown> | undefined {
   return value && typeof value === "object" && !Array.isArray(value) ? value as Record<string, unknown> : undefined;
 }
@@ -224,8 +311,9 @@ export async function transcribeWithDeepInfra(
   form.append("response_format", "verbose_json");
   form.append("temperature", "0");
   // undici's FormData is a valid body for undici's fetch; the DOM typings only know the global class.
-  const payload = asRecord(await postDeepInfra(config, "/audio/transcriptions", { body: form as unknown as BodyInit },
-    config.asrTimeoutMs, options.signal));
+  // The same FormData is sent again on a retry (fetch serializes it per request).
+  const payload = asRecord(await runStageCall("asr", options.signal, () =>
+    postDeepInfra(config, "/audio/transcriptions", { body: form as unknown as BodyInit }, config.asrTimeoutMs, options.signal)));
   if (!payload) throw new DeepInfraProviderError("invalid_response");
   return {
     text: typeof payload.text === "string" ? payload.text.trim() : "",
@@ -259,9 +347,9 @@ export async function translateWithDeepInfra(
     stream: false,
     ...(config.reasoningEffort ? { reasoning_effort: config.reasoningEffort } : {}),
   };
-  const payload = await postDeepInfra(config, "/chat/completions",
+  const payload = await runStageCall("text", options.signal, () => postDeepInfra(config, "/chat/completions",
     { body: JSON.stringify(body), headers: { "Content-Type": "application/json" } },
-    config.textTimeoutMs, options.signal);
+    config.textTimeoutMs, options.signal));
   const englishText = readChatContent(payload);
   if (!englishText) throw new DeepInfraProviderError("empty_response");
   return { englishText, model: config.textModel };

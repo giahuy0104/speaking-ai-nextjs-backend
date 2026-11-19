@@ -25,9 +25,10 @@ export const TEXT_SOURCES = [
   "cloudflare",
   "openai",
   "deepinfra",
+  "google",
   "fallback",
 ];
-export const AUDIO_SOURCES = ["cache", "openai_tts", "cloudflare_tts", "device_tts"];
+export const AUDIO_SOURCES = ["cache", "openai_tts", "cloudflare_tts", "deepinfra_tts", "google_tts", "device_tts"];
 const ASR_MODES = [
   "text",
   "batch_chunks",
@@ -115,7 +116,7 @@ const conversationProperties: OpenApiObject = {
   processingMode: enumOf(["rule", "ai", "fallback"]),
   matchedRule: str(),
   textSource: enumOf(TEXT_SOURCES),
-  textProvider: enumOf(["cloudflare", "openai", "deepinfra"]),
+  textProvider: enumOf(["cloudflare", "openai", "deepinfra", "google"]),
   textModel: str(),
   textFallbackUsed: bool(),
   textFallbackReason: str(),
@@ -300,7 +301,7 @@ export const componentSchemas: OpenApiObject = {
   AudioSynthesisResult: object(
     {
       audioUrl: str(),
-      source: enumOf(["cache", "openai_tts", "cloudflare_tts"]),
+      source: enumOf(["cache", "openai_tts", "cloudflare_tts", "deepinfra_tts", "google_tts"]),
       cacheReady: bool(),
       byteLength: int(),
       eagerStreamStarted: bool(),
