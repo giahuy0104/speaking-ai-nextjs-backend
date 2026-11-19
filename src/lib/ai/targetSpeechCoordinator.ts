@@ -15,8 +15,14 @@ export type TargetSpeechCoordinatorOptions = {
   save: (text: string, language: string, audio: ArrayBuffer) => Promise<unknown>;
   onSaveError?: (error: unknown) => void;
   retainMs?: number;
-  /** How long a failure is kept, so repeated requests get it at once instead of a new synthesis. */
+  /** How long a kept failure is kept, so repeated requests get it at once instead of a new synthesis. */
   failureRetainMs?: number;
+  /**
+   * Whether a failure is kept at all (default: every failure). Only a refusal that a
+   * retry would hit again (provider busy, quota) is worth keeping; a timeout or a
+   * network error should be retried by the next request.
+   */
+  shouldRetainFailure?: (error: unknown) => boolean;
   maxEntries?: number;
   setTimer?: (callback: () => void, ms: number) => unknown;
 };
@@ -67,11 +73,15 @@ export function createTargetSpeechCoordinator(options: TargetSpeechCoordinatorOp
         return audio;
       });
       jobs.set(key, job);
-      // Both outcomes are kept briefly: a success for a late request, a failure so the
-      // app's repeated downloads fail fast (to its device voice) instead of retrying.
+      // A success is kept briefly for a late request. A refusal is kept so the app's
+      // repeated downloads fail fast (to its device voice) instead of asking a provider
+      // that is already refusing; any other failure is dropped so the next request retries.
       job.then(
         () => setTimer(() => forget(key, job), retainMs),
-        () => setTimer(() => forget(key, job), failureRetainMs),
+        error => {
+          if (options.shouldRetainFailure && !options.shouldRetainFailure(error)) forget(key, job);
+          else setTimer(() => forget(key, job), failureRetainMs);
+        },
       );
       return job;
     },

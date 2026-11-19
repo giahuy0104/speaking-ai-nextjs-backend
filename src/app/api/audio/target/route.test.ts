@@ -38,14 +38,15 @@ if (scenario === 'fallback-voice') process.env.GOOGLE_TTS_FALLBACK_VOICE_ZH = 'W
         write(_chunk, _encoding, callback) { callback(); },
         final(callback) {
           callback();
-          // Google's quota refusal arrives before any audio.
-          duplex.destroy(Object.assign(new Error('quota'), { code: 8 }));
+          // Before any audio: Google's quota refusal, or (network) the channel dropping.
+          duplex.destroy(Object.assign(new Error('refused'), { code: scenario === 'network' ? 14 : 8 }));
         },
       });
       return duplex;
     },
     async synthesizeSpeech(request) {
       clipVoices.push(request.voice.name);
+      if (scenario === 'network') throw Object.assign(new Error('unavailable'), { code: 14 });
       // A 44-byte WAV header plus two samples.
       const wav = new Uint8Array(48);
       wav.set([0x52, 0x49, 0x46, 0x46], 0);
@@ -100,4 +101,11 @@ test("with a fallback voice, a refused stream is spoken by that voice and served
   assert.equal(result.responses[0].bytes, 48);
   assert.deepEqual(result.clipVoices, ["cmn-CN-Wavenet-A"]);
   assert.equal(result.streams, 1);
+});
+
+test("a network failure is not remembered: the repeat download asks Google again", () => {
+  const result = run("network");
+  assert.deepEqual(result.responses.map(response => response.status), [502, 502]);
+  assert.equal(result.streams, 2, "each download tries Google again");
+  assert.equal(result.clipVoices.length, 2, "and its stand-in clip");
 });

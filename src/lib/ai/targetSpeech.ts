@@ -1,3 +1,4 @@
+import { AppError } from "@/lib/appError";
 import { logEvent } from "@/lib/observability";
 import { saveReusableAudio, type ReusableAudioDescriptor } from "@/lib/storage/audio";
 import { getTargetTtsProfile, requestTargetSpeech, targetTtsProvider, type TargetSpeechLanguage } from "./aiProvider";
@@ -101,6 +102,15 @@ export function subscribeTargetSpeech(text: string, language: TargetSpeechLangua
 const clipFallbackLogger = (language: string) => (error: unknown) =>
   logEvent("warn", "target_speech_clip_provider_fallback", { language, from: "deepinfra", to: "google", error });
 
+/**
+ * A provider refusing work: Google rate limited, DeepInfra over its account limit, or
+ * a full local queue. Both providers answer these with HTTP 429 (and only these), so
+ * asking again right away would be refused again.
+ */
+function isProviderRefusal(error: unknown) {
+  return error instanceof AppError && error.status === 429;
+}
+
 const UNCACHED_JOB_RETAIN_MS = 20_000;
 const MAX_UNCACHED_JOBS = 1_000;
 const uncachedJobs = new Map<string, Promise<ArrayBuffer>>();
@@ -119,15 +129,16 @@ export function startUncachedTargetSpeech(jobId: string, text: string, language:
     ? targetSpeechStreams.start(text, language, uncachedKey(jobId))
     : requestTargetSpeech(text, language, { onClipFallback: clipFallbackLogger(language) });
   uncachedJobs.set(jobId, job);
-  // A failure is kept too: the app's second download of a failed turn gets the same
-  // error at once instead of paying for (and queueing) another synthesis.
-  const forget = () => {
-    const timer = setTimeout(() => {
-      if (uncachedJobs.get(jobId) === job) uncachedJobs.delete(jobId);
-    }, UNCACHED_JOB_RETAIN_MS);
+  const forgetNow = () => {
+    if (uncachedJobs.get(jobId) === job) uncachedJobs.delete(jobId);
+  };
+  const forgetLater = () => {
+    const timer = setTimeout(forgetNow, UNCACHED_JOB_RETAIN_MS);
     (timer as { unref?: () => void }).unref?.();
   };
-  job.then(forget, forget);
+  // A refusal is kept too: the app's second download of a refused turn gets the same
+  // error at once instead of asking the busy provider again. Other failures retry.
+  job.then(forgetLater, error => (isProviderRefusal(error) ? forgetLater() : forgetNow()));
   return job;
 }
 
@@ -153,4 +164,6 @@ export const targetSpeech = createTargetSpeechCoordinator({
     await saveReusableAudio(targetSpeechDescriptor(language as TargetSpeechLanguage, text), audio);
   },
   onSaveError: error => logEvent("error", "target_speech_cache_save_failed", { error }),
+  // Keep only refusals; a timeout or network error is retried by the next request.
+  shouldRetainFailure: isProviderRefusal,
 });
