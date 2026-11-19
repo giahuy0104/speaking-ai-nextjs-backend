@@ -10,6 +10,7 @@ import { randomUUID } from "node:crypto";
 import { createDeadline } from "./cloudflare/deadline";
 import { parsePoolConfig } from "./cloudflare/accountConfig";
 import { resolveWorkerAccountAlias, shouldRequeuePinnedJob } from "./audioTranslationWorkerAccount";
+import { audioCacheDisabled } from "./loadTestPersistence";
 
 export async function startAudioTranslationWorker() {
   if (process.env.CLOUDFLARE_AUDIO_TRANSLATION_POOL_ENABLED !== "true") throw new Error("job_worker_requires_shared_pool");
@@ -31,7 +32,10 @@ export async function startAudioTranslationWorker() {
         // A process died after starting inference. Its outcome is uncertain:
         // never repeat that provider call automatically after a stalled recovery.
         if (job.data.phase === "asr_inflight" || job.data.phase === "text_inflight") throw new UnrecoverableError("provider_outcome_uncertain");
-        const cached = cacheEnabled() ? await audioTranslationCache.get(job.data.fingerprint) : null;
+        // Dev with AUDIO_CACHE_DISABLED: like the sync route, no translation or text cache.
+        const cacheOff = audioCacheDisabled();
+        const useCache = cacheEnabled() && !cacheOff;
+        const cached = useCache ? await audioTranslationCache.get(job.data.fingerprint) : null;
         if (cached) { await job.updateData({ ...job.data, result: cached }); terminal = true; return cached; }
         const audio = await loadJobAudio(job.data.audio);
         const timeoutMs = Math.min(30_000, Number(process.env.CLOUDFLARE_AUDIO_TRANSLATION_TIMEOUT_MS) || 20_000, job.data.expiresAt - Date.now());
@@ -42,7 +46,8 @@ export async function startAudioTranslationWorker() {
         providerAttempts = session.execution.attempts;
         try {
           const result = await translateAudioToEnglish(audio, job.data.sourceLanguage, {
-            execution: session.execution, cacheScope: job.data.owner, checkpoint: job.data.checkpoint,
+            execution: session.execution, cacheScope: cacheOff ? undefined : job.data.owner, bypassTextCache: cacheOff,
+            checkpoint: job.data.checkpoint,
             async beforeProviderCall(stage) {
               // With hedging two calls can run at once; a late one must not undo progress
               // already saved (the ASR checkpoint or the final result).
@@ -57,7 +62,7 @@ export async function startAudioTranslationWorker() {
             },
           });
           await job.updateData({ ...job.data, result });
-          if (cacheEnabled()) await audioTranslationCache.set(job.data.fingerprint, result);
+          if (useCache) await audioTranslationCache.set(job.data.fingerprint, result);
           terminal = true;
           return result;
         } finally { session.release(); }

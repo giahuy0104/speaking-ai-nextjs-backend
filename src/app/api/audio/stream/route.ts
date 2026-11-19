@@ -1,5 +1,5 @@
 import { after } from "next/server";
-import { verifyUncachedEnglishAudio } from "@/lib/ai/loadTestPersistence";
+import { audioCacheDisabled, verifyUncachedEnglishAudio } from "@/lib/ai/loadTestPersistence";
 import { AppError, toErrorResponse } from "@/lib/errors";
 import { requestEnglishSpeechAudio } from "@/lib/ai/englishSpeech";
 import {
@@ -17,9 +17,9 @@ import {
   withRequestId,
 } from "@/lib/observability";
 import { turnContent } from "@/lib/turnContentLog";
-import { rewrapWavStreamAsCaf } from "@/lib/audio/caf";
 import { loggedAudioRoute } from "@/lib/audio/audioResponseLogger";
-import { isBoundedRangeRequest } from "@/lib/audio/rangedAudio";
+import { isBoundedRangeRequest, rangedAudioResponse } from "@/lib/audio/rangedAudio";
+import { finishedUncachedEnglishSpeech } from "@/lib/ai/uncachedEnglishSpeech";
 import type { ProviderTtsSource } from "@/types/conversation";
 
 export const runtime = "nodejs";
@@ -36,16 +36,17 @@ async function handleGet(request: Request) {
   const { knownCacheMiss } = consumeAudioStreamToken(url.searchParams.get("missToken"), text);
   // The signature, not the single-use token, decides: a retry, probe or another
   // backend must not fall back to the shared cache for a load-test turn.
-  const bypassCache = verifyUncachedEnglishAudio(url.searchParams.get("nocache"), text);
-  // Unsigned (this route carries no signature at all) and iOS-only: see the
-  // identical rewrapWavStreamAsCaf note in /api/audio/target/route.ts. A
-  // no-op whenever the live body isn't WAV (the default Cloudflare provider
-  // streams MP3, which AVPlayer already accepts without a Content-Length).
+  const noCache = url.searchParams.get("nocache");
+  // AUDIO_CACHE_DISABLED covers every URL, signed or not (offline intents, old builds).
+  const bypassCache = audioCacheDisabled() || verifyUncachedEnglishAudio(noCache, text);
+  // Unsigned (this route carries no signature at all): the iOS app adds it to every
+  // network audio source.
   const wantsCaf = url.searchParams.get("format") === "caf";
   // iOS (AVPlayer) cannot play a live stream of unknown length: it probes with
   // `Range: bytes=0-1` and fails with -11850 unless it gets a 206 with the total
   // size. The iOS app (?format=caf) and any bounded range request therefore wait
-  // for the finished file and are redirected to /api/audio/cache, which serves ranges.
+  // for the finished file: redirected to /api/audio/cache, or (uncached) served
+  // here with byte ranges.
   const needsFinishedAudio = wantsCaf || isBoundedRangeRequest(request.headers.get("range"));
 
   if (!text || text.length > 500) {
@@ -61,7 +62,12 @@ async function handleGet(request: Request) {
     );
   }
 
-  if (bypassCache) return withRequestId(await uncachedSpeech(text, requestId, startedAt, wantsCaf), requestId);
+  if (bypassCache) {
+    const finished = needsFinishedAudio
+      ? { key: `${noCache ?? "unsigned"}\n${text}`, range: request.headers.get("range") }
+      : null;
+    return withRequestId(await uncachedSpeech(text, requestId, startedAt, finished), requestId);
+  }
 
   const cacheStartedAt = performance.now();
   const cachedUrl = knownCacheMiss
@@ -251,12 +257,17 @@ function cacheRedirect(audioUrl: string) {
 }
 
 /**
- * Load tests (k6 installations with LOAD_TEST_BYPASS_AUDIO_CACHE): fresh speech
- * streamed straight from the provider. No cache read or write, and no joining or
- * sharing a stream with any other listener, so every turn pays a real synthesis.
+ * Uncached speech (load tests with LOAD_TEST_BYPASS_AUDIO_CACHE, or everyone with
+ * AUDIO_CACHE_DISABLED): fresh speech streamed straight from the provider. No cache
+ * read or write, and no joining or sharing a stream with any other turn, so every
+ * turn pays a real synthesis. iOS (and any bounded range request) gets the finished
+ * file with Content-Length and byte ranges instead (see uncachedEnglishSpeech.ts).
  */
-async function uncachedSpeech(text: string, requestId: string, startedAt: number, wantsCaf: boolean) {
+async function uncachedSpeech(
+  text: string, requestId: string, startedAt: number, finished: { key: string; range: string | null } | null,
+) {
   try {
+    if (finished) return await finishedUncachedSpeech(text, requestId, startedAt, finished.key, finished.range);
     const speech = await requestEnglishSpeechAudio(text);
     logEvent("info", "tts_uncached_stream_started", { ...turnContent({ englishText: text }),
       requestId,
@@ -265,7 +276,7 @@ async function uncachedSpeech(text: string, requestId: string, startedAt: number
       voice: speech.profile.voice,
       headersMs: Math.round(performance.now() - startedAt),
     });
-    return unbuffered(maybeAsCaf(new Response(speech.response.body, {
+    return unbuffered(new Response(speech.response.body, {
       status: 200,
       headers: {
         "Content-Type": speech.response.headers.get("content-type") ?? "audio/mpeg",
@@ -273,7 +284,7 @@ async function uncachedSpeech(text: string, requestId: string, startedAt: number
         "X-Audio-Source": speech.source,
         "X-Audio-Cache": "bypass",
       },
-    }), wantsCaf));
+    }));
   } catch (error) {
     logEvent("error", "tts_stream_request_failed", { ...turnContent({ englishText: text }), requestId, uncached: true, error });
     const responseError = error instanceof AppError
@@ -281,6 +292,19 @@ async function uncachedSpeech(text: string, requestId: string, startedAt: number
       : new AppError("TTS_FAILED", "Không thể truyền luồng âm thanh.", 502);
     return toErrorResponse(responseError, requestId);
   }
+}
+
+async function finishedUncachedSpeech(text: string, requestId: string, startedAt: number, key: string, range: string | null) {
+  const speech = await finishedUncachedEnglishSpeech(key, text);
+  logEvent("info", "tts_uncached_finished_served", { ...turnContent({ englishText: text }),
+    requestId, byteLength: speech.audio.byteLength, range, latencyMs: Math.round(performance.now() - startedAt),
+  });
+  return rangedAudioResponse(new Uint8Array(speech.audio), range, {
+    "Content-Type": speech.contentType,
+    "Cache-Control": "no-store",
+    "X-Audio-Source": speech.source,
+    "X-Audio-Cache": "bypass",
+  });
 }
 
 /**
@@ -291,17 +315,4 @@ async function uncachedSpeech(text: string, requestId: string, startedAt: number
 function unbuffered(response: Response) {
   response.headers.set("X-Accel-Buffering", "no");
   return response;
-}
-
-/** Re-wraps a live WAV response as CAF for one iOS request; everything else is untouched. */
-function maybeAsCaf(response: Response, wantsCaf: boolean): Response {
-  const contentType = response.headers.get("content-type") ?? "";
-  if (!wantsCaf || !response.body || !contentType.toLowerCase().includes("wav")) return response;
-  const headers = new Headers(response.headers);
-  headers.set("Content-Type", "audio/x-caf");
-  return new Response(rewrapWavStreamAsCaf(response.body), {
-    status: response.status,
-    statusText: response.statusText,
-    headers,
-  });
 }

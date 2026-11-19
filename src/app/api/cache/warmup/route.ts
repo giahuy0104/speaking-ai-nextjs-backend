@@ -9,6 +9,7 @@ import { claimLegacyConversationHistory } from "@/lib/history";
 import { migrateApprovedHistoryLearning } from "@/lib/ai/adaptiveLearning";
 import { requireAdminAccess } from "@/lib/adminAuth";
 import { requireInstallationAccess } from "@/lib/installationAuth";
+import { audioCacheDisabled } from "@/lib/ai/loadTestPersistence";
 
 export const runtime = "nodejs";
 export const maxDuration = 300;
@@ -69,6 +70,21 @@ export async function POST(request: Request) {
     const migratedLearning = clientId
       ? await migrateApprovedHistoryLearning(clientId)
       : null;
+
+    // Dev with no audio cache: pre-filling it would only write clips nobody reads.
+    if (audioCacheDisabled()) {
+      return Response.json(
+        {
+          accepted: true,
+          context,
+          claimedLegacyItems,
+          migratedLearning,
+          skipped: "audio_cache_disabled",
+          message: "Audio cache is disabled; warm-up skipped.",
+        },
+        { status: 202 },
+      );
+    }
 
     if (body.background === true) {
       after(async () => {

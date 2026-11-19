@@ -26,15 +26,30 @@ export function skipsPostResponsePersistence(clientId: string | undefined): bool
  *   uncached /api/audio/stream (single-use token), preview always unmatched;
  * - zh/ja/ko/fr: a signed /api/audio/target URL with this turn's own job id: its own
  *   synthesis, never cached and never shared with another turn.
+ *
+ * AUDIO_CACHE_DISABLED=true (dev only): the same uncached path for EVERY installation,
+ * real phones included. Only the cache is skipped; history is still saved.
  */
 export function bypassesAudioCache(clientId: string | undefined): boolean {
-  return loadTestCacheBypassEnabled() && skipsPostResponsePersistence(clientId);
+  if (audioCacheDisabled()) return true;
+  return flagOn(process.env.LOAD_TEST_BYPASS_AUDIO_CACHE) && skipsPostResponsePersistence(clientId);
 }
 
 type EnvSource = Readonly<Record<string, string | undefined>>;
 
+const flagOn = (value: string | undefined) => value?.trim().toLowerCase() === "true";
+
+/** AUDIO_CACHE_DISABLED=true: no installation reads or writes the audio cache. */
+export function audioCacheDisabled(env: EnvSource = process.env) {
+  return flagOn(env.AUDIO_CACHE_DISABLED);
+}
+
+/**
+ * Whether uncached audio URLs (English `nocache`, target `job`) are honoured: either
+ * the load-test bypass or the cache disabled for everyone.
+ */
 export function loadTestCacheBypassEnabled(env: EnvSource = process.env) {
-  return env.LOAD_TEST_BYPASS_AUDIO_CACHE?.trim().toLowerCase() === "true";
+  return flagOn(env.LOAD_TEST_BYPASS_AUDIO_CACHE) || audioCacheDisabled(env);
 }
 
 // An uncached English stream URL is signed, so any request for it (a retry, a
